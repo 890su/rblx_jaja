@@ -66,8 +66,9 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 		Name = "Floor",
 		Size = Vector3.new(PLOT_SIZE, 1, PLOT_SIZE),
 		Position = center - Vector3.new(0, 0.5, 0),
-		Color = Color3.fromRGB(45, 50, 70),
-		Material = Enum.Material.Metal,
+		Color = Color3.fromRGB(80, 86, 105),
+		Material = Theme.MATERIALS.stationFloor.base,
+		MaterialVariant = Theme.MATERIALS.stationFloor.variant,
 	}, model)
 	model.PrimaryPart = floor
 
@@ -195,8 +196,9 @@ local function buildTrack(parent: Instance)
 			Name = `Zone{i}`,
 			Size = Vector3.new(trackHalfWidth * 2, 1, zone.lengthStuds),
 			Position = Vector3.new(0, FLOOR_TOP - 0.5, z - zone.lengthStuds / 2),
-			Color = Color3.fromRGB(120 * shade, 90 * shade, 70 * shade),
-			Material = Enum.Material.Slate,
+			Color = Color3.fromRGB(175 * shade, 150 * shade, 150 * shade),
+			Material = Theme.MATERIALS.trackGround.base,
+			MaterialVariant = Theme.MATERIALS.trackGround.variant,
 		}, folder)
 
 		if zone.speedGate > 0 or zone.rebirthGate > 0 then
@@ -267,8 +269,9 @@ local function canyonWall(cframe: CFrame, size: Vector3, parent: Instance)
 		Name = "CanyonWall",
 		Size = size,
 		CFrame = cframe,
-		Color = Color3.fromRGB(70, 55, 50),
-		Material = Enum.Material.Basalt,
+		Color = Color3.fromRGB(230, 225, 240),
+		Material = Theme.MATERIALS.canyonWall.base,
+		MaterialVariant = Theme.MATERIALS.canyonWall.variant,
 	}, parent)
 end
 
@@ -371,9 +374,77 @@ local function currentDay(): number
 	return math.floor(os.time() / Canyons.RESEED_PERIOD)
 end
 
+-- Dusk-over-a-crater look: warm low sun, light haze, punchy colors.
+-- Texture scale of the AI MaterialVariants (stored in the place).
+local function setupMaterials()
+	local MaterialService = game:GetService("MaterialService")
+	local M = Theme.MATERIALS
+	for _, spec in { M.canyonWall, M.trackGround, M.stationFloor } do
+		local variant = MaterialService:FindFirstChild(spec.variant, true)
+		if variant and variant:IsA("MaterialVariant") then
+			variant.StudsPerTile = spec.studsPerTile
+		end
+	end
+end
+
+local function setupLighting()
+	local Lighting = game:GetService("Lighting")
+	Lighting.ClockTime = 17.4
+	Lighting.Brightness = 2.4
+	Lighting.OutdoorAmbient = Color3.fromRGB(120, 110, 150)
+	Lighting.EnvironmentDiffuseScale = 0.6
+	Lighting.EnvironmentSpecularScale = 0.6
+	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
+	atmosphere.Density = 0.28
+	atmosphere.Haze = 1.2
+	atmosphere.Color = Color3.fromRGB(255, 190, 160)
+	atmosphere.Decay = Color3.fromRGB(110, 80, 150)
+	atmosphere.Parent = Lighting
+	local grade = Lighting:FindFirstChild("MeteorGrade") :: ColorCorrectionEffect?
+	if not grade then
+		local newGrade = Instance.new("ColorCorrectionEffect")
+		newGrade.Name = "MeteorGrade"
+		newGrade.Parent = Lighting
+		grade = newGrade
+	end
+	local g = grade :: ColorCorrectionEffect
+	g.Saturation = 0.18
+	g.Contrast = 0.08
+	g.TintColor = Color3.fromRGB(255, 245, 250)
+end
+
+-- Replaces the template Baseplate with a wide crater plain under everything.
+local function setupGround(parent: Instance)
+	local baseplate = workspace:FindFirstChild("Baseplate")
+	if baseplate then
+		baseplate:Destroy()
+	end
+	local m = Theme.MATERIALS.trackGround
+	part({
+		Name = "CraterPlain",
+		Size = Vector3.new(2048, 1, 2048),
+		Position = Vector3.new(0, FLOOR_TOP - 0.55, 0),
+		Color = Color3.fromRGB(105, 90, 100),
+		Material = m.base,
+		MaterialVariant = m.variant,
+	}, parent)
+	-- Deck that joins all stations (covers the gaps between plots).
+	local deckWidth = Economy.SERVER_SIZE * PLOT_PITCH + 20
+	part({
+		Name = "StationDeck",
+		Size = Vector3.new(deckWidth, 1, PLOT_SIZE + 30),
+		Position = Vector3.new(0, FLOOR_TOP - 0.52, PLOT_Z),
+		Color = Color3.fromRGB(55, 58, 75),
+		Material = Enum.Material.Metal,
+	}, parent)
+end
+
 function WorldService.init()
+	setupLighting()
+	setupMaterials()
 	world = Instance.new("Folder")
 	world.Name = "World"
+	setupGround(world)
 	local plotFolder = Instance.new("Folder")
 	plotFolder.Name = "Plots"
 	for i = 1, Economy.SERVER_SIZE do

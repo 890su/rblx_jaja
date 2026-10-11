@@ -48,6 +48,17 @@ return deepFreeze({
 		big_bang_bunny = "Big Bang Bunny",
 	} :: { [string]: string },
 
+	-- AI-generated MaterialVariants stored in the place (MaterialService).
+	MATERIALS = {
+		canyonWall = { base = Enum.Material.Basalt, variant = "MH_CanyonRock", studsPerTile = 16 },
+		trackGround = { base = Enum.Material.Ground, variant = "MH_CraterGround", studsPerTile = 6 },
+		stationFloor = {
+			base = Enum.Material.Metal,
+			variant = "MH_StationFloor",
+			studsPerTile = 24,
+		},
+	},
+
 	RARITY_COLORS = {
 		Common = Color3.fromRGB(200, 200, 200),
 		Uncommon = Color3.fromRGB(90, 220, 110),

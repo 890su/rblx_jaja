@@ -15,6 +15,7 @@ local Format = require(Shared.Util.Format)
 local Locale = require(Shared.Locale)
 
 local Notifier = require(script.Parent.Parent.Util.Notifier)
+local MeteorVisual = require(script.Parent.Parent.Util.MeteorVisual)
 local WorldService = require(script.Parent.WorldService)
 local StationService = require(script.Parent.StationService)
 local SpeedService = require(script.Parent.SpeedService)
@@ -69,6 +70,7 @@ function CarryService.begin(player: Player, carry: Carry): boolean
 	weld.Part0 = visual
 	weld.Part1 = root
 	weld.Parent = visual
+	MeteorVisual.attach(visual, true)
 	visual.Parent = character
 	carry.visual = visual
 

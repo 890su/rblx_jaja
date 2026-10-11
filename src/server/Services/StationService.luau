@@ -85,9 +85,9 @@ local function ensureView(pedestal: BasePart): (TextLabel, TextLabel, Part)
 	if not gui then
 		local newGui = Instance.new("BillboardGui")
 		newGui.Name = "Info"
-		newGui.Size = UDim2.fromOffset(160, 50)
-		newGui.StudsOffset = Vector3.new(0, 7, 0)
-		newGui.MaxDistance = 80
+		newGui.Size = UDim2.fromOffset(120, 40)
+		newGui.StudsOffset = Vector3.new(0, 6, 0)
+		newGui.MaxDistance = 60
 		for _, spec in
 			{ { name = "Label", y = 0, h = 0.55 }, { name = "Value", y = 0.55, h = 0.45 } }
 		do

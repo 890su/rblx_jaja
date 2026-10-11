@@ -14,6 +14,7 @@ local Odds = require(Shared.Util.Odds)
 local Locale = require(Shared.Locale)
 
 local Notifier = require(script.Parent.Parent.Util.Notifier)
+local MeteorVisual = require(script.Parent.Parent.Util.MeteorVisual)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local CarryService = require(script.Parent.CarryService)
@@ -138,6 +139,7 @@ spawnMeteor = function(
 	meteor.Anchored = true
 	meteor.Position = position
 	meteor:SetAttribute("Boost", boost)
+	MeteorVisual.attach(meteor, false)
 
 	local isDropped = lifetime ~= nil
 	local prompt = Instance.new("ProximityPrompt")
