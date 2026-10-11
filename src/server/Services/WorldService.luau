@@ -12,7 +12,7 @@ local Economy = require(Shared.Config.Economy)
 local Zones = require(Shared.Config.Zones)
 local Canyons = require(Shared.Config.Canyons)
 local Maze = require(Shared.Util.Maze)
-local Remotes = require(Shared.Remotes)
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local Theme = require(Shared.Theme)
 
 export type Plot = {
@@ -99,16 +99,26 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 	collectorGui.Size = UDim2.fromOffset(180, 40)
 	collectorGui.StudsOffset = Vector3.new(0, 3, 0)
 	collectorGui.MaxDistance = 80
-	local collectorLabel = Instance.new("TextLabel")
-	collectorLabel.Name = "Label"
-	collectorLabel.Size = UDim2.fromScale(1, 1)
-	collectorLabel.BackgroundTransparency = 1
-	collectorLabel.TextScaled = true
-	collectorLabel.Font = Enum.Font.FredokaOne
-	collectorLabel.TextColor3 = Color3.fromRGB(255, 220, 90)
-	collectorLabel.TextStrokeTransparency = 0.3
-	collectorLabel.Text = ""
-	collectorLabel.Parent = collectorGui
+	collectorGui.Enabled = false
+	for _, spec in
+		{
+			{ name = "Label", text = "Collect", y = 0, h = 0.5 },
+			{ name = "Value", text = "", y = 0.5, h = 0.5 },
+		}
+	do
+		local collectorLabel = Instance.new("TextLabel")
+		collectorLabel.Name = spec.name
+		collectorLabel.Position = UDim2.fromScale(0, spec.y)
+		collectorLabel.Size = UDim2.fromScale(1, spec.h)
+		collectorLabel.BackgroundTransparency = 1
+		collectorLabel.TextScaled = true
+		collectorLabel.Font = Enum.Font.FredokaOne
+		collectorLabel.TextColor3 = Color3.fromRGB(255, 220, 90)
+		collectorLabel.TextStrokeTransparency = 0.3
+		collectorLabel.Text = spec.text
+		collectorLabel.AutoLocalize = spec.name == "Label"
+		collectorLabel.Parent = collectorGui
+	end
 	collectorGui.Parent = collector
 
 	local treadmill = part({
@@ -139,15 +149,25 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 	}, model)
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = Enum.NormalId.Front
-	local label = Instance.new("TextLabel")
-	label.Name = "Owner"
-	label.Size = UDim2.fromScale(1, 1)
-	label.BackgroundTransparency = 1
-	label.TextScaled = true
-	label.Font = Enum.Font.FredokaOne
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.Text = `Empty {Theme.BASE}`
-	label.Parent = gui
+	-- Owner name (never translated) above the localized "Station" term.
+	for _, spec in
+		{
+			{ name = "Owner", text = "", y = 0, h = 0.55 },
+			{ name = "Title", text = Theme.BASE, y = 0.55, h = 0.45 },
+		}
+	do
+		local label = Instance.new("TextLabel")
+		label.Name = spec.name
+		label.Position = UDim2.fromScale(0, spec.y)
+		label.Size = UDim2.fromScale(1, spec.h)
+		label.BackgroundTransparency = 1
+		label.TextScaled = true
+		label.Font = Enum.Font.FredokaOne
+		label.TextColor3 = Color3.new(1, 1, 1)
+		label.Text = spec.text
+		label.AutoLocalize = spec.name == "Title"
+		label.Parent = gui
+	end
 	gui.Parent = sign
 
 	model.Parent = parent
@@ -196,18 +216,28 @@ local function buildTrack(parent: Instance)
 
 			local gui = Instance.new("SurfaceGui")
 			gui.Face = Enum.NormalId.Back -- faces the station side (+Z)
-			local label = Instance.new("TextLabel")
-			label.Size = UDim2.fromScale(1, 1)
-			label.BackgroundTransparency = 1
-			label.TextScaled = true
-			label.Font = Enum.Font.FredokaOne
-			label.TextColor3 = Color3.new(1, 1, 1)
-			local requirement = `{zone.speedGate} Speed`
+			-- Zone name (localized term) on the left, numeric requirement on the right.
+			local requirement = `⚡ {zone.speedGate}`
 			if zone.rebirthGate > 0 then
-				requirement ..= ` + Rebirth {zone.rebirthGate}`
+				requirement ..= `  ♻ {zone.rebirthGate}`
 			end
-			label.Text = `{Theme.ZONE_NAMES[i] or `Zone {i}`}  ·  {requirement}`
-			label.Parent = gui
+			for _, spec in
+				{
+					{ text = Theme.ZONE_NAMES[i] or `Zone {i}`, x = 0, w = 0.6, localize = true },
+					{ text = requirement, x = 0.6, w = 0.4, localize = false },
+				}
+			do
+				local label = Instance.new("TextLabel")
+				label.Position = UDim2.fromScale(spec.x, 0)
+				label.Size = UDim2.fromScale(spec.w, 1)
+				label.BackgroundTransparency = 1
+				label.TextScaled = true
+				label.Font = Enum.Font.FredokaOne
+				label.TextColor3 = Color3.new(1, 1, 1)
+				label.Text = spec.text
+				label.AutoLocalize = spec.localize
+				label.Parent = gui
+			end
 			gui.Parent = gate
 		end
 		z -= zone.lengthStuds
@@ -361,8 +391,7 @@ function WorldService.start()
 		local day = currentDay()
 		if day ~= canyonDay then
 			buildCanyons(day)
-			Remotes.event("Notify")
-				:FireAllClients("The craters shifted! New canyon paths today", "pickup")
+			Notifier.all("craters_shifted", nil, "pickup")
 		end
 	end
 end

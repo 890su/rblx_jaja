@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Daily = require(Shared.Config.Daily)
 local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
 local UiKit = require(script.Parent.Parent.Lib.UiKit)
 
@@ -29,13 +30,15 @@ local function refresh()
 			elseif claimed then Color3.fromRGB(60, 60, 75)
 			else UiKit.CARD_COLOR
 	end
-	claimButton.Text = if available then `Claim day {nextDay}` else "Come back tomorrow!"
+	claimButton.Text = if available
+		then Locale.t("daily_claim", { day = nextDay })
+		else Locale.term("Come back tomorrow!")
 	claimButton.BackgroundColor3 = if available then UiKit.BUTTON_COLOR else UiKit.DISABLED_COLOR
-	sideDaily.Text = if available then "Daily (!)" else "Daily"
+	sideDaily.Text = Locale.term(if available then "Daily (!)" else "Daily")
 end
 
 function RewardsController.init()
-	local panel = UiKit.panel("Daily", "Daily Rewards")
+	local panel = UiKit.panel("Daily", Locale.term("Daily Rewards"))
 	local row = Instance.new("Frame")
 	row.BackgroundTransparency = 1
 	row.Position = UDim2.fromScale(0.04, 0.16)
@@ -52,12 +55,12 @@ function RewardsController.init()
 		frame.BackgroundColor3 = UiKit.CARD_COLOR
 		UiKit.corner(frame)
 		UiKit.text(frame, {
-			Text = `Day {day}`,
+			Text = Locale.t("daily_day", { day = day }),
 			Size = UDim2.fromScale(0.9, 0.22),
 			Position = UDim2.fromScale(0.05, 0.04),
 		})
 		UiKit.text(frame, {
-			Text = reward.label,
+			Text = Locale.term(reward.label),
 			Size = UDim2.fromScale(0.9, 0.6),
 			Position = UDim2.fromScale(0.05, 0.32),
 			TextColor3 = Color3.fromRGB(255, 220, 120),
@@ -77,7 +80,7 @@ function RewardsController.init()
 
 	-- Promo codes
 	local box = Instance.new("TextBox")
-	box.PlaceholderText = "Enter code"
+	box.PlaceholderText = Locale.term("Enter code")
 	box.Text = ""
 	box.ClearTextOnFocus = false
 	box.Font = UiKit.FONT
@@ -88,7 +91,7 @@ function RewardsController.init()
 	box.Position = UDim2.fromScale(0.1, 0.82)
 	UiKit.corner(box, 8)
 	box.Parent = panel
-	local redeem = UiKit.button(panel, "Redeem", {
+	local redeem = UiKit.button(panel, Locale.term("Redeem"), {
 		Size = UDim2.fromScale(0.25, 0.1),
 		Position = UDim2.fromScale(0.6, 0.82),
 		BackgroundColor3 = Color3.fromRGB(80, 110, 200),
@@ -100,7 +103,7 @@ function RewardsController.init()
 		end
 	end)
 
-	sideDaily = UiKit.sideButton("Daily", Color3.fromRGB(220, 90, 120), 4, function()
+	sideDaily = UiKit.sideButton(Locale.term("Daily"), Color3.fromRGB(220, 90, 120), 4, function()
 		UiKit.toggle("Daily")
 		refresh()
 	end)

@@ -15,6 +15,7 @@ local Economy = require(Shared.Config.Economy)
 local Format = require(Shared.Util.Format)
 local RebirthMath = require(Shared.Util.RebirthMath)
 local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
 local player = Players.LocalPlayer
 
@@ -47,7 +48,7 @@ local CARD_COLOR = UiKit.CARD_COLOR
 local BUTTON_COLOR = UiKit.BUTTON_COLOR
 
 local function buildShop()
-	local frame = UiKit.panel("Shop", `{Theme.ITEM} Shop`)
+	local frame = UiKit.panel("Shop", Locale.term("Meteor Shop"))
 	restockLabel = text(frame, {
 		Size = UDim2.fromScale(0.4, 0.07),
 		Position = UDim2.fromScale(0.48, 0.04),
@@ -125,16 +126,17 @@ local function refreshShop()
 		local left = state.remaining[slot] or 0
 		if offer then
 			local color = (Theme.RARITY_COLORS :: any)[offer.rarity] or Color3.new(1, 1, 1)
-			entry.name.Text = Theme.CREATURE_NAMES[offer.creatureId] or offer.rarity
-			entry.rarity.Text = offer.rarity
+			entry.name.Text = Locale.term(Theme.CREATURE_NAMES[offer.creatureId] or offer.rarity)
+			entry.rarity.Text = Locale.term(offer.rarity)
 			entry.rarity.TextColor3 = color;
 			(entry.frame:FindFirstChildOfClass("UIStroke") :: UIStroke).Color = color
-			entry.price.Text = `{Format.short(offer.price)} {Theme.CURRENCY}`
-			entry.stock.Text = if left > 0 then `{left} left` else "Sold out"
-			entry.buy.Text = if left <= 0
-				then "Sold out"
-				elseif coins < offer.price then "Too pricey"
-				else "Buy"
+			entry.price.Text = Locale.t("amount_coins", { amount = Format.short(offer.price) })
+			entry.stock.Text = if left > 0
+				then Locale.t("shop_left", { count = left })
+				else Locale.term("Sold out")
+			entry.buy.Text = Locale.term(
+				if left <= 0 then "Sold out" elseif coins < offer.price then "Too pricey" else "Buy"
+			)
 			entry.buy.BackgroundColor3 = if left > 0 and coins >= offer.price
 				then BUTTON_COLOR
 				else Color3.fromRGB(90, 90, 100)
@@ -143,12 +145,15 @@ local function refreshShop()
 	local nextCost = player:GetAttribute("NextPedestalCost") :: number?
 	local count = (player:GetAttribute("PedestalCount") :: number?) or Economy.PEDESTALS_START
 	pedestalButton.Text = if nextCost
-		then `Unlock pedestal {count + 1} · {Format.short(nextCost)} {Theme.CURRENCY}`
-		else "All pedestals unlocked"
+		then Locale.t(
+			"pedestal_unlock_button",
+			{ number = count + 1, amount = Format.short(nextCost) }
+		)
+		else Locale.term("All pedestals unlocked")
 end
 
 local function buildRebirth()
-	local frame = UiKit.panel("Rebirth", "Rebirth")
+	local frame = UiKit.panel("Rebirth", Locale.term("Rebirth"))
 	rebirthInfo = text(frame, {
 		Size = UDim2.fromScale(0.9, 0.6),
 		Position = UDim2.fromScale(0.05, 0.15),
@@ -160,7 +165,7 @@ local function buildRebirth()
 	})
 	rebirthButton = button(
 		frame,
-		"Rebirth!",
+		Locale.term("Rebirth!"),
 		{ Size = UDim2.fromScale(0.5, 0.12), Position = UDim2.fromScale(0.25, 0.82) }
 	)
 	rebirthButton.Activated:Connect(function()
@@ -175,17 +180,21 @@ local function refreshRebirth()
 	local needSpeed = RebirthMath.speedRequired(rebirths)
 	local needCoins = RebirthMath.cost(rebirths)
 	local ok = speed >= needSpeed and coins >= needCoins
-	local nextZone = if rebirths == 0 then `\nUnlocks {Theme.ZONE_NAMES[5]}` else ""
-	rebirthInfo.Text = table.concat({
-		`Rebirths: {rebirths}`,
-		`Speed: {Format.short(speed)} / {Format.short(needSpeed)}`,
-		`{Theme.CURRENCY}: {Format.short(coins)} / {Format.short(needCoins)}`,
+	local lines = {
+		Locale.t("rebirth_count", { count = rebirths }),
+		Locale.t("rebirth_speed", { have = Format.short(speed), need = Format.short(needSpeed) }),
+		Locale.t("rebirth_coins", { have = Format.short(coins), need = Format.short(needCoins) }),
 		"",
-		`Reward: +{math.floor(Economy.REBIRTH_INCOME_BONUS * 100)}% income, +{math.floor(
-			Speed.REBIRTH_GAIN_BONUS * 100
-		)}% speed gain{nextZone}`,
-		`Resets Speed and {Theme.CURRENCY}. Creatures stay.`,
-	}, "\n")
+		Locale.t("rebirth_reward", {
+			income = math.floor(Economy.REBIRTH_INCOME_BONUS * 100),
+			speed = math.floor(Speed.REBIRTH_GAIN_BONUS * 100),
+		}),
+	}
+	if rebirths == 0 then
+		table.insert(lines, Locale.t("rebirth_unlocks", { zone = Locale.ref(Theme.ZONE_NAMES[5]) }))
+	end
+	table.insert(lines, Locale.term("Resets Speed and Stardust. Creatures stay."))
+	rebirthInfo.Text = table.concat(lines, "\n")
 	rebirthButton.BackgroundColor3 = if ok then BUTTON_COLOR else Color3.fromRGB(90, 90, 100)
 end
 
@@ -194,15 +203,17 @@ local function refreshShower()
 	local endsAt = (workspace:GetAttribute("ShowerEndsAt") :: number?) or 0
 	local nextAt = (workspace:GetAttribute("NextShowerAt") :: number?) or 0
 	if now < endsAt then
-		showerLabel.Text = `☄ {Theme.SHOWER_EVENT} NOW · {Format.duration(endsAt - now)}`
+		showerLabel.Text = "☄ "
+			.. Locale.t("shower_now", { time = Format.duration(endsAt - now) })
 		showerLabel.TextColor3 = Color3.fromRGB(255, 170, 80)
 	elseif nextAt > 0 then
-		showerLabel.Text = `☄ {Theme.SHOWER_EVENT} in {Format.duration(nextAt - now)}`
+		showerLabel.Text = "☄ " .. Locale.t("shower_in", { time = Format.duration(nextAt - now) })
 		showerLabel.TextColor3 = Color3.fromRGB(200, 210, 255)
 	end
 	local state = shopState
 	if state and UiKit.isOpen("Shop") then
-		restockLabel.Text = `Restock in {Format.duration(state.endsAt - now)}`
+		restockLabel.Text =
+			Locale.t("shop_restock_in", { time = Format.duration(state.endsAt - now) })
 	end
 end
 
@@ -219,15 +230,15 @@ end
 
 function MenuController.init()
 	local gui = UiKit.gui()
-	UiKit.sideButton("Shop", Color3.fromRGB(230, 150, 40), 1, function()
+	UiKit.sideButton(Locale.term("Shop"), Color3.fromRGB(230, 150, 40), 1, function()
 		UiKit.toggle("Shop")
 		refreshShop()
 	end)
-	UiKit.sideButton("Rebirth", Color3.fromRGB(160, 80, 220), 2, function()
+	UiKit.sideButton(Locale.term("Rebirth"), Color3.fromRGB(160, 80, 220), 2, function()
 		UiKit.toggle("Rebirth")
 		refreshRebirth()
 	end)
-	UiKit.sideButton("Invite +10%", Color3.fromRGB(60, 150, 230), 5, invite)
+	UiKit.sideButton(Locale.term("Invite +10%"), Color3.fromRGB(60, 150, 230), 5, invite)
 
 	showerLabel = text(gui, {
 		AnchorPoint = Vector2.new(1, 0),

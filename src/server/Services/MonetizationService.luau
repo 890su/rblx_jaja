@@ -18,7 +18,9 @@ local Rarity = require(Shared.Config.Rarity)
 local Theme = require(Shared.Theme)
 local Odds = require(Shared.Util.Odds)
 local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
 local ShopService = require(script.Parent.ShopService)
@@ -32,8 +34,8 @@ local passByKey: { [string]: Products.Pass } = {}
 local passById: { [number]: Products.Pass } = {}
 local productById: { [number]: Products.Product } = {}
 
-local function notify(player: Player, message: string, kind: string?)
-	Remotes.event("Notify"):FireClient(player, message, kind)
+local function notify(player: Player, key: string, kind: string?, args: Locale.Args?)
+	Notifier.send(player, key, args, kind)
 end
 
 local function setPass(player: Player, key: string)
@@ -92,12 +94,12 @@ local GRANTS: { [string]: (player: Player, profile: Types.PlayerProfile) -> bool
 		end
 		profile.shieldUntil = math.max(profile.shieldUntil, os.time())
 			+ Products.STARTER_SHIELD_SECONDS
-		notify(player, "Starter Pack unlocked! Enjoy your new creatures", "success")
+		notify(player, "starter_pack", "success")
 		return true
 	end,
 	Shield15 = function(player, profile)
 		profile.shieldUntil = math.max(profile.shieldUntil, os.time()) + Products.SHIELD_SECONDS
-		notify(player, `{Theme.BASE} shielded for 15 minutes`, "success")
+		notify(player, "shielded", "success")
 		return true
 	end,
 	InstantHatch = function(player, profile)
@@ -108,13 +110,13 @@ local GRANTS: { [string]: (player: Player, profile: Types.PlayerProfile) -> bool
 			end
 		end
 		StationService.refresh(player)
-		notify(player, "Everything hatched!", "success")
+		notify(player, "all_hatched", "success")
 		return true
 	end,
 	Restock = function(player, profile)
 		profile.shop.bought = {}
 		ShopService.pushState(player)
-		notify(player, "Your Meteor Shop stock is refilled", "success")
+		notify(player, "shop_refilled", "success")
 		return true
 	end,
 	ServerLuck = function(player)
@@ -125,8 +127,7 @@ local GRANTS: { [string]: (player: Player, profile: Types.PlayerProfile) -> bool
 			math.max(current, now) + Products.SERVER_LUCK.seconds
 		)
 		workspace:SetAttribute("ServerLuckBoost", Products.SERVER_LUCK.boost)
-		Remotes.event("Notify")
-			:FireAllClients(`{player.DisplayName} activated Server Luck! x2 rare meteors`, "pickup")
+		Notifier.all("server_luck", { player = player.DisplayName }, "pickup")
 		return true
 	end,
 }
@@ -137,11 +138,11 @@ local function crateGrant(count: number): (player: Player, profile: Types.Player
 		for _ = 1, count do
 			local id = MonetizationService.rollCrate(rng)
 			giveCreature(player, id, true)
-			table.insert(names, Theme.CREATURE_NAMES[id] or id)
+			table.insert(names, Locale.ref(Theme.CREATURE_NAMES[id] or id))
 			Remotes.event("Fx")
 				:FireClient(player, "crate", Vector3.zero, Creatures.BY_ID[id].rarity)
 		end
-		notify(player, `Crate: {table.concat(names, ", ")}`, "success")
+		notify(player, "crate_result", "success", { list = names })
 		return true
 	end
 end
@@ -219,7 +220,7 @@ function MonetizationService.init()
 		if purchased and pass then
 			setPass(player, pass.key)
 			StationService.refresh(player)
-			notify(player, `{pass.name} unlocked!`, "success")
+			notify(player, "pass_unlocked", "success", { pass = Locale.ref(pass.name) })
 		end
 	end)
 	MarketplaceService.ProcessReceipt = processReceipt

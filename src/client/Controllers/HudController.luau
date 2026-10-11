@@ -11,6 +11,7 @@ local Zones = require(Shared.Config.Zones)
 local Theme = require(Shared.Theme)
 local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
 local player = Players.LocalPlayer
 
@@ -61,17 +62,21 @@ end
 
 local function refreshStats()
 	speedLabel.Text = `⚡ {Format.short((player:GetAttribute("Speed") :: number?) or 0)}`
-	coinsLabel.Text =
-		`✦ {Format.short((player:GetAttribute("Coins") :: number?) or 0)} {Theme.CURRENCY}`
+	coinsLabel.Text = Locale.t(
+		"amount_coins",
+		{ amount = Format.short((player:GetAttribute("Coins") :: number?) or 0) }
+	)
 	local carrying = player:GetAttribute("Carrying") :: string?
 	carryLabel.Visible = carrying ~= nil
 	if carrying then
-		carryLabel.Text = `Carrying {carrying} {Theme.ITEM} — run home!`
+		carryLabel.Text = Locale.t("hud_carrying", { rarity = Locale.ref(carrying) })
 		carryLabel.TextColor3 = (Theme.RARITY_COLORS :: any)[carrying] or Color3.new(1, 1, 1)
 	end
 end
 
-local function toast(message: string, kind: string?)
+-- Server sends a Locale key + args; rendered in the player's language.
+local function toast(key: string, args: Locale.Args?, kind: string?)
+	local message = Locale.t(key, args)
 	local item = label("Toast", toastFrame, {
 		Size = UDim2.new(1, 0, 0, 34),
 		Text = message,
@@ -151,9 +156,9 @@ function HudController.start()
 			local zone = zoneIndexAt(root.Position.Z)
 			if zone ~= lastZone then
 				lastZone = zone
-				zoneLabel.Text = if zone == 0
-					then Theme.BASE
-					else Theme.ZONE_NAMES[zone] or `Zone {zone}`
+				zoneLabel.Text = Locale.term(
+					if zone == 0 then Theme.BASE else Theme.ZONE_NAMES[zone] or `Zone {zone}`
+				)
 			end
 		end
 		task.wait(0.25)

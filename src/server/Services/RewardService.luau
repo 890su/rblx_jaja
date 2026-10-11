@@ -6,10 +6,9 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Daily = require(Shared.Config.Daily)
 local Creatures = require(Shared.Config.Creatures)
-local Theme = require(Shared.Theme)
-local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local Codes = require(script.Parent.Parent.Data.Codes)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local DataService = require(script.Parent.DataService)
@@ -73,7 +72,7 @@ local function onClaim(player: Player)
 		profile.shieldUntil = math.max(profile.shieldUntil, os.time()) + reward.shieldMinutes * 60
 	end
 	publish(player, profile)
-	Remotes.event("Notify"):FireClient(player, `Day {streak} reward: {reward.label}!`, "success")
+	Notifier.send(player, "daily_claimed", { day = streak }, "success")
 end
 
 local function onRedeem(player: Player, raw: unknown)
@@ -83,7 +82,6 @@ local function onRedeem(player: Player, raw: unknown)
 	if typeof(raw) ~= "string" or #raw == 0 or #raw > MAX_CODE_LENGTH then
 		return
 	end
-	local notify = Remotes.event("Notify")
 	local profile = DataService.get(player)
 	if not profile then
 		return
@@ -91,25 +89,22 @@ local function onRedeem(player: Player, raw: unknown)
 	local key = string.upper((raw:gsub("%s", "")))
 	local code = Codes[key]
 	if not code or os.time() > code.expires then
-		notify:FireClient(player, "That code doesn't work", "warning")
+		Notifier.send(player, "code_invalid", nil, "warning")
 		return
 	end
 	if profile.codes[key] then
-		notify:FireClient(player, "You already used this code", "warning")
+		Notifier.send(player, "code_used", nil, "warning")
 		return
 	end
 	profile.codes[key] = true
-	local parts = {}
 	if code.coins then
 		DataService.addCoins(player, code.coins)
 		TelemetryService.economy(player, "source", code.coins, "Code", key)
-		table.insert(parts, `{Format.short(code.coins)} {Theme.CURRENCY}`)
 	end
 	if code.creatureId then
 		giveCreature(player, code.creatureId)
-		table.insert(parts, Theme.CREATURE_NAMES[code.creatureId] or code.creatureId)
 	end
-	notify:FireClient(player, `Code redeemed: {table.concat(parts, " + ")}`, "success")
+	Notifier.send(player, "code_redeemed", nil, "success")
 end
 
 function RewardService.init()

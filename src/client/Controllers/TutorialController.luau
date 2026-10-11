@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Theme = require(Shared.Theme)
 local Zones = require(Shared.Config.Zones)
+local Locale = require(Shared.Locale)
 
 local UiKit = require(script.Parent.Parent.Lib.UiKit)
 
@@ -84,20 +85,21 @@ local function update()
 
 	banner.Visible = true
 	if step == "run" then
-		banner.Text = "Run onto the track! Your Speed grows every second"
+		banner.Text = Locale.term("Run onto the track! Your Speed grows every second")
 		setMarker(Vector3.new(root.Position.X, 3, -40))
 	elseif step == "grab" then
-		banner.Text = `Grab a glowing {Theme.ITEM} on the track`
+		banner.Text = Locale.term("Grab a glowing Meteor on the track")
 		setMarker(nearestMeteor(root.Position))
 	elseif step == "home" then
-		banner.Text = "Bring it home! Follow the green arrow"
+		banner.Text = Locale.term("Bring it home! Follow the green arrow")
 		setMarker(nil)
 	elseif step == "collect" then
-		banner.Text = `Your creatures earn {Theme.CURRENCY}. Step on the yellow pad to collect`
+		banner.Text = Locale.term("Your creatures earn Stardust. Step on the yellow pad to collect")
 		setMarker(if home then home + Vector3.new(0, 0, -12) else nil)
 	elseif step == "gate" then
 		local gate = Zones.ZONES[2].speedGate
-		banner.Text = `Reach {gate} Speed to open {Theme.ZONE_NAMES[2]} — rarer {Theme.ITEM}s!`
+		banner.Text =
+			Locale.t("tutorial_gate", { speed = gate, zone = Locale.ref(Theme.ZONE_NAMES[2]) })
 		setMarker(nil)
 	end
 end

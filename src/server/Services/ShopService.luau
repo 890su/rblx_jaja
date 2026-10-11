@@ -15,7 +15,9 @@ local Clock = require(Shared.Clock)
 local Format = require(Shared.Util.Format)
 local ShopOffers = require(Shared.Util.ShopOffers)
 local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
@@ -23,7 +25,6 @@ local TelemetryService = require(script.Parent.TelemetryService)
 
 local ShopService = {}
 
-local notify: RemoteEvent
 local shopState: RemoteEvent
 local currentCycle = -1
 local currentOffers: { Types.ShopOffer } = {}
@@ -91,20 +92,21 @@ local function onBuy(player: Player, slot: unknown)
 	local bought = purchasesOf(profile)
 	local key = tostring(slot)
 	if (bought[key] or 0) >= offer.stock then
-		notify:FireClient(player, "Sold out — wait for the restock", "warning")
+		Notifier.send(player, "shop_sold_out", nil, "warning")
 	elseif profile.coins < offer.price then
-		notify:FireClient(player, `Not enough {Theme.CURRENCY}`, "warning")
+		Notifier.send(player, "not_enough_coins", nil, "warning")
 	elseif not StationService.hasFreePedestal(player) then
-		notify:FireClient(player, "All pedestals are full!", "warning")
+		Notifier.send(player, "pedestals_full", nil, "warning")
 	elseif StationService.placeNew(player, offer.creatureId, nil) then
 		DataService.addCoins(player, -offer.price)
 		bought[key] = (bought[key] or 0) + 1
 		TelemetryService.economy(player, "sink", offer.price, "Shop", offer.creatureId)
 		TelemetryService.funnel(player, "FirstShopBuy")
 		local name = Theme.CREATURE_NAMES[offer.creatureId] or offer.rarity
-		notify:FireClient(
+		Notifier.send(
 			player,
-			`Bought {offer.rarity} {Theme.ITEM} ({name}) — hatching!`,
+			"shop_bought",
+			{ rarity = Locale.ref(offer.rarity), creature = Locale.ref(name) },
 			"success"
 		)
 	end
@@ -121,15 +123,15 @@ local function onBuyPedestal(player: Player)
 	end
 	local cost = nextPedestalCost(profile)
 	if not cost then
-		notify:FireClient(player, "All pedestals unlocked", "warning")
+		Notifier.send(player, "pedestals_all_unlocked", nil, "warning")
 	elseif profile.coins < cost then
-		notify:FireClient(player, `Need {Format.short(cost)} {Theme.CURRENCY}`, "warning")
+		Notifier.send(player, "need_coins", { amount = Format.short(cost) }, "warning")
 	else
 		DataService.addCoins(player, -cost)
 		profile.pedestalCount += 1
 		TelemetryService.economy(player, "sink", cost, "Upgrade", `pedestal{profile.pedestalCount}`)
 		StationService.refresh(player)
-		notify:FireClient(player, `Pedestal {profile.pedestalCount} unlocked!`, "success")
+		Notifier.send(player, "pedestal_unlocked", { number = profile.pedestalCount }, "success")
 	end
 	pushState(player)
 end
@@ -139,7 +141,6 @@ function ShopService.pushState(player: Player)
 end
 
 function ShopService.init()
-	notify = Remotes.event("Notify")
 	shopState = Remotes.event("ShopState")
 	refreshCycle()
 	Remotes.event("ShopBuy").OnServerEvent:Connect(onBuy)
@@ -156,7 +157,7 @@ function ShopService.start()
 			for _, player in Players:GetPlayers() do
 				pushState(player)
 			end
-			notify:FireAllClients("The Meteor Shop restocked!", "pickup")
+			Notifier.all("shop_restocked", nil, "pickup")
 		end
 	end
 end

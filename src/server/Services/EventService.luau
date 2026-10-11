@@ -5,10 +5,10 @@
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Events = require(Shared.Config.Events)
-local Theme = require(Shared.Theme)
 local Clock = require(Shared.Clock)
 local Remotes = require(Shared.Remotes)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local MeteorService = require(script.Parent.MeteorService)
 
 local TICK = 0.5
@@ -25,8 +25,7 @@ local function startShower(remaining: number)
 		local zone = zones[(i - 1) % #zones + 1]
 		MeteorService.spawnEvent(zone, Events.SHOWER_RARITY_BOOST, remaining, rng)
 	end
-	Remotes.event("Notify")
-		:FireAllClients(`{Theme.SHOWER_EVENT}! Boosted meteors in the deep zones`, "pickup")
+	Notifier.all("shower_started", nil, "pickup")
 	Remotes.event("Fx"):FireAllClients("shower", Vector3.zero, remaining)
 end
 
@@ -50,11 +49,7 @@ function EventService.start()
 		end
 		if period - phase <= Events.SHOWER_WARNING and warnedCycle ~= cycle then
 			warnedCycle = cycle
-			Remotes.event("Notify")
-				:FireAllClients(
-					`{Theme.SHOWER_EVENT} in {Events.SHOWER_WARNING} seconds!`,
-					"warning"
-				)
+			Notifier.all("shower_warning", { seconds = Events.SHOWER_WARNING }, "warning")
 		end
 		task.wait(TICK)
 	end

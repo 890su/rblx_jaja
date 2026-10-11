@@ -11,8 +11,9 @@ local Speed = require(Shared.Config.Speed)
 local Steal = require(Shared.Config.Steal)
 local Zones = require(Shared.Config.Zones)
 local Theme = require(Shared.Theme)
-local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local TelemetryService = require(script.Parent.TelemetryService)
@@ -33,7 +34,6 @@ type Track = { root: BasePart, position: Vector3 }
 local tracked: { [Player]: Track } = {}
 local strikes: { [Player]: { number } } = {}
 local graceUntil: { [Player]: number } = {}
-local notify: RemoteEvent
 
 local function rootOf(player: Player): (BasePart?, Humanoid?)
 	local character = player.Character
@@ -114,7 +114,12 @@ local function pushBehindGate(player: Player, root: BasePart, zoneIndex: number)
 	character:PivotTo(CFrame.new(root.Position.X, root.Position.Y + 2, gateZ + 8))
 	local zone = Zones.ZONES[zoneIndex]
 	local name = Theme.ZONE_NAMES[zoneIndex] or `Zone {zoneIndex}`
-	notify:FireClient(player, `{name} needs {zone.speedGate} Speed`, "warning")
+	Notifier.send(
+		player,
+		"zone_locked",
+		{ zone = Locale.ref(name), speed = zone.speedGate },
+		"warning"
+	)
 end
 
 local function tickPlayer(player: Player)
@@ -175,7 +180,6 @@ local function tickPlayer(player: Player)
 end
 
 function SpeedService.init()
-	notify = Remotes.event("Notify")
 	Players.PlayerRemoving:Connect(function(player)
 		tracked[player] = nil
 		strikes[player] = nil

@@ -9,8 +9,8 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Theme = require(Shared.Theme)
-local Remotes = require(Shared.Remotes)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local WorldService = require(script.Parent.WorldService)
 local StationService = require(script.Parent.StationService)
 local SpeedService = require(script.Parent.SpeedService)
@@ -30,7 +30,6 @@ local CarryService = {}
 
 local carrying: { [Player]: Carry } = {}
 local fullWarnedAt: { [Player]: number } = {}
-local notify: RemoteEvent
 
 local function makeVisual(rarity: Types.Rarity): Part
 	local part = Instance.new("Part")
@@ -113,14 +112,13 @@ local function checkDeliveries()
 				end
 			elseif os.clock() - (fullWarnedAt[player] or 0) > FULL_WARN_COOLDOWN then
 				fullWarnedAt[player] = os.clock()
-				notify:FireClient(player, "All pedestals are full!", "warning")
+				Notifier.send(player, "pedestals_full", nil, "warning")
 			end
 		end
 	end
 end
 
 function CarryService.init()
-	notify = Remotes.event("Notify")
 	local function watchCharacter(player: Player, character: Model)
 		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 		humanoid.Died:Connect(function()

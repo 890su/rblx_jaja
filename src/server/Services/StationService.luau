@@ -16,7 +16,9 @@ local Creatures = require(Shared.Config.Creatures)
 local Theme = require(Shared.Theme)
 local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local Income = require(script.Parent.Parent.Data.Income)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
@@ -31,8 +33,11 @@ local plotOwner: { [number]: Player } = {}
 local playerPlot: { [Player]: Plot } = {}
 local storedCoins: { [Player]: number } = {}
 local collectDebounce: { [Player]: number } = {}
+-- Auto-collect banks every tick; analytics gets one batched event per minute.
+local autoBanked: { [Player]: number } = {}
+local autoBankedFlushAt: { [Player]: number } = {}
+local AUTO_BANK_LOG_PERIOD = 60
 
-local notify: RemoteEvent
 local fx: RemoteEvent
 
 local isHatched = Income.isHatched
@@ -73,12 +78,9 @@ function StationService.incomePerSecond(player: Player, profile: Types.PlayerPro
 	return Income.perSecond(profile, os.time(), StationService.passIncomeMultiplier(player))
 end
 
-local function creatureName(state: Types.PedestalState): string
-	local name = Theme.CREATURE_NAMES[state.creatureId] or state.rarity
-	return if state.mutation then `{state.mutation} {name}` else name
-end
-
-local function ensureView(pedestal: BasePart): (TextLabel, Part)
+-- Billboard: "Label" holds a translatable term (creature / rarity / Empty /
+-- Locked, auto-localized per viewer), "Value" holds numbers only.
+local function ensureView(pedestal: BasePart): (TextLabel, TextLabel, Part)
 	local gui = pedestal:FindFirstChild("Info") :: BillboardGui?
 	if not gui then
 		local newGui = Instance.new("BillboardGui")
@@ -86,15 +88,21 @@ local function ensureView(pedestal: BasePart): (TextLabel, Part)
 		newGui.Size = UDim2.fromOffset(160, 50)
 		newGui.StudsOffset = Vector3.new(0, 7, 0)
 		newGui.MaxDistance = 80
-		local label = Instance.new("TextLabel")
-		label.Name = "Label"
-		label.Size = UDim2.fromScale(1, 1)
-		label.BackgroundTransparency = 1
-		label.TextScaled = true
-		label.Font = Enum.Font.FredokaOne
-		label.TextStrokeTransparency = 0.3
-		label.TextColor3 = Color3.new(1, 1, 1)
-		label.Parent = newGui
+		for _, spec in
+			{ { name = "Label", y = 0, h = 0.55 }, { name = "Value", y = 0.55, h = 0.45 } }
+		do
+			local label = Instance.new("TextLabel")
+			label.Name = spec.name
+			label.Position = UDim2.fromScale(0, spec.y)
+			label.Size = UDim2.fromScale(1, spec.h)
+			label.BackgroundTransparency = 1
+			label.TextScaled = true
+			label.Font = Enum.Font.FredokaOne
+			label.TextStrokeTransparency = 0.3
+			label.TextColor3 = Color3.new(1, 1, 1)
+			label.AutoLocalize = spec.name == "Label"
+			label.Parent = newGui
+		end
 		newGui.Parent = pedestal
 		gui = newGui
 	end
@@ -112,7 +120,10 @@ local function ensureView(pedestal: BasePart): (TextLabel, Part)
 		newOrb.Parent = pedestal
 		orb = newOrb
 	end
-	return (gui :: BillboardGui):FindFirstChild("Label") :: TextLabel, orb :: Part
+	local info = gui :: BillboardGui
+	return info:FindFirstChild("Label") :: TextLabel,
+		info:FindFirstChild("Value") :: TextLabel,
+		orb :: Part
 end
 
 -- Puts the creature's 3D model (ReplicatedStorage.Assets.Creatures.<id>) on the
@@ -170,7 +181,7 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 	local owner = plotOwner[plot.index]
 	local capacity = if profile and owner then StationService.capacity(owner, profile) else 0
 	for slot, pedestal in plot.pedestals do
-		local label, orb = ensureView(pedestal)
+		local label, value, orb = ensureView(pedestal)
 		local state = profile and profile.pedestals[tostring(slot)]
 		local unlocked = profile ~= nil and slot <= capacity
 		pedestal:SetAttribute("Occupied", state ~= nil)
@@ -186,21 +197,23 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 				orb.Transparency = if hasModel then 1 else 0
 				orb.Color = color
 				orb.Size = Vector3.new(4, 4, 4)
-				label.Text = `{creatureName(state)}\n+{Format.short(incomeOf(state))}/s`
+				label.Text = Theme.CREATURE_NAMES[state.creatureId] or state.rarity
+				value.Text = `+{Format.short(incomeOf(state))}/s`
+					.. (if state.mutation then " ★" else "")
 			else
 				showCreature(pedestal, nil)
 				orb.Transparency = 0.25
 				orb.Color = color
 				orb.Size = Vector3.new(2.5, 2.5, 2.5)
-				label.Text = `{state.rarity} {Theme.ITEM}\n{Format.duration(
-					(state.hatchAt :: number) - now
-				)}`
+				label.Text = state.rarity
+				value.Text = Format.duration((state.hatchAt :: number) - now)
 			end
 		else
 			showCreature(pedestal, nil)
 			orb.Transparency = 1
 			label.TextColor3 = Color3.new(1, 1, 1)
 			label.Text = if not profile then "" elseif unlocked then "Empty" else "Locked"
+			value.Text = ""
 		end
 	end
 end
@@ -209,7 +222,7 @@ local function setOwnerSign(plot: Plot, player: Player?)
 	local sign = plot.model:FindFirstChild("Sign")
 	local label = sign and sign:FindFirstChild("Owner", true) :: TextLabel?
 	if label then
-		label.Text = if player then `{player.DisplayName}'s {Theme.BASE}` else `Empty {Theme.BASE}`
+		label.Text = if player then player.DisplayName else ""
 	end
 end
 
@@ -246,9 +259,10 @@ local function assignPlot(player: Player, profile: Types.PlayerProfile)
 			end
 			if offline > 0 then
 				task.delay(3, function()
-					notify:FireClient(
+					Notifier.send(
 						player,
-						`Welcome back! Your creatures made {Format.short(offline)} {Theme.CURRENCY}`,
+						"welcome_back",
+						{ amount = Format.short(offline) },
 						"coins"
 					)
 				end)
@@ -268,6 +282,8 @@ local function releasePlot(player: Player)
 	playerPlot[player] = nil
 	storedCoins[player] = nil
 	collectDebounce[player] = nil
+	autoBanked[player] = nil
+	autoBankedFlushAt[player] = nil
 	setOwnerSign(plot, nil)
 	refreshPlot(plot, nil)
 end
@@ -282,10 +298,19 @@ local function bank(player: Player, plot: Plot, silent: boolean)
 	end
 	storedCoins[player] -= amount
 	DataService.addCoins(player, amount)
-	TelemetryService.economy(player, "source", amount, "Income")
+	if silent then
+		autoBanked[player] = (autoBanked[player] or 0) + amount
+		if os.clock() >= (autoBankedFlushAt[player] or 0) then
+			TelemetryService.economy(player, "source", autoBanked[player], "Income", "auto")
+			autoBanked[player] = 0
+			autoBankedFlushAt[player] = os.clock() + AUTO_BANK_LOG_PERIOD
+		end
+	else
+		TelemetryService.economy(player, "source", amount, "Income")
+	end
 	TelemetryService.funnel(player, "FirstCollect")
 	if not silent then
-		notify:FireClient(player, `+{Format.short(amount)} {Theme.CURRENCY}`, "coins")
+		Notifier.send(player, "coins_collected", { amount = Format.short(amount) }, "coins")
 		fx:FireClient(player, "collect", plot.collector.Position, amount)
 	end
 end
@@ -456,7 +481,12 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 	for slot, state in profile.pedestals do
 		if isHatched(state, now) and not profile.index[state.creatureId] then
 			profile.index[state.creatureId] = true
-			notify:FireClient(player, `New creature: {creatureName(state)}!`, "success")
+			Notifier.send(
+				player,
+				"new_creature",
+				{ creature = Locale.ref(Theme.CREATURE_NAMES[state.creatureId] or state.rarity) },
+				"success"
+			)
 		end
 		-- Hatch moment (crossed this tick): burst effect for everyone nearby.
 		if
@@ -477,16 +507,17 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 		bank(player, plot, true) -- Auto-collect
 	end
 	local stored = math.floor(storedCoins[player])
-	local label = plot.collector:FindFirstChild("Label", true) :: TextLabel?
-	if label then
-		label.Text = if stored > 0 then `Collect {Format.short(stored)}` else ""
+	local collectorGui = plot.collector:FindFirstChild("Info") :: BillboardGui?
+	local collectorValue = collectorGui and collectorGui:FindFirstChild("Value") :: TextLabel?
+	if collectorGui and collectorValue then
+		collectorGui.Enabled = stored > 0
+		collectorValue.Text = `+{Format.short(stored)}`
 	end
 	player:SetAttribute("StorageCount", #profile.storage)
 	refreshPlot(plot, profile)
 end
 
 function StationService.init()
-	notify = Remotes.event("Notify")
 	fx = Remotes.event("Fx")
 	DataService.onLoaded(assignPlot)
 	DataService.onRemoving(function(player, profile)

@@ -15,6 +15,7 @@ Plan: `docs/02-development-plan.md` (stack, architecture, schema, milestones, Do
 - Studio: `Roblox_Studio` MCP. Sync code with `python -I scripts/mcp_sync.py` (never hand-edit scripts in Studio — files are truth). Playtest loop: sync → `start_stop_play` true → `execute_luau` (Server: inspect state; Client: drive input, e.g. `ProximityPrompt:InputHoldBegin()`) / `character_navigation` → `get_console_output` → `start_stop_play` false. Multi-line Luau only; inspect before changing; save place before bulk edits.
 
 ## Hard rules
+- No hardcoded player-facing text: add a key to `src/shared/Locale` (template with {params}) or a static term; server uses `Notifier`, client uses `Locale.t` / `Locale.term`; numbers go in separate non-localized labels. Re-export + upload the CSV after changes.
 - `--!strict` everywhere; no `_G`; services are ModuleScripts with typed APIs.
 - Server decides: speed gain, rarity/mutation rolls, steal success, income, offline income, purchases, codes. Client only renders and requests.
 - Every remote: type + range + ownership + distance + cooldown validation, token-bucket rate limit.

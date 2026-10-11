@@ -11,8 +11,9 @@ local Rarity = require(Shared.Config.Rarity)
 local Creatures = require(Shared.Config.Creatures)
 local Theme = require(Shared.Theme)
 local Odds = require(Shared.Util.Odds)
-local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local CarryService = require(script.Parent.CarryService)
@@ -26,12 +27,11 @@ local MeteorService = {}
 local rng = Random.new()
 local alive: { [number]: number } = {} -- zone index -> live meteor count
 local fieldFolder: Folder
-local notify: RemoteEvent
 
 local function oneInText(zoneIndex: number, rarity: Types.Rarity, boost: number?): string
 	local zone = Zones.ZONES[zoneIndex]
 	local oneIn = zone and Odds.oneIn(zone.weights, rarity, boost)
-	return if oneIn and oneIn > 1 and rarity ~= "Common" then ` · 1 in {oneIn}` else ""
+	return if oneIn and oneIn > 1 and rarity ~= "Common" then ` · 1/{oneIn}` else ""
 end
 
 local function makeMeteorPart(rarity: Types.Rarity): Part
@@ -110,17 +110,19 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 		end,
 		onDelivered = function(owner, carry)
 			TelemetryService.funnel(owner, "FirstPlace")
-			notify:FireClient(
+			Notifier.send(
 				owner,
-				`{carry.state.rarity} {Theme.ITEM} placed — hatching!`,
+				"meteor_placed",
+				{ rarity = Locale.ref(carry.state.rarity) },
 				"success"
 			)
 		end,
 	})
 	TelemetryService.funnel(player, "FirstPickup")
-	notify:FireClient(
+	Notifier.send(
 		player,
-		`{rarity} {Theme.ITEM}{oneInText(zoneIndex, rarity, meteorBoost)}! Bring it home`,
+		"meteor_pickup",
+		{ rarity = Locale.ref(rarity), odds = oneInText(zoneIndex, rarity, meteorBoost) },
 		"pickup"
 	)
 end
@@ -140,7 +142,26 @@ spawnMeteor = function(
 	local isDropped = lifetime ~= nil
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.ActionText = "Grab"
-	prompt.ObjectText = `{rarity} {Theme.ITEM}{oneInText(zoneIndex, rarity, boost)}`
+	prompt.ObjectText = rarity -- localized term; odds shown as numbers below
+	local odds = oneInText(zoneIndex, rarity, boost)
+	if odds ~= "" then
+		local oddsGui = Instance.new("BillboardGui")
+		oddsGui.Name = "Odds"
+		oddsGui.Size = UDim2.fromOffset(70, 22)
+		oddsGui.StudsOffset = Vector3.new(0, 2.6, 0)
+		oddsGui.MaxDistance = 60
+		local oddsLabel = Instance.new("TextLabel")
+		oddsLabel.Size = UDim2.fromScale(1, 1)
+		oddsLabel.BackgroundTransparency = 1
+		oddsLabel.TextScaled = true
+		oddsLabel.Font = Enum.Font.FredokaOne
+		oddsLabel.TextColor3 = Theme.RARITY_COLORS[rarity]
+		oddsLabel.TextStrokeTransparency = 0.2
+		oddsLabel.AutoLocalize = false
+		oddsLabel.Text = odds:sub(#" · " + 1)
+		oddsLabel.Parent = oddsGui
+		oddsGui.Parent = meteor
+	end
 	prompt.HoldDuration = 0.25
 	prompt.MaxActivationDistance = 10
 	prompt.RequiresLineOfSight = false
@@ -190,7 +211,6 @@ function MeteorService.spawnEvent(
 end
 
 function MeteorService.init()
-	notify = Remotes.event("Notify")
 	fieldFolder = Instance.new("Folder")
 	fieldFolder.Name = "Meteors"
 	fieldFolder.Parent = workspace

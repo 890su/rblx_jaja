@@ -14,6 +14,7 @@ local Rarity = require(Shared.Config.Rarity)
 local Zones = require(Shared.Config.Zones)
 local Theme = require(Shared.Theme)
 local Odds = require(Shared.Util.Odds)
+local Locale = require(Shared.Locale)
 
 local UiKit = require(script.Parent.Parent.Lib.UiKit)
 
@@ -62,14 +63,19 @@ local function fillCrateOdds()
 				end
 			end
 			order += 1
-			row(oddsList, `{rarity}: {fmtPercent(rarityPct)}`, Theme.RARITY_COLORS[rarity], order)
+			row(
+				oddsList,
+				`{Locale.term(rarity)}: {fmtPercent(rarityPct)}`,
+				Theme.RARITY_COLORS[rarity],
+				order
+			)
 			for _, id in pool do
 				order += 1
 				local pct = rarityPct / #pool
 				total += pct
 				row(
 					oddsList,
-					`    {Theme.CREATURE_NAMES[id] or id} — {fmtPercent(pct)}`,
+					`    {Locale.term(Theme.CREATURE_NAMES[id] or id)} — {fmtPercent(pct)}`,
 					nil,
 					order
 				)
@@ -79,7 +85,7 @@ local function fillCrateOdds()
 	order += 1
 	row(
 		oddsList,
-		`Total: {fmtPercent(total)} · each crate item is rolled independently`,
+		Locale.t("odds_total", { pct = fmtPercent(total) }),
 		Color3.fromRGB(180, 180, 200),
 		order
 	)
@@ -90,7 +96,7 @@ local function fillLuckOdds()
 	local order = 1
 	row(
 		oddsList,
-		`Effect: x{boost} weight for every non-Common meteor spawn on this server for {Products.SERVER_LUCK.seconds // 60} min.`,
+		Locale.t("luck_effect", { boost = boost, minutes = Products.SERVER_LUCK.seconds // 60 }),
 		Color3.fromRGB(180, 200, 255),
 		order
 	)
@@ -98,7 +104,7 @@ local function fillLuckOdds()
 		order += 1
 		row(
 			oddsList,
-			Theme.ZONE_NAMES[index] or `Zone {index}`,
+			Locale.term(Theme.ZONE_NAMES[index] or `Zone {index}`),
 			Color3.fromRGB(255, 220, 120),
 			order
 		)
@@ -113,7 +119,7 @@ local function fillLuckOdds()
 				local after = Odds.percent(boosted, rarity)
 				row(
 					oddsList,
-					`    {rarity}: {fmtPercent(before)} → {fmtPercent(after)}`,
+					`    {Locale.term(rarity)}: {fmtPercent(before)} → {fmtPercent(after)}`,
 					Theme.RARITY_COLORS[rarity],
 					order
 				)
@@ -129,13 +135,15 @@ local function openOdds(product: Products.Product)
 			child:Destroy()
 		end
 	end
-	oddsTitle.Text = `{product.name} · odds`
+	oddsTitle.Text = Locale.t("odds_title", { name = Locale.ref(product.name) })
 	if product.key == "ServerLuck" then
 		fillLuckOdds()
 	else
 		fillCrateOdds()
 	end
-	oddsBuy.Text = if product.id ~= 0 then `Buy · R$ {product.price}` else "Coming soon"
+	oddsBuy.Text = if product.id ~= 0
+		then Locale.t("odds_buy", { price = product.price })
+		else Locale.term("Coming soon")
 	oddsBuy.BackgroundColor3 = if product.id ~= 0 then UiKit.BUTTON_COLOR else UiKit.DISABLED_COLOR
 	UiKit.show("Odds")
 end
@@ -164,13 +172,13 @@ local function card(
 	UiKit.corner(frame)
 	frame.Parent = parent
 	UiKit.text(frame, {
-		Text = item.name,
+		Text = Locale.term(item.name),
 		Size = UDim2.fromScale(0.62, 0.5),
 		Position = UDim2.fromScale(0.03, 0.04),
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 	UiKit.text(frame, {
-		Text = item.description,
+		Text = Locale.term(item.description),
 		Size = UDim2.fromScale(0.62, 0.4),
 		Position = UDim2.fromScale(0.03, 0.54),
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -178,9 +186,9 @@ local function card(
 	})
 	local hasOdds = not isPass and ODDS_PRODUCTS[item.key] == true
 	local label = if item.id == 0
-		then "Coming soon"
-		elseif hasOdds then `Odds · R$ {item.price}`
-		else `R$ {item.price}`
+		then Locale.term("Coming soon")
+		elseif hasOdds then Locale.t("odds_button", { price = item.price })
+		else Locale.t("price_robux", { price = item.price })
 	local b = UiKit.button(frame, label, {
 		Size = UDim2.fromScale(0.3, 0.7),
 		Position = UDim2.fromScale(0.68, 0.15),
@@ -203,7 +211,7 @@ end
 local function refreshOwned()
 	for key, b in passButtons do
 		if player:GetAttribute(`Pass_{key}`) then
-			b.Text = "Owned"
+			b.Text = Locale.term("Owned")
 			b.BackgroundColor3 = UiKit.DISABLED_COLOR
 			b.Active = false
 		end
@@ -211,7 +219,7 @@ local function refreshOwned()
 end
 
 function StoreController.init()
-	local store = UiKit.panel("Store", "Store")
+	local store = UiKit.panel("Store", Locale.term("Store"))
 	local list = UiKit.list(store, UDim2.fromScale(0.04, 0.14), UDim2.fromScale(0.92, 0.82))
 	local order = 0
 	for _, pass in Products.PASSES do
@@ -223,7 +231,7 @@ function StoreController.init()
 		card(list, product, false, order)
 	end
 
-	local odds = UiKit.panel("Odds", "Odds")
+	local odds = UiKit.panel("Odds", Locale.term("Odds"))
 	oddsTitle = odds:FindFirstChild("Title") :: TextLabel
 	oddsList = UiKit.list(odds, UDim2.fromScale(0.04, 0.14), UDim2.fromScale(0.92, 0.66))
 	oddsBuy = UiKit.button(
@@ -238,7 +246,7 @@ function StoreController.init()
 		end
 	end)
 
-	UiKit.sideButton("Store", Color3.fromRGB(40, 170, 110), 3, function()
+	UiKit.sideButton(Locale.term("Store"), Color3.fromRGB(40, 170, 110), 3, function()
 		UiKit.toggle("Store")
 		refreshOwned()
 	end)

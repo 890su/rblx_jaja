@@ -11,8 +11,9 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Steal = require(Shared.Config.Steal)
 local Theme = require(Shared.Theme)
-local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local StationService = require(script.Parent.StationService)
@@ -34,7 +35,6 @@ local lastStealAt: { [Player]: number } = {}
 local lastVictimAt: { [Player]: { [Player]: number } } = {}
 local holdBegan: { [Player]: number } = {}
 local chases: { [Player]: Chase } = {} -- keyed by thief
-local notify: RemoteEvent
 
 local function rootOf(player: Player): BasePart?
 	local character = player.Character
@@ -69,56 +69,56 @@ function StealService.isProtected(owner: Player): boolean
 		and StationService.creatureCount(profile) < Steal.PROTECTION_MIN_CREATURES
 end
 
--- Returns nil if allowed, otherwise a player-facing reason.
+-- Returns nil if allowed, otherwise a Locale key (+ args) for the reason.
 local function rejectReason(
 	thief: Player,
 	victim: Player,
 	slot: string,
 	pedestal: BasePart
-): string?
+): (string?, Locale.Args?)
 	local thiefProfile = DataService.get(thief)
 	local victimProfile = DataService.get(victim)
 	if thief == victim or not thiefProfile or not victimProfile then
-		return "Can't steal here"
+		return "steal_cant"
 	end
 	local state = victimProfile.pedestals[slot]
 	if not state then
-		return "Nothing to steal"
+		return "steal_nothing"
 	end
 	if CarryService.get(thief) then
-		return "Your hands are full"
+		return "steal_hands_full"
 	end
 	local root = rootOf(thief)
 	if not root or (root.Position - pedestal.Position).Magnitude > Steal.MAX_STEAL_DISTANCE then
-		return "Too far away"
+		return "steal_too_far"
 	end
 	local began = holdBegan[thief]
 	if not began or os.clock() - began < Steal.PROMPT_HOLD_SECONDS - HOLD_TOLERANCE then
-		return "Hold to steal"
+		return "steal_hold"
 	end
 	if not StationService.hasFreePedestal(thief) then
-		return "Your pedestals are full"
+		return "steal_full"
 	end
 	if StealService.isLocked(victim) then
-		return `{victim.DisplayName}'s {Theme.BASE} is locked`
+		return "steal_locked", { player = victim.DisplayName }
 	end
 	if StealService.isProtected(victim) then
-		return `{victim.DisplayName} is protected (new player)`
+		return "steal_protected", { player = victim.DisplayName }
 	end
 	local now = os.clock()
 	local sinceLast = now - (lastStealAt[thief] or -math.huge)
 	if sinceLast < Steal.THIEF_COOLDOWN_SECONDS then
-		return `Wait {math.ceil(Steal.THIEF_COOLDOWN_SECONDS - sinceLast)}s to steal again`
+		return "steal_wait", { seconds = math.ceil(Steal.THIEF_COOLDOWN_SECONDS - sinceLast) }
 	end
 	local victims = lastVictimAt[thief]
 	if victims and now - (victims[victim] or -math.huge) < Steal.SAME_VICTIM_COOLDOWN_SECONDS then
-		return `You robbed {victim.DisplayName} recently`
+		return "steal_recent", { player = victim.DisplayName }
 	end
 	if
 		state.rarity == "Mythic"
 		and StationService.creatureCount(victimProfile) < Steal.MYTHIC_MIN_VICTIM_CREATURES
 	then
-		return "That Mythic is protected"
+		return "steal_mythic"
 	end
 	return nil
 end
@@ -167,10 +167,10 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 	if not victim then
 		return
 	end
-	local reason = rejectReason(thief, victim, slot, pedestal)
+	local reason, reasonArgs = rejectReason(thief, victim, slot, pedestal)
 	holdBegan[thief] = nil
 	if reason then
-		notify:FireClient(thief, reason, "warning")
+		Notifier.send(thief, reason, reasonArgs, "warning")
 		return
 	end
 
@@ -179,6 +179,7 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 		return
 	end
 	local creatureName = nameOf(state)
+	local creatureRef = Locale.ref(creatureName)
 	local began = CarryService.begin(thief, {
 		state = state,
 		fresh = false,
@@ -188,7 +189,7 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 			endChase(lostBy, true)
 			local owner = if chase then chase.victim else victim
 			if returnToVictim(owner, carry.state, slot) then
-				notify:FireClient(owner, `Your {creatureName} came back home!`, "success")
+				Notifier.send(owner, "creature_returned", { creature = creatureRef }, "success")
 			end
 		end,
 		onDelivered = function(by)
@@ -202,11 +203,12 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 			if victimProfile then
 				victimProfile.stats.timesRobbed += 1
 			end
-			notify:FireClient(by, `You stole {creatureName}!`, "success")
+			Notifier.send(by, "steal_success", { creature = creatureRef }, "success")
 			if victim.Parent == Players then
-				notify:FireClient(
+				Notifier.send(
 					victim,
-					`{by.DisplayName} got away with your {creatureName}`,
+					"steal_got_away",
+					{ player = by.DisplayName, creature = creatureRef },
 					"warning"
 				)
 			end
@@ -237,14 +239,16 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 		end
 	end)
 
-	notify:FireClient(
+	Notifier.send(
 		thief,
-		`Stolen {creatureName}! Run home before {victim.DisplayName} catches you!`,
+		"steal_started_thief",
+		{ creature = creatureRef, player = victim.DisplayName },
 		"pickup"
 	)
-	notify:FireClient(
+	Notifier.send(
 		victim,
-		`{thief.DisplayName} stole your {creatureName}! Catch them!`,
+		"steal_started_victim",
+		{ player = thief.DisplayName, creature = creatureRef },
 		"warning"
 	)
 end
@@ -271,12 +275,18 @@ local function tickChases()
 					victimProfile.stats.defends += 1
 				end
 				TelemetryService.custom(victim, "ChaseCaught")
-				notify:FireClient(
+				Notifier.send(
 					victim,
-					`Caught {thief.DisplayName}! {chase.creatureName} is back`,
+					"chase_caught_victim",
+					{ player = thief.DisplayName, creature = Locale.ref(chase.creatureName) },
 					"success"
 				)
-				notify:FireClient(thief, `{victim.DisplayName} caught you!`, "warning")
+				Notifier.send(
+					thief,
+					"chase_caught_thief",
+					{ player = victim.DisplayName },
+					"warning"
+				)
 			end
 		end
 	end
@@ -359,7 +369,6 @@ function StealService.debugReset(player: Player)
 end
 
 function StealService.init()
-	notify = Remotes.event("Notify")
 	for _, plot in WorldService.getPlots() do
 		setupPlot(plot)
 	end

@@ -4,11 +4,11 @@
 -- access to deeper zones. Creatures and pedestals are kept.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
-local Theme = require(Shared.Theme)
 local Format = require(Shared.Util.Format)
 local RebirthMath = require(Shared.Util.RebirthMath)
 local Remotes = require(Shared.Remotes)
 
+local Notifier = require(script.Parent.Parent.Util.Notifier)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local DataService = require(script.Parent.DataService)
 local SpeedService = require(script.Parent.SpeedService)
@@ -22,7 +22,6 @@ local function onRebirth(player: Player)
 	if not limit:allow(player) then
 		return
 	end
-	local notify = Remotes.event("Notify")
 	local profile = DataService.get(player)
 	if not profile then
 		return
@@ -30,11 +29,16 @@ local function onRebirth(player: Player)
 	local cost = RebirthMath.cost(profile.rebirths)
 	local speedNeeded = RebirthMath.speedRequired(profile.rebirths)
 	if profile.speed < speedNeeded then
-		notify:FireClient(player, `Rebirth needs {Format.short(speedNeeded)} Speed`, "warning")
+		Notifier.send(
+			player,
+			"rebirth_need_speed",
+			{ amount = Format.short(speedNeeded) },
+			"warning"
+		)
 		return
 	end
 	if profile.coins < cost then
-		notify:FireClient(player, `Rebirth needs {Format.short(cost)} {Theme.CURRENCY}`, "warning")
+		Notifier.send(player, "rebirth_need_coins", { amount = Format.short(cost) }, "warning")
 		return
 	end
 	TelemetryService.economy(
@@ -50,7 +54,7 @@ local function onRebirth(player: Player)
 	DataService.sync(player)
 	SpeedService.apply(player)
 	TelemetryService.funnel(player, "FirstRebirth")
-	notify:FireClient(player, `Rebirth {profile.rebirths}! Permanent bonus unlocked`, "success")
+	Notifier.send(player, "rebirth_done", { count = profile.rebirths }, "success")
 end
 
 function RebirthService.init()
