@@ -159,8 +159,11 @@ class Mcp:
     def studio_id(self, attempts: int = 10) -> str:
         for _ in range(attempts):
             studios = json.loads(self.tool("list_roblox_studios", {})).get("studios", [])
-            if studios:
-                return studios[0]["id"]
+            # Prefer the edit window (it carries the place name); test-server
+            # and test-client windows are listed with name = null.
+            named = [s for s in studios if s.get("name")]
+            if named or studios:
+                return (named or studios)[0]["id"]
             time.sleep(1.5)
         raise RuntimeError("No Roblox Studio connected to MCP (open a place, enable Studio as MCP server)")
 

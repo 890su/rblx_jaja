@@ -69,7 +69,7 @@ Migrations are pure functions `vN → vN+1`, unit-tested.
 | 1 | Oct 12–18 | Speed +1/s, track & 5 zones, gates, meteor spawn, pickup/carry/drop, plots, server income tick | 8-player test: speed grows only while moving; gates enforced server-side |
 | 2 | Oct 19–25 | ProfileStore, autosave, offline income, hatch timers, rarity "1 in X", creatures v1 (placeholders) | Rejoin restores everything; offline income matches formula; no data loss on server shutdown |
 | 3 | Oct 26–Nov 1 | Stealing, chase-back, base lock, shields, protections, anti-exploit | Exploit checklist passes (teleport steal, prompt spam, remote fuzz) |
-| 4 | Nov 2–8 | Meteor Shop rotation, upgrades, rebirth, Meteor Shower, crews, friend bonus, private servers | Global clock identical across servers; crew merge/split safe |
+| 4 | Nov 2–8 | Crater Canyons (GDD §4.2b, prototype pulled forward to wk 3), Meteor Shop rotation, upgrades, rebirth, Meteor Shower, crews, friend bonus, private servers | Global clock identical across servers; crew merge/split safe |
 | 5 | Nov 9–15 | All MVP products + passes, Odds windows, receipts, FTUE, analytics funnel, daily, codes, notifications | Test purchases in Studio; odds sum 100%; funnel events visible |
 | 6 | Nov 16–22 | Final art pass, VFX/audio, closed test (20–50 players), balance, perf pass, thumbnails/icon/video | D1 of testers tracked; no P0/P1 bugs; mobile 60 FPS on mid device |
 | 7 | Nov 23–29 | Soft launch (see `docs/03-launch-plan.md`) | Live, monitoring on |

@@ -6,6 +6,7 @@
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Zones = require(Shared.Config.Zones)
+local Canyons = require(Shared.Config.Canyons)
 local Rarity = require(Shared.Config.Rarity)
 local Creatures = require(Shared.Config.Creatures)
 local Theme = require(Shared.Theme)
@@ -26,9 +27,9 @@ local alive: { [number]: number } = {} -- zone index -> live meteor count
 local fieldFolder: Folder
 local notify: RemoteEvent
 
-local function oneInText(zoneIndex: number, rarity: Types.Rarity): string
+local function oneInText(zoneIndex: number, rarity: Types.Rarity, boost: number?): string
 	local zone = Zones.ZONES[zoneIndex]
-	local oneIn = zone and Odds.oneIn(zone.weights, rarity)
+	local oneIn = zone and Odds.oneIn(zone.weights, rarity, boost)
 	return if oneIn and oneIn > 1 then ` · 1 in {oneIn}` else ""
 end
 
@@ -51,7 +52,13 @@ local function rollMutation(): string?
 	return nil
 end
 
-local spawnMeteor: (zoneIndex: number, position: Vector3, rarity: Types.Rarity, lifetime: number?) -> ()
+local spawnMeteor: (
+	zoneIndex: number,
+	position: Vector3,
+	rarity: Types.Rarity,
+	lifetime: number?,
+	boost: number?
+) -> ()
 
 local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped: boolean)
 	if CarryService.get(player) or meteor:GetAttribute("Taken") then
@@ -72,6 +79,7 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 	end
 
 	local rarity = meteor:GetAttribute("Rarity") :: Types.Rarity
+	local meteorBoost = meteor:GetAttribute("Boost") :: number?
 	-- FTUE: first pickup in the guarantee zone is at least the guaranteed rarity.
 	local guarantee = Zones.FIRST_VISIT_GUARANTEE
 	if zoneIndex == guarantee.zone and not isDropped and not profile.flags.ftueRareGranted then
@@ -109,7 +117,7 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 	})
 	notify:FireClient(
 		player,
-		`{rarity} {Theme.ITEM}{oneInText(zoneIndex, rarity)}! Bring it home`,
+		`{rarity} {Theme.ITEM}{oneInText(zoneIndex, rarity, meteorBoost)}! Bring it home`,
 		"pickup"
 	)
 end
@@ -118,16 +126,18 @@ spawnMeteor = function(
 	zoneIndex: number,
 	position: Vector3,
 	rarity: Types.Rarity,
-	lifetime: number?
+	lifetime: number?,
+	boost: number?
 )
 	local meteor = makeMeteorPart(rarity)
 	meteor.Anchored = true
 	meteor.Position = position
+	meteor:SetAttribute("Boost", boost)
 
 	local isDropped = lifetime ~= nil
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.ActionText = "Grab"
-	prompt.ObjectText = `{rarity} {Theme.ITEM}{oneInText(zoneIndex, rarity)}`
+	prompt.ObjectText = `{rarity} {Theme.ITEM}{oneInText(zoneIndex, rarity, boost)}`
 	prompt.HoldDuration = 0.25
 	prompt.MaxActivationDistance = 10
 	prompt.RequiresLineOfSight = false
@@ -160,8 +170,10 @@ function MeteorService.start()
 		task.spawn(function()
 			while true do
 				if (alive[zoneIndex] or 0) < zone.maxMeteors then
-					local rarity = Odds.roll(zone.weights, Rarity.ORDER, rng)
-					spawnMeteor(zoneIndex, WorldService.randomPointInZone(zoneIndex, rng), rarity)
+					local position, inCanyon = WorldService.randomPointInZone(zoneIndex, rng)
+					local boost = if inCanyon then Canyons.RARITY_BOOST else nil
+					local rarity = Odds.roll(zone.weights, Rarity.ORDER, rng, boost)
+					spawnMeteor(zoneIndex, position, rarity, nil, boost)
 				end
 				task.wait(zone.spawnIntervalSeconds)
 			end

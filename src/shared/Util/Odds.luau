@@ -42,8 +42,20 @@ function Odds.roll(
 	return fallback
 end
 
+local function boosted(weights: Types.RarityWeights, boost: number?): Types.RarityWeights
+	if not boost or boost == 1 then
+		return weights
+	end
+	local out: Types.RarityWeights = {}
+	for rarity, weight in weights do
+		out[rarity] = if rarity ~= "Common" then weight * boost else weight
+	end
+	return out
+end
+
 -- "1 in X" for display; nil if the rarity can't appear with these weights.
-function Odds.oneIn(weights: Types.RarityWeights, rarity: Types.Rarity): number?
+function Odds.oneIn(weights: Types.RarityWeights, rarity: Types.Rarity, boost: number?): number?
+	weights = boosted(weights, boost)
 	local weight = weights[rarity]
 	if not weight or weight <= 0 then
 		return nil

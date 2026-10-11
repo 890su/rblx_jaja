@@ -21,6 +21,9 @@ local TELEPORT_SLACK = 1.6 -- allowed multiple of WalkSpeed * dt before flagging
 local TELEPORT_FLAT = 25 -- studs of slack for physics/latency
 local STRIKE_WINDOW = 60
 local STRIKES_TO_KICK = 10
+-- After a server teleport the client may still report its old position for a
+-- moment; skip movement checks during this window.
+local TELEPORT_GRACE = 2
 
 local SpeedService = {}
 
@@ -28,6 +31,7 @@ type Track = { root: BasePart, position: Vector3 }
 
 local tracked: { [Player]: Track } = {}
 local strikes: { [Player]: { number } } = {}
+local graceUntil: { [Player]: number } = {}
 local notify: RemoteEvent
 
 local function rootOf(player: Player): (BasePart?, Humanoid?)
@@ -74,6 +78,7 @@ end
 -- Call before any server-initiated teleport so it isn't flagged as cheating.
 function SpeedService.markTeleport(player: Player)
 	tracked[player] = nil
+	graceUntil[player] = os.clock() + TELEPORT_GRACE
 end
 
 -- Re-applies WalkSpeed from authoritative state (call after carry/buff changes).
@@ -119,7 +124,7 @@ local function tickPlayer(player: Player)
 	local position = root.Position
 	local previous = tracked[player]
 	-- New character (respawn) or after a server teleport: start fresh.
-	if not previous or previous.root ~= root then
+	if not previous or previous.root ~= root or (graceUntil[player] or 0) > os.clock() then
 		tracked[player] = { root = root, position = position }
 		SpeedService.apply(player)
 		return
@@ -168,6 +173,7 @@ function SpeedService.init()
 	Players.PlayerRemoving:Connect(function(player)
 		tracked[player] = nil
 		strikes[player] = nil
+		graceUntil[player] = nil
 	end)
 end
 

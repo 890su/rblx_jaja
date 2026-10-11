@@ -1,6 +1,6 @@
 # Meteor Rush — Game Design Document
 
-Version 0.1 · 2026-10-11 · Working title (validate via thumbnail A/B before content spend).
+Version 0.2 · 2026-10-11 (added §4.2b Crater Canyons) · Working title (validate via thumbnail A/B before content spend).
 Source research: `reports/Простые трендовые игры Roblox.md`.
 
 ## 1. Concept
@@ -53,6 +53,16 @@ Session rhythm: 3–15 min sessions anchored to Meteor Shower (15 min), shop rot
 | 4 | Void Basin | 2,000 | — |
 | 5 | Nova Core | 8,000 | Rebirth ≥ 1 |
 - Meteors spawn on server timers per zone (max N alive per zone), each with server-rolled rarity.
+
+### 4.2b Crater Canyons (decided 2026-10-11)
+Goal: make escaping and chasing a decision ("which way do I run?") without killing the speed fantasy or the first minute.
+- **Zones 1–2 stay straight** (FTUE, first reward < 30 s).
+- **Zones 3–5:** a central **speed lane** (80 studs wide) flanked by **canyon mazes** on both sides (grid of 48-stud cells, walls ~28 studs high).
+- Maze = braided (loops, few dead ends): recursive backtracker + ~35% extra wall removal, so there are always several routes. Several openings connect canyons to the lane.
+- **Risk/reward:** ~70% of meteors in canyon zones spawn inside canyons with a ×2 rarity boost (shown in the "1 in X" text); the lane is safe but poorer.
+- **Shifting craters:** layout is seeded by UTC day (same on every server — learnable, clip-friendly) and reshuffles daily with a server-wide announcement. Candidate later: reshuffle on each Meteor Shower.
+- **Never lost:** while carrying, a 3D arrow points home; the thief highlight is visible through walls so chases continue around corners.
+- Metrics to judge it: bounce bands, session length, % chases ending in a catch, canyon vs lane pickup share. Tunables in `Config/Canyons`.
 
 ### 4.3 Meteors, rarity, creatures
 - 6 rarities, shown as "1 in X" (Fish It style). Default spawn weights per zone in `Config/Rarity`.
