@@ -78,7 +78,9 @@ Goal: make escaping and chasing a decision ("which way do I run?") without killi
 - Carrying: one meteor at a time; carrier speed ×0.6; dropping on death/reset returns it to the field for 10 s.
 
 ### 4.4 Station (base)
-- 8 plots per server (server size 8). Start with 3 pedestals; buy pedestals 4–6 with coins (escalating); +2 via Station Expansion pass.
+- 8 plots per server (server size 8). Start with 3 pedestals; buy pedestals 4–8 with coins (500 / 2.5K / 10K / 60K / 250K); +2 via Station Expansion pass (10 max).
+- **Full station:** delivering a meteor that earns more than your weakest creature replaces it; the old one sells for income × 30 s (no dead end when full).
+- **Run Training** (coin sink): 10 levels, +10% speed gain each, cost 2K × 2.2^level.
 - Income ticks on server every 1 s into the "collector"; touch collector to bank (Auto-collect pass skips this).
 - Offline income: 25% rate, cap 12 h (pass: 50%, 24 h). Calculated on join from saved timestamp, server-side.
 - Hatch timers run in real time, including offline.
@@ -91,7 +93,7 @@ Goal: make escaping and chasing a decision ("which way do I run?") without killi
 - All steal logic server-authoritative (distance checks, prompt validation, rate limits).
 
 ### 4.6 Rebirth
-- Cost: coins `5,000 × 4^n` and Speed ≥ 10,000 × (n+1). Resets Speed and coins; keeps creatures and pedestals.
+- Cost: coins `300,000 × 4^n` and Speed ≥ 5,000 × (n+1) (tuned with tools/balance_sim.py: F2P Rebirth 1 ≈ 1h40, Zone 5 ≈ 3h, a new goal every 10–20 min). Resets Speed and coins; keeps creatures and pedestals.
 - Rewards: +50% income multiplier (additive per rebirth), +25% speed gain, unlocks Zone 5 at Rebirth 1, cosmetic trail tier.
 
 ### 4.7 Shops

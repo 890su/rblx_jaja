@@ -73,12 +73,12 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 
 	local pedestals: { BasePart } = {}
 	for slot = 1, PEDESTAL_SLOTS do
-		local row = (slot - 1) // 4
-		local col = (slot - 1) % 4
+		local row = (slot - 1) // 5
+		local col = (slot - 1) % 5
 		local pedestal = part({
 			Name = `Pedestal{slot}`,
 			Size = Vector3.new(6, 2, 6),
-			Position = center + Vector3.new((col - 1.5) * 12, 1, 8 + row * 12),
+			Position = center + Vector3.new((col - 2) * 11, 1, 8 + row * 12),
 			Color = Color3.fromRGB(90, 95, 120),
 			Material = Enum.Material.SmoothPlastic,
 		}, model)

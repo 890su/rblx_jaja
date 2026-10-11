@@ -1,0 +1,5 @@
+Key,Source,Context,Example
+"creature_replaced","Replaced {old} (+{amount} Stardust) — your station got stronger!",,
+"training_button","Run Training {level} → {next} · {amount} Stardust",,
+"training_up","Run Training level {level}! +{bonus}% speed gain",,
+,"Run Training maxed",,

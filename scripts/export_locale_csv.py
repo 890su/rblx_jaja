@@ -39,6 +39,7 @@ def main() -> int:
         mcp.close()
     out = ROOT / "localization" / "meteor_heist.csv"
     out.parent.mkdir(exist_ok=True)
+    previous = set(out.read_text(encoding="utf-8").splitlines()) if out.exists() else set()
     out.write_text(csv + "\n", encoding="utf-8")
     rows = csv.count("\n")
     print(f"wrote {out} ({rows} entries)")
@@ -60,6 +61,11 @@ def main() -> int:
         writer.writerows(body[i : i + 30])
         (parts / f"part{i // 30 + 1}.csv").write_text(buf.getvalue(), encoding="utf-8")
     print(f"wrote {len(range(0, len(body), 30))} upload parts to {parts}")
+    # Only the rows that changed since the last export: usually all you need to upload.
+    delta = [line for line in csv.splitlines()[1:] if line and line not in previous]
+    if previous and delta:
+        (parts / "new.csv").write_text("\n".join([csv.splitlines()[0], *delta]) + "\n", encoding="utf-8")
+        print(f"wrote {len(delta)} new/changed rows to {parts / 'new.csv'}")
     return 0
 
 

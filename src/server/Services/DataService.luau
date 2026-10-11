@@ -41,6 +41,7 @@ local TEMPLATE: Profile = {
 	purchases = {},
 	daily = { streak = 0, lastClaimDay = -1 },
 	codes = {},
+	training = 0,
 }
 
 local DataService = {}

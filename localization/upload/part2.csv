@@ -1,4 +1,5 @@
 Key,Source,Context,Example
+pedestals_full,All pedestals are full!,,
 price_robux,R$ {price},,
 rebirth_coins,Stardust: {have} / {need},,
 rebirth_count,Rebirths: {count},,
@@ -28,4 +29,3 @@ steal_hands_full,Your hands are full,,
 steal_hold,Hold to steal,,
 steal_locked,{player}'s Station is locked,,
 steal_mythic,That Mythic is protected,,
-steal_nothing,Nothing to steal,,

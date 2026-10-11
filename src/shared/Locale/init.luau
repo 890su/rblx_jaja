@@ -23,6 +23,7 @@ export type Args = { [string]: any }
 local STRINGS: { [string]: string } = {
 	-- Carry / meteors
 	pedestals_full = "All pedestals are full!",
+	creature_replaced = "Replaced {old} (+{amount} Stardust) — your station got stronger!",
 	meteor_pickup = "{rarity} Meteor{odds}! Bring it home",
 	meteor_placed = "{rarity} Meteor placed — hatching!",
 	-- Events
@@ -54,6 +55,8 @@ local STRINGS: { [string]: string } = {
 	need_coins = "Need {amount} Stardust",
 	pedestal_unlocked = "Pedestal {number} unlocked!",
 	shop_restocked = "The Meteor Shop restocked!",
+	training_up = "Run Training level {level}! +{bonus}% speed gain",
+	training_button = "Run Training {level} → {next} · {amount} Stardust",
 	-- Station / speed
 	zone_locked = "{zone} needs {speed} Speed",
 	welcome_back = "Welcome back! Your creatures made {amount} Stardust",
@@ -127,6 +130,7 @@ local STATIC_TERMS: { string } = {
 	"Sold out",
 	"Too pricey",
 	"All pedestals unlocked",
+	"Run Training maxed",
 	"Owned",
 	"Coming soon",
 	"Odds",

@@ -9,6 +9,10 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Theme = require(Shared.Theme)
+local Creatures = require(Shared.Config.Creatures)
+local Rarity = require(Shared.Config.Rarity)
+local Format = require(Shared.Util.Format)
+local Locale = require(Shared.Locale)
 
 local Notifier = require(script.Parent.Parent.Util.Notifier)
 local WorldService = require(script.Parent.WorldService)
@@ -110,9 +114,31 @@ local function checkDeliveries()
 				if carry.onDelivered then
 					carry.onDelivered(player, carry)
 				end
-			elseif os.clock() - (fullWarnedAt[player] or 0) > FULL_WARN_COOLDOWN then
-				fullWarnedAt[player] = os.clock()
-				Notifier.send(player, "pedestals_full", nil, "warning")
+			else
+				-- Full: a better fresh meteor replaces the weakest creature.
+				local replaced, value = nil, nil
+				if carry.fresh then
+					local creature = Creatures.BY_ID[carry.state.creatureId]
+					replaced, value = StationService.replaceWeakest(player, {
+						creatureId = carry.state.creatureId,
+						rarity = carry.state.rarity,
+						mutation = carry.state.mutation,
+						hatchAt = os.time() + Rarity.INFO[creature.rarity].hatchSeconds,
+					})
+				end
+				if replaced then
+					CarryService.clear(player)
+					Notifier.send(player, "creature_replaced", {
+						old = Locale.ref(replaced),
+						amount = Format.short(value :: number),
+					}, "coins")
+					if carry.onDelivered then
+						carry.onDelivered(player, carry)
+					end
+				elseif os.clock() - (fullWarnedAt[player] or 0) > FULL_WARN_COOLDOWN then
+					fullWarnedAt[player] = os.clock()
+					Notifier.send(player, "pedestals_full", nil, "warning")
+				end
 			end
 		end
 	end

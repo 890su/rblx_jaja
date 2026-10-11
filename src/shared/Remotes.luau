@@ -14,6 +14,7 @@ local EVENT_NAMES: { string } = {
 	"ShopState", -- server -> client: (state: Types.ShopState)
 	"ShopBuy", -- client -> server: (slot: number)
 	"BuyPedestal", -- client -> server: ()
+	"BuyTraining", -- client -> server: ()
 	"Rebirth", -- client -> server: ()
 	"Fx", -- server -> client: (kind: string, position: Vector3, extra: any)
 	"ClaimDaily", -- client -> server: ()

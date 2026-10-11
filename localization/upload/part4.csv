@@ -1,5 +1,9 @@
 Key,Source,Context,Example
+,Buy,,
+,Sold out,,
+,Too pricey,,
 ,All pedestals unlocked,,
+,Run Training maxed,,
 ,Owned,,
 ,Coming soon,,
 ,Odds,,
@@ -25,7 +29,3 @@ Key,Source,Context,Example
 ,Singularity Sprite,,
 ,Pulsar Pup,,
 ,Celestial Kirin,,
-,Eclipse Lynx,,
-,Starlight Seraph,,
-,Meteor Mammoth,,
-,Rockroo,,

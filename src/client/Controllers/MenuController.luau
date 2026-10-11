@@ -26,6 +26,7 @@ local MenuController = {}
 local shopState: Types.ShopState? = nil
 local restockLabel: TextLabel
 local pedestalButton: TextButton
+local trainingButton: TextButton
 local cards: {
 	{
 		frame: Frame,
@@ -106,12 +107,20 @@ local function buildShop()
 		cards[slot] = entry
 	end
 	pedestalButton = button(frame, "", {
-		Size = UDim2.fromScale(0.6, 0.1),
-		Position = UDim2.fromScale(0.2, 0.86),
+		Size = UDim2.fromScale(0.45, 0.1),
+		Position = UDim2.fromScale(0.04, 0.86),
 		BackgroundColor3 = Color3.fromRGB(80, 110, 200),
 	})
 	pedestalButton.Activated:Connect(function()
 		Remotes.event("BuyPedestal"):FireServer()
+	end)
+	trainingButton = button(frame, "", {
+		Size = UDim2.fromScale(0.45, 0.1),
+		Position = UDim2.fromScale(0.51, 0.86),
+		BackgroundColor3 = Color3.fromRGB(40, 150, 170),
+	})
+	trainingButton.Activated:Connect(function()
+		Remotes.event("BuyTraining"):FireServer()
 	end)
 end
 
@@ -150,6 +159,14 @@ local function refreshShop()
 			{ number = count + 1, amount = Format.short(nextCost) }
 		)
 		else Locale.term("All pedestals unlocked")
+	local training = (player:GetAttribute("Training") :: number?) or 0
+	local trainingCost = player:GetAttribute("NextTrainingCost") :: number?
+	trainingButton.Text = if trainingCost
+		then Locale.t(
+			"training_button",
+			{ level = training, next = training + 1, amount = Format.short(trainingCost) }
+		)
+		else Locale.term("Run Training maxed")
 end
 
 local function buildRebirth()
@@ -257,7 +274,9 @@ function MenuController.start()
 		shopState = state
 		refreshShop()
 	end)
-	for _, attribute in { "Coins", "Speed", "Rebirths", "NextPedestalCost", "PedestalCount" } do
+	for _, attribute in
+		{ "Coins", "Speed", "Rebirths", "NextPedestalCost", "PedestalCount", "NextTrainingCost" }
+	do
 		player:GetAttributeChangedSignal(attribute):Connect(function()
 			if UiKit.isOpen("Shop") then
 				refreshShop()

@@ -443,6 +443,38 @@ function StationService.give(
 	return "stored"
 end
 
+-- Station full: swap the weakest creature for `state` if it earns more, selling
+-- the old one for income * SELL_SECONDS. Returns (replacedName, coins) or nil.
+function StationService.replaceWeakest(
+	player: Player,
+	state: Types.PedestalState
+): (string?, number?)
+	local profile = DataService.get(player)
+	local plot = playerPlot[player]
+	if not profile or not plot or not Creatures.BY_ID[state.creatureId] then
+		return nil, nil
+	end
+	local weakestKey: string? = nil
+	local weakestIncome = math.huge
+	for slot = 1, StationService.capacity(player, profile) do
+		local key = tostring(slot)
+		local existing = profile.pedestals[key]
+		if existing and incomeOf(existing) < weakestIncome then
+			weakestKey, weakestIncome = key, incomeOf(existing)
+		end
+	end
+	if not weakestKey or incomeOf(state) <= weakestIncome then
+		return nil, nil
+	end
+	local old = profile.pedestals[weakestKey]
+	local value = math.floor(weakestIncome * Economy.SELL_SECONDS)
+	profile.pedestals[weakestKey] = table.clone(state)
+	DataService.addCoins(player, value)
+	TelemetryService.economy(player, "source", value, "Sell", old.creatureId)
+	refreshPlot(plot, profile)
+	return Theme.CREATURE_NAMES[old.creatureId] or old.rarity, value
+end
+
 -- Removes and returns the state on a pedestal (used by stealing).
 function StationService.takeState(player: Player, slot: string): Types.PedestalState?
 	local profile = DataService.get(player)

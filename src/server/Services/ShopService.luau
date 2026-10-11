@@ -55,6 +55,13 @@ local function nextPedestalCost(profile: Types.PlayerProfile): number?
 	return Economy.PEDESTAL_COSTS[profile.pedestalCount - Economy.PEDESTALS_START + 1]
 end
 
+local function trainingCost(level: number): number?
+	if level >= Economy.TRAINING_MAX then
+		return nil
+	end
+	return math.floor(Economy.TRAINING_BASE_COST * Economy.TRAINING_COST_GROWTH ^ level)
+end
+
 local function pushState(player: Player)
 	local profile = DataService.get(player)
 	if not profile then
@@ -74,6 +81,8 @@ local function pushState(player: Player)
 	shopState:FireClient(player, state)
 	player:SetAttribute("PedestalCount", profile.pedestalCount)
 	player:SetAttribute("NextPedestalCost", nextPedestalCost(profile))
+	player:SetAttribute("Training", profile.training)
+	player:SetAttribute("NextTrainingCost", trainingCost(profile.training))
 end
 
 local function onBuy(player: Player, slot: unknown)
@@ -136,6 +145,31 @@ local function onBuyPedestal(player: Player)
 	pushState(player)
 end
 
+local function onBuyTraining(player: Player)
+	if not buyLimit:allow(player) then
+		return
+	end
+	local profile = DataService.get(player)
+	if not profile then
+		return
+	end
+	local cost = trainingCost(profile.training)
+	if not cost then
+		return
+	elseif profile.coins < cost then
+		Notifier.send(player, "need_coins", { amount = Format.short(cost) }, "warning")
+	else
+		DataService.addCoins(player, -cost)
+		profile.training += 1
+		TelemetryService.economy(player, "sink", cost, "Upgrade", `training{profile.training}`)
+		Notifier.send(player, "training_up", {
+			level = profile.training,
+			bonus = math.floor(profile.training * Economy.TRAINING_BONUS * 100),
+		}, "success")
+	end
+	pushState(player)
+end
+
 function ShopService.pushState(player: Player)
 	pushState(player)
 end
@@ -145,6 +179,7 @@ function ShopService.init()
 	refreshCycle()
 	Remotes.event("ShopBuy").OnServerEvent:Connect(onBuy)
 	Remotes.event("BuyPedestal").OnServerEvent:Connect(onBuyPedestal)
+	Remotes.event("BuyTraining").OnServerEvent:Connect(onBuyTraining)
 	DataService.onLoaded(function(player)
 		pushState(player)
 	end)

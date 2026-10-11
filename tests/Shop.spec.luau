@@ -39,8 +39,8 @@ for cycle = 1, 50 do
 	end
 end
 check("offers rotate", changed > 10)
-check("rebirth cost 0", RebirthMath.cost(0) == 5000)
-check("rebirth cost 2", RebirthMath.cost(2) == 80000)
-check("rebirth speed 1", RebirthMath.speedRequired(1) == 20000)
+check("rebirth cost 0", RebirthMath.cost(0) == 300000)
+check("rebirth cost 2", RebirthMath.cost(2) == 4800000)
+check("rebirth speed 1", RebirthMath.speedRequired(1) == 10000)
 
 return `PASS {passed}`

@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Speed = require(Shared.Config.Speed)
+local Economy = require(Shared.Config.Economy)
 local Steal = require(Shared.Config.Steal)
 local Zones = require(Shared.Config.Zones)
 local Theme = require(Shared.Theme)
@@ -66,7 +67,8 @@ function SpeedService.gainMultiplier(player: Player): number
 	local friends = (player:GetAttribute("FriendsInServer") :: number?) or 0 -- set by FriendService
 	local friendBonus = math.min(friends * Speed.FRIEND_GAIN_BONUS, Speed.FRIEND_GAIN_BONUS_CAP)
 	local pass = if player:GetAttribute("Pass_Speed2x") then Speed.PASS_MULTIPLIER else 1 -- set by MonetizationService
-	return (1 + rebirths * Speed.REBIRTH_GAIN_BONUS) * (1 + friendBonus) * pass
+	local training = if profile then profile.training * Economy.TRAINING_BONUS else 0
+	return (1 + rebirths * Speed.REBIRTH_GAIN_BONUS) * (1 + friendBonus) * (1 + training) * pass
 end
 
 function SpeedService.isZoneUnlocked(player: Player, zoneIndex: number): boolean

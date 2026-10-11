@@ -50,6 +50,7 @@ export type PlayerProfile = {
 	purchases: { [string]: number }, -- receipt PurchaseId -> os.time() (idempotency)
 	daily: { streak: number, lastClaimDay: number },
 	codes: { [string]: boolean },
+	training: number, -- Run Training upgrade level
 }
 
 export type ShopOffer = {
