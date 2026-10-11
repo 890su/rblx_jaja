@@ -1,0 +1,51 @@
+--!strict
+-- Rebirth (GDD §4.6): spend the coin cost and meet the speed requirement to
+-- reset Speed and coins for a permanent income/speed-gain multiplier and
+-- access to deeper zones. Creatures and pedestals are kept.
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Theme = require(Shared.Theme)
+local Format = require(Shared.Util.Format)
+local RebirthMath = require(Shared.Util.RebirthMath)
+local Remotes = require(Shared.Remotes)
+
+local RateLimit = require(script.Parent.Parent.Util.RateLimit)
+local DataService = require(script.Parent.DataService)
+local SpeedService = require(script.Parent.SpeedService)
+
+local RebirthService = {}
+
+local limit = RateLimit.new(2, 0.5)
+
+local function onRebirth(player: Player)
+	if not limit:allow(player) then
+		return
+	end
+	local notify = Remotes.event("Notify")
+	local profile = DataService.get(player)
+	if not profile then
+		return
+	end
+	local cost = RebirthMath.cost(profile.rebirths)
+	local speedNeeded = RebirthMath.speedRequired(profile.rebirths)
+	if profile.speed < speedNeeded then
+		notify:FireClient(player, `Rebirth needs {Format.short(speedNeeded)} Speed`, "warning")
+		return
+	end
+	if profile.coins < cost then
+		notify:FireClient(player, `Rebirth needs {Format.short(cost)} {Theme.CURRENCY}`, "warning")
+		return
+	end
+	profile.rebirths += 1
+	profile.coins = 0
+	profile.speed = 0
+	DataService.sync(player)
+	SpeedService.apply(player)
+	notify:FireClient(player, `Rebirth {profile.rebirths}! Permanent bonus unlocked`, "success")
+end
+
+function RebirthService.init()
+	Remotes.event("Rebirth").OnServerEvent:Connect(onRebirth)
+end
+
+return RebirthService

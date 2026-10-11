@@ -36,6 +36,7 @@ local TEMPLATE: Profile = {
 	index = {},
 	shieldUntil = 0,
 	stats = { steals = 0, defends = 0, timesRobbed = 0 },
+	shop = { cycle = -1, bought = {} },
 }
 
 local DataService = {}

@@ -45,6 +45,22 @@ export type PlayerProfile = {
 	index: { [string]: boolean }, -- creature ids ever hatched (collection book)
 	shieldUntil: number, -- os.time() until which the station can't be raided
 	stats: PlayerStats,
+	shop: { cycle: number, bought: { [string]: number } }, -- per-cycle purchases by slot
+}
+
+export type ShopOffer = {
+	slot: number,
+	creatureId: string,
+	rarity: Rarity,
+	price: number,
+	stock: number,
+}
+
+export type ShopState = {
+	cycle: number,
+	endsAt: number, -- server time (workspace:GetServerTimeNow) of next restock
+	offers: { ShopOffer },
+	remaining: { number }, -- per slot, for this player
 }
 
 export type PlayerStats = {

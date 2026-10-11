@@ -11,6 +11,10 @@ local FOLDER_NAME = "Remotes"
 -- Add names here as systems land (see docs/02-development-plan.md milestones).
 local EVENT_NAMES: { string } = {
 	"Notify", -- server -> client: (message: string, kind: string?)
+	"ShopState", -- server -> client: (state: Types.ShopState)
+	"ShopBuy", -- client -> server: (slot: number)
+	"BuyPedestal", -- client -> server: ()
+	"Rebirth", -- client -> server: ()
 }
 
 local Remotes = {}

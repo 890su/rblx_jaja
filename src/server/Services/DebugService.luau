@@ -15,6 +15,7 @@ local Steal = require(Shared.Config.Steal)
 local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
 local StealService = require(script.Parent.StealService)
+local EventService = require(script.Parent.EventService)
 
 local DebugService = {}
 
@@ -50,6 +51,15 @@ local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
 		StealService.debugReset(player)
 		return true
 	end,
+	coins = function(player, value)
+		local profile = assert(player and DataService.get(player), "no profile")
+		DataService.addCoins(player, (tonumber(value) or 0) - profile.coins)
+		return true
+	end,
+	shower = function()
+		EventService.debugShower()
+		return true
+	end,
 	speed = function(player, value)
 		assert(player, "no player")
 		DataService.setSpeed(player, tonumber(value) or 0)
@@ -67,6 +77,9 @@ local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
 			speed = profile.speed,
 			pedestals = pedestals,
 			stats = profile.stats,
+			rebirths = profile.rebirths,
+			pedestalCount = profile.pedestalCount,
+			shop = profile.shop,
 			carrying = player:GetAttribute("Carrying"),
 			chaseUntil = player:GetAttribute("ChaseUntil"),
 		})

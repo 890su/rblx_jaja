@@ -21,6 +21,7 @@ export type Plot = {
 	spawn: CFrame,
 	pedestals: { BasePart },
 	collector: BasePart,
+	treadmill: BasePart,
 	center: Vector3,
 }
 
@@ -110,6 +111,26 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 	collectorLabel.Parent = collectorGui
 	collectorGui.Parent = collector
 
+	local treadmill = part({
+		Name = "Treadmill",
+		Size = Vector3.new(8, 0.6, 14),
+		Position = center + Vector3.new(20, 0.3, -12),
+		Color = Color3.fromRGB(40, 40, 50),
+		Material = Enum.Material.DiamondPlate,
+	}, model)
+	local treadGui = Instance.new("SurfaceGui")
+	treadGui.Face = Enum.NormalId.Top
+	local treadLabel = Instance.new("TextLabel")
+	treadLabel.Size = UDim2.fromScale(1, 1)
+	treadLabel.BackgroundTransparency = 1
+	treadLabel.TextScaled = true
+	treadLabel.Font = Enum.Font.FredokaOne
+	treadLabel.TextColor3 = Color3.fromRGB(120, 220, 255)
+	treadLabel.Text = "TREADMILL · stand here for Speed"
+	treadLabel.Rotation = 90
+	treadLabel.Parent = treadGui
+	treadGui.Parent = treadmill
+
 	local sign = part({
 		Name = "Sign",
 		Size = Vector3.new(16, 6, 1),
@@ -136,6 +157,7 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 		spawn = CFrame.new(center + Vector3.new(0, 3, 20)) * CFrame.Angles(0, 0, 0),
 		pedestals = pedestals,
 		collector = collector,
+		treadmill = treadmill,
 		center = center,
 	}
 end

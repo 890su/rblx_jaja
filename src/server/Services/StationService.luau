@@ -6,6 +6,7 @@
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Economy = require(Shared.Config.Economy)
+local Speed = require(Shared.Config.Speed)
 local Rarity = require(Shared.Config.Rarity)
 local Creatures = require(Shared.Config.Creatures)
 local Theme = require(Shared.Theme)
@@ -329,6 +330,19 @@ function StationService.start()
 		for player, plot in playerPlot do
 			local profile = DataService.get(player)
 			if profile then
+				-- Treadmill: AFK speed while standing on your own treadmill.
+				local character = player.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if root then
+					local offset = root.Position - plot.treadmill.Position
+					if math.abs(offset.X) <= 4.5 and math.abs(offset.Z) <= 7.5 and offset.Y < 6 then
+						local gain = Speed.GAIN_PER_SECOND * Speed.TREADMILL_RATE_NO_PASS
+						DataService.setSpeed(
+							player,
+							profile.speed + gain * SpeedService.gainMultiplier(player)
+						)
+					end
+				end
 				local now = os.time()
 				profile.lastOnline = now
 				profile.playtimeTotal += Economy.INCOME_TICK_SECONDS

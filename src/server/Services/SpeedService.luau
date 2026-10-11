@@ -62,8 +62,10 @@ end
 function SpeedService.gainMultiplier(player: Player): number
 	local profile = DataService.get(player)
 	local rebirths = if profile then profile.rebirths else 0
-	-- Friend bonus (week 4) and 2x Speed pass (week 5) plug in here.
-	return 1 + rebirths * Speed.REBIRTH_GAIN_BONUS
+	local friends = (player:GetAttribute("FriendsInServer") :: number?) or 0 -- set by FriendService
+	local friendBonus = math.min(friends * Speed.FRIEND_GAIN_BONUS, Speed.FRIEND_GAIN_BONUS_CAP)
+	-- 2x Speed pass (week 5) plugs in here.
+	return (1 + rebirths * Speed.REBIRTH_GAIN_BONUS) * (1 + friendBonus)
 end
 
 function SpeedService.isZoneUnlocked(player: Player, zoneIndex: number): boolean

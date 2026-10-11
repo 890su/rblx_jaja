@@ -158,6 +158,23 @@ spawnMeteor = function(
 	end
 end
 
+-- Event meteor (Meteor Shower): boosted rarity, despawns after `lifetime`.
+function MeteorService.spawnEvent(
+	zoneIndex: number,
+	boost: number,
+	lifetime: number,
+	eventRng: Random
+)
+	local zone = Zones.ZONES[zoneIndex]
+	if not zone then
+		return
+	end
+	local position, inCanyon = WorldService.randomPointInZone(zoneIndex, eventRng)
+	local totalBoost = boost * (if inCanyon then Canyons.RARITY_BOOST else 1)
+	local rarity = Odds.roll(zone.weights, Rarity.ORDER, eventRng, totalBoost)
+	spawnMeteor(zoneIndex, position, rarity, lifetime, totalBoost)
+end
+
 function MeteorService.init()
 	notify = Remotes.event("Notify")
 	fieldFolder = Instance.new("Folder")
