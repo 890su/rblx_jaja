@@ -18,6 +18,7 @@ local WorldService = require(script.Parent.WorldService)
 local StationService = require(script.Parent.StationService)
 local SpeedService = require(script.Parent.SpeedService)
 local CarryService = require(script.Parent.CarryService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 type Plot = WorldService.Plot
 type Chase = { victim: Player, slot: string, endsAt: number, creatureName: string }
@@ -95,7 +96,7 @@ local function rejectReason(
 	if not began or os.clock() - began < Steal.PROMPT_HOLD_SECONDS - HOLD_TOLERANCE then
 		return "Hold to steal"
 	end
-	if not StationService.hasFreePedestal(thiefProfile) then
+	if not StationService.hasFreePedestal(thief) then
 		return "Your pedestals are full"
 	end
 	if StealService.isLocked(victim) then
@@ -196,6 +197,7 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 			if thiefProfile then
 				thiefProfile.stats.steals += 1
 			end
+			TelemetryService.custom(by, "StealSuccess")
 			local victimProfile = DataService.get(victim)
 			if victimProfile then
 				victimProfile.stats.timesRobbed += 1
@@ -268,6 +270,7 @@ local function tickChases()
 				if victimProfile then
 					victimProfile.stats.defends += 1
 				end
+				TelemetryService.custom(victim, "ChaseCaught")
 				notify:FireClient(
 					victim,
 					`Caught {thief.DisplayName}! {chase.creatureName} is back`,
@@ -286,8 +289,11 @@ local function tickStations()
 			local root = rootOf(owner)
 			local inside = root ~= nil and WorldService.isInPlot(plot, root.Position)
 			if inside and not inStation[owner] then
-				-- Lock refreshes every time the owner comes home (VIP bonus: week 5).
-				lockedUntil[owner] = os.clock() + Steal.BASE_LOCK_SECONDS
+				-- Lock refreshes every time the owner comes home.
+				local vipBonus = if owner:GetAttribute("Pass_VIP")
+					then Steal.VIP_LOCK_BONUS_SECONDS
+					else 0
+				lockedUntil[owner] = os.clock() + Steal.BASE_LOCK_SECONDS + vipBonus
 			end
 			inStation[owner] = inside
 		end

@@ -15,6 +15,7 @@ local Remotes = require(Shared.Remotes)
 
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 local TICK = 1
 local TELEPORT_SLACK = 1.6 -- allowed multiple of WalkSpeed * dt before flagging
@@ -64,8 +65,8 @@ function SpeedService.gainMultiplier(player: Player): number
 	local rebirths = if profile then profile.rebirths else 0
 	local friends = (player:GetAttribute("FriendsInServer") :: number?) or 0 -- set by FriendService
 	local friendBonus = math.min(friends * Speed.FRIEND_GAIN_BONUS, Speed.FRIEND_GAIN_BONUS_CAP)
-	-- 2x Speed pass (week 5) plugs in here.
-	return (1 + rebirths * Speed.REBIRTH_GAIN_BONUS) * (1 + friendBonus)
+	local pass = if player:GetAttribute("Pass_Speed2x") then Speed.PASS_MULTIPLIER else 1 -- set by MonetizationService
+	return (1 + rebirths * Speed.REBIRTH_GAIN_BONUS) * (1 + friendBonus) * pass
 end
 
 function SpeedService.isZoneUnlocked(player: Player, zoneIndex: number): boolean
@@ -157,6 +158,9 @@ local function tickPlayer(player: Player)
 	end
 
 	local zoneIndex = WorldService.zoneIndexAt(position)
+	if zoneIndex >= 2 and SpeedService.isZoneUnlocked(player, 2) then
+		TelemetryService.funnel(player, "ReachedZone2")
+	end
 	if zoneIndex > 1 and not SpeedService.isZoneUnlocked(player, zoneIndex) then
 		-- Push the player behind the first locked gate they are past.
 		for i = 2, zoneIndex do

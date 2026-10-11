@@ -35,6 +35,7 @@ local notify: RemoteEvent
 local function makeVisual(rarity: Types.Rarity): Part
 	local part = Instance.new("Part")
 	part.Name = "CarriedMeteor"
+	part:SetAttribute("Rarity", rarity)
 	part.Shape = Enum.PartType.Ball
 	part.Size = Vector3.new(3, 3, 3)
 	part.Material = Enum.Material.Neon

@@ -12,6 +12,7 @@ local Remotes = require(Shared.Remotes)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local DataService = require(script.Parent.DataService)
 local SpeedService = require(script.Parent.SpeedService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 local RebirthService = {}
 
@@ -36,11 +37,19 @@ local function onRebirth(player: Player)
 		notify:FireClient(player, `Rebirth needs {Format.short(cost)} {Theme.CURRENCY}`, "warning")
 		return
 	end
+	TelemetryService.economy(
+		player,
+		"sink",
+		profile.coins,
+		"Rebirth",
+		`rebirth{profile.rebirths + 1}`
+	)
 	profile.rebirths += 1
 	profile.coins = 0
 	profile.speed = 0
 	DataService.sync(player)
 	SpeedService.apply(player)
+	TelemetryService.funnel(player, "FirstRebirth")
 	notify:FireClient(player, `Rebirth {profile.rebirths}! Permanent bonus unlocked`, "success")
 end
 

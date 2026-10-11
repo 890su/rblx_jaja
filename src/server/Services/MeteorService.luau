@@ -16,6 +16,7 @@ local Remotes = require(Shared.Remotes)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local CarryService = require(script.Parent.CarryService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 local PICKUP_DISTANCE = 14 -- server check; prompt range is 10
 local DROPPED_LIFETIME = 10
@@ -108,6 +109,7 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 			end
 		end,
 		onDelivered = function(owner, carry)
+			TelemetryService.funnel(owner, "FirstPlace")
 			notify:FireClient(
 				owner,
 				`{carry.state.rarity} {Theme.ITEM} placed — hatching!`,
@@ -115,6 +117,7 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 			)
 		end,
 	})
+	TelemetryService.funnel(player, "FirstPickup")
 	notify:FireClient(
 		player,
 		`{rarity} {Theme.ITEM}{oneInText(zoneIndex, rarity, meteorBoost)}! Bring it home`,
@@ -158,6 +161,15 @@ spawnMeteor = function(
 	end
 end
 
+-- Server Luck product: multiplier on non-Common spawn weights while active.
+function MeteorService.luckBoost(): number
+	local untilTime = (workspace:GetAttribute("ServerLuckUntil") :: number?) or 0
+	if untilTime > workspace:GetServerTimeNow() then
+		return (workspace:GetAttribute("ServerLuckBoost") :: number?) or 1
+	end
+	return 1
+end
+
 -- Event meteor (Meteor Shower): boosted rarity, despawns after `lifetime`.
 function MeteorService.spawnEvent(
 	zoneIndex: number,
@@ -170,7 +182,9 @@ function MeteorService.spawnEvent(
 		return
 	end
 	local position, inCanyon = WorldService.randomPointInZone(zoneIndex, eventRng)
-	local totalBoost = boost * (if inCanyon then Canyons.RARITY_BOOST else 1)
+	local totalBoost = boost
+		* (if inCanyon then Canyons.RARITY_BOOST else 1)
+		* MeteorService.luckBoost()
 	local rarity = Odds.roll(zone.weights, Rarity.ORDER, eventRng, totalBoost)
 	spawnMeteor(zoneIndex, position, rarity, lifetime, totalBoost)
 end
@@ -188,7 +202,8 @@ function MeteorService.start()
 			while true do
 				if (alive[zoneIndex] or 0) < zone.maxMeteors then
 					local position, inCanyon = WorldService.randomPointInZone(zoneIndex, rng)
-					local boost = if inCanyon then Canyons.RARITY_BOOST else nil
+					local boost = (if inCanyon then Canyons.RARITY_BOOST else 1)
+						* MeteorService.luckBoost()
 					local rarity = Odds.roll(zone.weights, Rarity.ORDER, rng, boost)
 					spawnMeteor(zoneIndex, position, rarity, nil, boost)
 				end

@@ -19,6 +19,7 @@ local Remotes = require(Shared.Remotes)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 local ShopService = {}
 
@@ -93,11 +94,13 @@ local function onBuy(player: Player, slot: unknown)
 		notify:FireClient(player, "Sold out — wait for the restock", "warning")
 	elseif profile.coins < offer.price then
 		notify:FireClient(player, `Not enough {Theme.CURRENCY}`, "warning")
-	elseif not StationService.hasFreePedestal(profile) then
+	elseif not StationService.hasFreePedestal(player) then
 		notify:FireClient(player, "All pedestals are full!", "warning")
 	elseif StationService.placeNew(player, offer.creatureId, nil) then
 		DataService.addCoins(player, -offer.price)
 		bought[key] = (bought[key] or 0) + 1
+		TelemetryService.economy(player, "sink", offer.price, "Shop", offer.creatureId)
+		TelemetryService.funnel(player, "FirstShopBuy")
 		local name = Theme.CREATURE_NAMES[offer.creatureId] or offer.rarity
 		notify:FireClient(
 			player,
@@ -124,6 +127,7 @@ local function onBuyPedestal(player: Player)
 	else
 		DataService.addCoins(player, -cost)
 		profile.pedestalCount += 1
+		TelemetryService.economy(player, "sink", cost, "Upgrade", `pedestal{profile.pedestalCount}`)
 		StationService.refresh(player)
 		notify:FireClient(player, `Pedestal {profile.pedestalCount} unlocked!`, "success")
 	end

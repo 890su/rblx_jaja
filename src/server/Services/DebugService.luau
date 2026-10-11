@@ -16,6 +16,7 @@ local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
 local StealService = require(script.Parent.StealService)
 local EventService = require(script.Parent.EventService)
+local MonetizationService = require(script.Parent.MonetizationService)
 
 local DebugService = {}
 
@@ -56,6 +57,15 @@ local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
 		DataService.addCoins(player, (tonumber(value) or 0) - profile.coins)
 		return true
 	end,
+	grant = function(player, key)
+		assert(player, "no player")
+		return MonetizationService.debugGrant(player, key)
+	end,
+	pass = function(player, key)
+		assert(player, "no player")
+		MonetizationService.debugPass(player, key)
+		return true
+	end,
 	shower = function()
 		EventService.debugShower()
 		return true
@@ -80,6 +90,10 @@ local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
 			rebirths = profile.rebirths,
 			pedestalCount = profile.pedestalCount,
 			shop = profile.shop,
+			storage = #profile.storage,
+			shieldUntil = profile.shieldUntil,
+			daily = profile.daily,
+			flags = profile.flags,
 			carrying = player:GetAttribute("Carrying"),
 			chaseUntil = player:GetAttribute("ChaseUntil"),
 		})

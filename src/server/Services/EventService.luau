@@ -27,6 +27,7 @@ local function startShower(remaining: number)
 	end
 	Remotes.event("Notify")
 		:FireAllClients(`{Theme.SHOWER_EVENT}! Boosted meteors in the deep zones`, "pickup")
+	Remotes.event("Fx"):FireAllClients("shower", Vector3.zero, remaining)
 end
 
 -- Studio QA only (DebugService): start a shower right now.

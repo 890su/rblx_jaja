@@ -18,24 +18,29 @@ function Income.ofPedestal(state: Types.PedestalState): number
 	return base * (if mutation then mutation.incomeMultiplier else 1)
 end
 
-function Income.multiplier(profile: Types.PlayerProfile): number
-	-- 2x Coins / VIP passes (week 5) multiply in here.
-	return 1 + profile.rebirths * Economy.REBIRTH_INCOME_BONUS
+-- `extra` = pass multipliers (2x Coins, VIP), resolved by the caller.
+function Income.multiplier(profile: Types.PlayerProfile, extra: number?): number
+	return (1 + profile.rebirths * Economy.REBIRTH_INCOME_BONUS) * (extra or 1)
 end
 
-function Income.perSecond(profile: Types.PlayerProfile, now: number): number
+function Income.perSecond(profile: Types.PlayerProfile, now: number, extra: number?): number
 	local sum = 0
 	for _, state in profile.pedestals do
 		if Income.isHatched(state, now) then
 			sum += Income.ofPedestal(state)
 		end
 	end
-	return sum * Income.multiplier(profile)
+	return sum * Income.multiplier(profile, extra)
 end
 
 -- Coins earned while away: each creature earns from max(lastOnline, hatchAt)
 -- until min(now, lastOnline + cap), at the reduced offline rate.
-function Income.offline(profile: Types.PlayerProfile, now: number, hasOfflinePass: boolean?): number
+function Income.offline(
+	profile: Types.PlayerProfile,
+	now: number,
+	hasOfflinePass: boolean?,
+	extra: number?
+): number
 	if profile.lastOnline <= 0 or now <= profile.lastOnline then
 		return 0
 	end
@@ -51,7 +56,7 @@ function Income.offline(profile: Types.PlayerProfile, now: number, hasOfflinePas
 			sum += Income.ofPedestal(state) * (stop - start)
 		end
 	end
-	return math.floor(sum * rate * Income.multiplier(profile))
+	return math.floor(sum * rate * Income.multiplier(profile, extra))
 end
 
 return table.freeze(Income)

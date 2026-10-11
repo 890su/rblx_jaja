@@ -15,6 +15,9 @@ local EVENT_NAMES: { string } = {
 	"ShopBuy", -- client -> server: (slot: number)
 	"BuyPedestal", -- client -> server: ()
 	"Rebirth", -- client -> server: ()
+	"Fx", -- server -> client: (kind: string, position: Vector3, extra: any)
+	"ClaimDaily", -- client -> server: ()
+	"RedeemCode", -- client -> server: (code: string)
 }
 
 local Remotes = {}

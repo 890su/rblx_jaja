@@ -18,15 +18,10 @@ local Remotes = require(Shared.Remotes)
 
 local player = Players.LocalPlayer
 
+local UiKit = require(script.Parent.Parent.Lib.UiKit)
+
 local MenuController = {}
 
-local FONT = Enum.Font.FredokaOne
-local PANEL_COLOR = Color3.fromRGB(28, 30, 46)
-local CARD_COLOR = Color3.fromRGB(42, 45, 68)
-local BUTTON_COLOR = Color3.fromRGB(70, 170, 90)
-
-local gui: ScreenGui
-local panels: { [string]: Frame } = {}
 local shopState: Types.ShopState? = nil
 local restockLabel: TextLabel
 local pedestalButton: TextButton
@@ -45,84 +40,14 @@ local rebirthInfo: TextLabel
 local rebirthButton: TextButton
 local showerLabel: TextLabel
 
-local function corner(parent: Instance, radius: number?)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius or 10)
-	c.Parent = parent
-end
-
-local function text(parent: Instance, props: { [string]: any }): TextLabel
-	local l = Instance.new("TextLabel")
-	l.BackgroundTransparency = 1
-	l.Font = FONT
-	l.TextScaled = true
-	l.TextColor3 = Color3.new(1, 1, 1)
-	for key, value in props do
-		(l :: any)[key] = value
-	end
-	l.Parent = parent
-	return l
-end
-
-local function button(parent: Instance, label: string, props: { [string]: any }): TextButton
-	local b = Instance.new("TextButton")
-	b.Font = FONT
-	b.TextScaled = true
-	b.Text = label
-	b.TextColor3 = Color3.new(1, 1, 1)
-	b.BackgroundColor3 = BUTTON_COLOR
-	b.AutoButtonColor = true
-	for key, value in props do
-		(b :: any)[key] = value
-	end
-	corner(b, 8)
-	local pad = Instance.new("UIPadding")
-	pad.PaddingTop = UDim.new(0.12, 0)
-	pad.PaddingBottom = UDim.new(0.12, 0)
-	pad.Parent = b
-	b.Parent = parent
-	return b
-end
-
-local function togglePanel(name: string)
-	for panelName, frame in panels do
-		frame.Visible = panelName == name and not frame.Visible
-	end
-end
-
-local function makePanel(name: string, title: string): Frame
-	local frame = Instance.new("Frame")
-	frame.Name = name
-	frame.AnchorPoint = Vector2.new(0.5, 0.5)
-	frame.Position = UDim2.fromScale(0.5, 0.52)
-	frame.Size = UDim2.fromScale(0.62, 0.66)
-	frame.BackgroundColor3 = PANEL_COLOR
-	frame.Visible = false
-	corner(frame, 14)
-	local ratio = Instance.new("UIAspectRatioConstraint")
-	ratio.AspectRatio = 1.5
-	ratio.Parent = frame
-	text(frame, {
-		Text = title,
-		Size = UDim2.fromScale(0.7, 0.1),
-		Position = UDim2.fromScale(0.04, 0.02),
-		TextXAlignment = Enum.TextXAlignment.Left,
-	})
-	local close = button(frame, "X", {
-		Size = UDim2.fromScale(0.07, 0.1),
-		Position = UDim2.fromScale(0.91, 0.02),
-		BackgroundColor3 = Color3.fromRGB(190, 70, 70),
-	})
-	close.Activated:Connect(function()
-		frame.Visible = false
-	end)
-	frame.Parent = gui
-	panels[name] = frame
-	return frame
-end
+local corner = UiKit.corner
+local text = UiKit.text
+local button = UiKit.button
+local CARD_COLOR = UiKit.CARD_COLOR
+local BUTTON_COLOR = UiKit.BUTTON_COLOR
 
 local function buildShop()
-	local frame = makePanel("Shop", `{Theme.ITEM} Shop`)
+	local frame = UiKit.panel("Shop", `{Theme.ITEM} Shop`)
 	restockLabel = text(frame, {
 		Size = UDim2.fromScale(0.4, 0.07),
 		Position = UDim2.fromScale(0.48, 0.04),
@@ -223,7 +148,7 @@ local function refreshShop()
 end
 
 local function buildRebirth()
-	local frame = makePanel("Rebirth", "Rebirth")
+	local frame = UiKit.panel("Rebirth", "Rebirth")
 	rebirthInfo = text(frame, {
 		Size = UDim2.fromScale(0.9, 0.6),
 		Position = UDim2.fromScale(0.05, 0.15),
@@ -276,7 +201,7 @@ local function refreshShower()
 		showerLabel.TextColor3 = Color3.fromRGB(200, 210, 255)
 	end
 	local state = shopState
-	if state and panels.Shop.Visible then
+	if state and UiKit.isOpen("Shop") then
 		restockLabel.Text = `Restock in {Format.duration(state.endsAt - now)}`
 	end
 end
@@ -293,43 +218,16 @@ local function invite()
 end
 
 function MenuController.init()
-	gui = Instance.new("ScreenGui")
-	gui.Name = "Menu"
-	gui.ResetOnSpawn = false
-
-	local side = Instance.new("Frame")
-	side.BackgroundTransparency = 1
-	side.AnchorPoint = Vector2.new(0, 0)
-	side.Position = UDim2.new(0, 12, 0.56, 0)
-	side.Size = UDim2.fromScale(0.13, 0.26)
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0.04, 0)
-	layout.Parent = side
-	side.Parent = gui
-	local shopButton = button(
-		side,
-		"Shop",
-		{ Size = UDim2.fromScale(1, 0.3), BackgroundColor3 = Color3.fromRGB(230, 150, 40) }
-	)
-	local rebirthOpen = button(
-		side,
-		"Rebirth",
-		{ Size = UDim2.fromScale(1, 0.3), BackgroundColor3 = Color3.fromRGB(160, 80, 220) }
-	)
-	local inviteButton = button(
-		side,
-		"Invite +10%",
-		{ Size = UDim2.fromScale(1, 0.3), BackgroundColor3 = Color3.fromRGB(60, 150, 230) }
-	)
-	shopButton.Activated:Connect(function()
-		togglePanel("Shop")
+	local gui = UiKit.gui()
+	UiKit.sideButton("Shop", Color3.fromRGB(230, 150, 40), 1, function()
+		UiKit.toggle("Shop")
 		refreshShop()
 	end)
-	rebirthOpen.Activated:Connect(function()
-		togglePanel("Rebirth")
+	UiKit.sideButton("Rebirth", Color3.fromRGB(160, 80, 220), 2, function()
+		UiKit.toggle("Rebirth")
 		refreshRebirth()
 	end)
-	inviteButton.Activated:Connect(invite)
+	UiKit.sideButton("Invite +10%", Color3.fromRGB(60, 150, 230), 5, invite)
 
 	showerLabel = text(gui, {
 		AnchorPoint = Vector2.new(1, 0),
@@ -341,7 +239,6 @@ function MenuController.init()
 
 	buildShop()
 	buildRebirth()
-	gui.Parent = player:WaitForChild("PlayerGui")
 end
 
 function MenuController.start()
@@ -351,10 +248,10 @@ function MenuController.start()
 	end)
 	for _, attribute in { "Coins", "Speed", "Rebirths", "NextPedestalCost", "PedestalCount" } do
 		player:GetAttributeChangedSignal(attribute):Connect(function()
-			if panels.Shop.Visible then
+			if UiKit.isOpen("Shop") then
 				refreshShop()
 			end
-			if panels.Rebirth.Visible then
+			if UiKit.isOpen("Rebirth") then
 				refreshRebirth()
 			end
 		end)

@@ -37,6 +37,10 @@ local TEMPLATE: Profile = {
 	shieldUntil = 0,
 	stats = { steals = 0, defends = 0, timesRobbed = 0 },
 	shop = { cycle = -1, bought = {} },
+	storage = {},
+	purchases = {},
+	daily = { streak = 0, lastClaimDay = -1 },
+	codes = {},
 }
 
 local DataService = {}
@@ -44,6 +48,7 @@ local DataService = {}
 local store: any
 local sessions: { [Player]: any } = {} -- ProfileStore Profile objects
 local loadedCallbacks: { LoadedCallback } = {}
+local preloadCallbacks: { LoadedCallback } = {}
 local removingCallbacks: { (player: Player, profile: Profile) -> () } = {}
 
 local function dataOf(player: Player): Profile?
@@ -115,6 +120,17 @@ local function onPlayerAdded(player: Player)
 
 	sessions[player] = session
 	local profile = session.Data :: Profile
+	-- Preload hooks run in order and may yield (e.g. game pass checks) so
+	-- every onLoaded callback sees the finished state.
+	for _, callback in preloadCallbacks do
+		local preloadOk, preloadErr = pcall(callback :: any, player, profile)
+		if not preloadOk then
+			warn(`[DataService] preload callback failed: {preloadErr}`)
+		end
+	end
+	if sessions[player] ~= session then
+		return
+	end
 	createLeaderstats(player)
 	syncAttributes(player, profile)
 	for _, callback in loadedCallbacks do
@@ -145,6 +161,19 @@ function DataService.onLoaded(callback: LoadedCallback)
 	table.insert(loadedCallbacks, callback)
 	for player, session in sessions do
 		task.spawn(callback, player, session.Data :: Profile)
+	end
+end
+
+-- Runs (in registration order, may yield) after load and before onLoaded.
+function DataService.onPreload(callback: LoadedCallback)
+	table.insert(preloadCallbacks, callback)
+end
+
+-- Requests an immediate save (e.g. after granting a Robux purchase).
+function DataService.saveNow(player: Player)
+	local session = sessions[player]
+	if session then
+		session:Save()
 	end
 end
 

@@ -46,6 +46,10 @@ export type PlayerProfile = {
 	shieldUntil: number, -- os.time() until which the station can't be raided
 	stats: PlayerStats,
 	shop: { cycle: number, bought: { [string]: number } }, -- per-cycle purchases by slot
+	storage: { PedestalState }, -- creatures waiting for a free pedestal (crates, packs)
+	purchases: { [string]: number }, -- receipt PurchaseId -> os.time() (idempotency)
+	daily: { streak: number, lastClaimDay: number },
+	codes: { [string]: boolean },
 }
 
 export type ShopOffer = {
