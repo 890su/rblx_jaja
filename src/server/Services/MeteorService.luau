@@ -9,6 +9,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Zones = require(Shared.Config.Zones)
 local Rarity = require(Shared.Config.Rarity)
+local Creatures = require(Shared.Config.Creatures)
 local Theme = require(Shared.Theme)
 local Odds = require(Shared.Util.Odds)
 local Remotes = require(Shared.Remotes)
@@ -22,7 +23,7 @@ local PICKUP_DISTANCE = 14 -- server check; prompt range is 10
 local DROPPED_LIFETIME = 10
 local CARRY_CHECK_PERIOD = 0.2
 
-export type Carry = { rarity: Types.Rarity, mutation: string?, visual: BasePart }
+export type Carry = { creatureId: string, rarity: Types.Rarity, mutation: string?, visual: BasePart }
 
 local MeteorService = {}
 
@@ -104,7 +105,11 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 	weld.Parent = visual
 	visual.Parent = character
 
-	carrying[player] = { rarity = rarity, mutation = rollMutation(), visual = visual }
+	-- Creature and mutation are decided at pickup (server RNG); the hatch only
+	-- reveals them. The zone picks the creature pool.
+	local creature = Creatures.pick(rarity, zoneIndex, rng)
+	carrying[player] =
+		{ creatureId = creature.id, rarity = rarity, mutation = rollMutation(), visual = visual }
 	player:SetAttribute("Carrying", rarity)
 	SpeedService.apply(player)
 	notify:FireClient(
@@ -177,7 +182,7 @@ local function checkDeliveries()
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if plot and root and WorldService.isInPlot(plot, root.Position) then
-			if StationService.tryPlace(player, carry.rarity, carry.mutation) then
+			if StationService.tryPlace(player, carry.creatureId, carry.mutation) then
 				clearCarry(player)
 				notify:FireClient(
 					player,

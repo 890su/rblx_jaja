@@ -42,6 +42,7 @@ export type PlayerProfile = {
 	lastOnline: number,
 	playtimeTotal: number,
 	flags: { [string]: boolean }, -- one-time FTUE beats, rewards claimed
+	index: { [string]: boolean }, -- creature ids ever hatched (collection book)
 }
 
 return nil

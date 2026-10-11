@@ -7,10 +7,12 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Economy = require(Shared.Config.Economy)
 local Rarity = require(Shared.Config.Rarity)
+local Creatures = require(Shared.Config.Creatures)
 local Theme = require(Shared.Theme)
 local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
 
+local Income = require(script.Parent.Parent.Data.Income)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 
@@ -25,25 +27,16 @@ local collectDebounce: { [Player]: number } = {}
 
 local notify: RemoteEvent
 
-local function isHatched(state: Types.PedestalState, now: number): boolean
-	return state.hatchAt == nil or now >= (state.hatchAt :: number)
-end
-
-local function incomeOf(state: Types.PedestalState): number
-	local base = Rarity.INFO[state.rarity].incomePerSecond
-	local mutation = state.mutation and (Rarity.MUTATIONS :: any)[state.mutation]
-	return base * (if mutation then mutation.incomeMultiplier else 1)
-end
+local isHatched = Income.isHatched
+local incomeOf = Income.ofPedestal
 
 function StationService.incomePerSecond(profile: Types.PlayerProfile): number
-	local now = os.time()
-	local sum = 0
-	for _, state in profile.pedestals do
-		if isHatched(state, now) then
-			sum += incomeOf(state)
-		end
-	end
-	return sum * (1 + profile.rebirths * Economy.REBIRTH_INCOME_BONUS)
+	return Income.perSecond(profile, os.time())
+end
+
+local function creatureName(state: Types.PedestalState): string
+	local name = Theme.CREATURE_NAMES[state.creatureId] or state.rarity
+	return if state.mutation then `{state.mutation} {name}` else name
 end
 
 local function ensureView(pedestal: BasePart): (TextLabel, Part)
@@ -96,7 +89,7 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 			if isHatched(state, now) then
 				orb.Transparency = 0
 				orb.Size = Vector3.new(4, 4, 4)
-				label.Text = `{state.rarity}\n+{Format.short(incomeOf(state))}/s`
+				label.Text = `{creatureName(state)}\n+{Format.short(incomeOf(state))}/s`
 			else
 				orb.Transparency = 0.4
 				orb.Size = Vector3.new(2.5, 2.5, 2.5)
@@ -132,7 +125,9 @@ local function assignPlot(player: Player, profile: Types.PlayerProfile)
 		if not plotOwner[plot.index] then
 			plotOwner[plot.index] = player
 			playerPlot[player] = plot
-			storedCoins[player] = 0
+			local offline = Income.offline(profile, os.time())
+			storedCoins[player] = offline
+			profile.lastOnline = os.time()
 			setOwnerSign(plot, player)
 			refreshPlot(plot, profile)
 			player.CharacterAdded:Connect(function(character)
@@ -140,6 +135,15 @@ local function assignPlot(player: Player, profile: Types.PlayerProfile)
 			end)
 			if player.Character then
 				spawnAtPlot(player, player.Character)
+			end
+			if offline > 0 then
+				task.delay(3, function()
+					notify:FireClient(
+						player,
+						`Welcome back! Your creatures made {Format.short(offline)} {Theme.CURRENCY}`,
+						"coins"
+					)
+				end)
 			end
 			return
 		end
@@ -197,8 +201,14 @@ function StationService.getPlot(player: Player): Plot?
 	return playerPlot[player]
 end
 
--- Places a meteor on the first free unlocked pedestal. Returns success.
-function StationService.tryPlace(player: Player, rarity: Types.Rarity, mutation: string?): boolean
+-- Places a meteor (already rolled into a creature) on the first free unlocked
+-- pedestal. Returns success.
+function StationService.tryPlace(player: Player, creatureId: string, mutation: string?): boolean
+	local creature = Creatures.BY_ID[creatureId]
+	if not creature then
+		return false
+	end
+	local rarity = creature.rarity
 	local profile = DataService.get(player)
 	local plot = playerPlot[player]
 	if not profile or not plot then
@@ -208,7 +218,7 @@ function StationService.tryPlace(player: Player, rarity: Types.Rarity, mutation:
 		local key = tostring(slot)
 		if not profile.pedestals[key] then
 			profile.pedestals[key] = {
-				creatureId = rarity, -- placeholder until creature roster (week 2)
+				creatureId = creatureId,
 				rarity = rarity,
 				mutation = mutation,
 				hatchAt = os.time() + Rarity.INFO[rarity].hatchSeconds,
@@ -223,7 +233,12 @@ end
 function StationService.init()
 	notify = Remotes.event("Notify")
 	DataService.onLoaded(assignPlot)
-	DataService.onRemoving(function(player)
+	DataService.onRemoving(function(player, profile)
+		-- Bank uncollected coins so leaving never loses income.
+		local stored = math.floor(storedCoins[player] or 0)
+		if stored > 0 then
+			profile.coins += stored
+		end
 		releasePlot(player)
 	end)
 	for _, plot in WorldService.getPlots() do
@@ -245,6 +260,15 @@ function StationService.start()
 		for player, plot in playerPlot do
 			local profile = DataService.get(player)
 			if profile then
+				local now = os.time()
+				profile.lastOnline = now
+				profile.playtimeTotal += Economy.INCOME_TICK_SECONDS
+				for _, state in profile.pedestals do
+					if isHatched(state, now) and not profile.index[state.creatureId] then
+						profile.index[state.creatureId] = true
+						notify:FireClient(player, `New creature: {creatureName(state)}!`, "success")
+					end
+				end
 				storedCoins[player] = (storedCoins[player] or 0)
 					+ StationService.incomePerSecond(profile) * Economy.INCOME_TICK_SECONDS
 				local stored = math.floor(storedCoins[player])

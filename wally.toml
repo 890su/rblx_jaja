@@ -8,4 +8,4 @@ realm = "shared"
 # Trove = "sleitnick/trove@1"
 
 [server-dependencies]
-# ProfileStore — added in week 2 (data milestone)
+ProfileStore = "lm-loleris/profilestore@1.0.3"

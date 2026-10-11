@@ -1,36 +1,51 @@
 --!strict
--- Player profiles. WEEK 1: in-memory only. Week 2 swaps the backend to
--- ProfileStore (session locking, autosave, BindToClose) behind this same API.
--- Key stats are mirrored to Player attributes (+ leaderstats) for the client;
--- attributes are display-only and never read back as truth.
+-- Player profiles on ProfileStore: session locking, autosave (every 300 s by
+-- ProfileStore) and save-on-shutdown (ProfileStore binds BindToClose itself).
+-- Studio uses a separate "_dev" store. Key stats are mirrored to Player
+-- attributes (+ leaderstats) for the client; those are display-only.
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Economy = require(Shared.Config.Economy)
 
+local ProfileStore =
+	require(ServerScriptService:WaitForChild("ServerPackages"):WaitForChild("ProfileStore")) :: any
+local Migrations = require(script.Parent.Parent.Data.Migrations)
+
 type Profile = Types.PlayerProfile
 type LoadedCallback = (player: Player, profile: Profile) -> ()
 
+local STORE_NAME = if RunService:IsStudio() then "PlayerData_dev" else "PlayerData"
+local KICK_LOAD_FAILED = "Your data couldn't load. Please rejoin in a moment."
+local KICK_SESSION_ENDED = "Your data was opened on another server. Please rejoin."
+
+local TEMPLATE: Profile = {
+	schema = Migrations.LATEST,
+	coins = 0,
+	speed = 0,
+	rebirths = 0,
+	pedestalCount = Economy.PEDESTALS_START,
+	pedestals = {},
+	lastOnline = 0, -- 0 = never played (no offline income on first join)
+	playtimeTotal = 0,
+	flags = {},
+	index = {},
+}
+
 local DataService = {}
 
-local profiles: { [Player]: Profile } = {}
+local store: any
+local sessions: { [Player]: any } = {} -- ProfileStore Profile objects
 local loadedCallbacks: { LoadedCallback } = {}
 local removingCallbacks: { (player: Player, profile: Profile) -> () } = {}
 
-local function newProfile(): Profile
-	return {
-		schema = 1,
-		coins = 0,
-		speed = 0,
-		rebirths = 0,
-		pedestalCount = Economy.PEDESTALS_START,
-		pedestals = {},
-		lastOnline = os.time(),
-		playtimeTotal = 0,
-		flags = {},
-	}
+local function dataOf(player: Player): Profile?
+	local session = sessions[player]
+	return if session then session.Data :: Profile else nil
 end
 
 local function syncAttributes(player: Player, profile: Profile)
@@ -62,8 +77,41 @@ local function createLeaderstats(player: Player)
 end
 
 local function onPlayerAdded(player: Player)
-	local profile = newProfile()
-	profiles[player] = profile
+	local session = store:StartSessionAsync(`Player_{player.UserId}`, {
+		Cancel = function()
+			return player.Parent ~= Players
+		end,
+	})
+	if session == nil then
+		player:Kick(KICK_LOAD_FAILED)
+		return
+	end
+
+	session:AddUserId(player.UserId) -- GDPR erasure support
+	session:Reconcile() -- fill fields added to TEMPLATE since this profile was saved
+	local ok, err = pcall(function()
+		local migrated = Migrations.run(session.Data)
+		session.Data = migrated
+	end)
+	if not ok then
+		warn(`[DataService] migration failed for {player.UserId}: {err}`)
+		session:EndSession()
+		player:Kick(KICK_LOAD_FAILED)
+		return
+	end
+
+	session.OnSessionEnd:Connect(function()
+		sessions[player] = nil
+		player:Kick(KICK_SESSION_ENDED)
+	end)
+
+	if player.Parent ~= Players then
+		session:EndSession()
+		return
+	end
+
+	sessions[player] = session
+	local profile = session.Data :: Profile
 	createLeaderstats(player)
 	syncAttributes(player, profile)
 	for _, callback in loadedCallbacks do
@@ -72,35 +120,42 @@ local function onPlayerAdded(player: Player)
 end
 
 local function onPlayerRemoving(player: Player)
-	local profile = profiles[player]
-	if not profile then
+	local session = sessions[player]
+	if not session then
 		return
 	end
-	profile.lastOnline = os.time()
+	local profile = session.Data :: Profile
+	-- Callbacks run synchronously so their final writes land before the save.
 	for _, callback in removingCallbacks do
-		task.spawn(callback, player, profile)
+		local ok, err = pcall(callback :: any, player, profile)
+		if not ok then
+			warn(`[DataService] removing callback failed: {err}`)
+		end
 	end
-	profiles[player] = nil
+	profile.lastOnline = os.time()
+	sessions[player] = nil
+	session:EndSession()
 end
 
 -- Runs `callback` for every player whose profile is (or becomes) loaded.
 function DataService.onLoaded(callback: LoadedCallback)
 	table.insert(loadedCallbacks, callback)
-	for player, profile in profiles do
-		task.spawn(callback, player, profile)
+	for player, session in sessions do
+		task.spawn(callback, player, session.Data :: Profile)
 	end
 end
 
+-- Runs synchronously right before a leaving player's profile is saved.
 function DataService.onRemoving(callback: (player: Player, profile: Profile) -> ())
 	table.insert(removingCallbacks, callback)
 end
 
 function DataService.get(player: Player): Profile?
-	return profiles[player]
+	return dataOf(player)
 end
 
 function DataService.addCoins(player: Player, delta: number)
-	local profile = profiles[player]
+	local profile = dataOf(player)
 	if not profile then
 		return
 	end
@@ -109,7 +164,7 @@ function DataService.addCoins(player: Player, delta: number)
 end
 
 function DataService.setSpeed(player: Player, value: number)
-	local profile = profiles[player]
+	local profile = dataOf(player)
 	if not profile then
 		return
 	end
@@ -118,10 +173,14 @@ function DataService.setSpeed(player: Player, value: number)
 end
 
 function DataService.sync(player: Player)
-	local profile = profiles[player]
+	local profile = dataOf(player)
 	if profile then
 		syncAttributes(player, profile)
 	end
+end
+
+function DataService.init()
+	store = ProfileStore.New(STORE_NAME, TEMPLATE)
 end
 
 function DataService.start()

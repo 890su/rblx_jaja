@@ -4,6 +4,7 @@ One-way sync (files are the source of truth), mirroring default.project.json:
   src/shared -> ReplicatedStorage.Shared
   src/server -> ServerScriptService.Server
   src/client -> StarterPlayer.StarterPlayerScripts.Client
+  ServerPackages (Wally) -> ServerScriptService.ServerPackages
 Rojo file conventions: init.server.luau / init.client.luau / init.luau turn the
 folder into a Script / LocalScript / ModuleScript; *.server.luau -> Script,
 *.client.luau -> LocalScript, other *.luau -> ModuleScript.
@@ -28,6 +29,7 @@ MAPPINGS = [
     ("src/shared", 'game:GetService("ReplicatedStorage")', "Shared"),
     ("src/server", 'game:GetService("ServerScriptService")', "Server"),
     ("src/client", 'game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")', "Client"),
+    ("ServerPackages", 'game:GetService("ServerScriptService")', "ServerPackages"),
 ]
 
 
@@ -41,7 +43,10 @@ def long_string(text: str) -> str:
 
 
 def class_for_file(name: str) -> tuple[str, str] | None:
-    for suffix, cls in ((".server.luau", "Script"), (".client.luau", "LocalScript"), (".luau", "ModuleScript")):
+    for suffix, cls in (
+        (".server.luau", "Script"), (".client.luau", "LocalScript"), (".luau", "ModuleScript"),
+        (".server.lua", "Script"), (".client.lua", "LocalScript"), (".lua", "ModuleScript"),
+    ):
         if name.endswith(suffix):
             return name[: -len(suffix)], cls
     return None
@@ -53,8 +58,17 @@ def node_for(path: Path, name: str) -> dict:
         info = class_for_file(path.name)
         assert info, path
         return {"name": info[0], "class": info[1], "source": path.read_text(encoding="utf-8"), "children": []}
+    nested = path / "default.project.json"
+    if nested.exists():  # Wally package: a nested Rojo project pointing at one file/dir
+        target = json.loads(nested.read_text(encoding="utf-8"))["tree"]["$path"]
+        node = node_for(path / target, name)
+        node["name"] = name
+        return node
     init_class, source = "Folder", None
-    for init_name, cls in (("init.server.luau", "Script"), ("init.client.luau", "LocalScript"), ("init.luau", "ModuleScript")):
+    for init_name, cls in (
+        ("init.server.luau", "Script"), ("init.client.luau", "LocalScript"), ("init.luau", "ModuleScript"),
+        ("init.server.lua", "Script"), ("init.client.lua", "LocalScript"), ("init.lua", "ModuleScript"),
+    ):
         init = path / init_name
         if init.exists():
             init_class, source = cls, init.read_text(encoding="utf-8")
@@ -82,7 +96,9 @@ def emit(node: dict, var: str, lines: list[str], counter: list[int]) -> None:
         lines.append(f"{child_var}.Parent = {var}")
 
 
-def build_chunk(src: str, parent_expr: str, name: str) -> str:
+def build_chunk(src: str, parent_expr: str, name: str) -> str | None:
+    if not (ROOT / src).exists():
+        return None
     node = node_for(ROOT / src, name)
     lines = ["local parent = " + parent_expr]
     lines.append(f'local old = parent:FindFirstChild({json.dumps(name)})')
@@ -153,7 +169,7 @@ class Mcp:
 
 
 def main() -> int:
-    chunks = [build_chunk(*m) for m in MAPPINGS]
+    chunks = [c for c in (build_chunk(*m) for m in MAPPINGS) if c]
     if "--dry-run" in sys.argv:
         for chunk in chunks:
             print(chunk[:400], "...\n")

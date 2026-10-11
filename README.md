@@ -21,4 +21,6 @@ Bootstrap is two-phase: every Service/Controller module may export `init()` (wir
 - Format: `stylua src`
 - Lint: `selene src`
 - Types: `bash scripts/typecheck.sh` (luau-lsp, strict)
+- Unit tests: `tests/*.spec.luau` — run in Studio Edit mode via MCP `execute_luau` (returns `PASS n`)
+- Packages: `wally install` (ServerPackages is git-ignored; synced by `mcp_sync.py`)
 - Build: `rojo build -o build.rbxl`
