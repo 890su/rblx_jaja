@@ -30,7 +30,7 @@ local notify: RemoteEvent
 local function oneInText(zoneIndex: number, rarity: Types.Rarity, boost: number?): string
 	local zone = Zones.ZONES[zoneIndex]
 	local oneIn = zone and Odds.oneIn(zone.weights, rarity, boost)
-	return if oneIn and oneIn > 1 then ` · 1 in {oneIn}` else ""
+	return if oneIn and oneIn > 1 and rarity ~= "Common" then ` · 1 in {oneIn}` else ""
 end
 
 local function makeMeteorPart(rarity: Types.Rarity): Part

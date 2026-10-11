@@ -133,6 +133,8 @@ local function assignPlot(player: Player, profile: Types.PlayerProfile)
 			profile.lastOnline = os.time()
 			setOwnerSign(plot, player)
 			refreshPlot(plot, profile)
+			-- Player attributes always replicate (plot parts may be streamed out).
+			player:SetAttribute("HomePosition", plot.center)
 			player.CharacterAdded:Connect(function(character)
 				task.defer(spawnAtPlot, player, character)
 			end)
