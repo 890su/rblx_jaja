@@ -21,7 +21,7 @@ Bootstrap is two-phase: every Service/Controller module may export `init()` (wir
 - Source language English; 13 languages AI auto-translated in Creator Hub (strings + experience info).
 - Player-facing sentences live in `src/shared/Locale` as keyed templates; the server sends `Notifier.send(player, key, args)`, the client renders `Locale.t(key, args)`. Translatable words passed as args use `Locale.ref(term)`.
 - World labels keep words and numbers in separate TextLabels (words auto-localize, numbers don't).
-- After adding strings: `python -I scripts/mcp_sync.py` → `python -I scripts/export_locale_csv.py` → upload `localization/meteor_heist.csv` (Creator Hub → Localization → Table management → Upload CSV).
+- After adding strings: `python -I scripts/mcp_sync.py` → `python -I scripts/export_locale_csv.py` → upload `localization/upload/part*.csv` one by one (Creator Hub → Localization → Table management → Upload CSV; the full file times out).
 
 ## Checks
 

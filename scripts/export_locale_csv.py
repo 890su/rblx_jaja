@@ -42,6 +42,24 @@ def main() -> int:
     out.write_text(csv + "\n", encoding="utf-8")
     rows = csv.count("\n")
     print(f"wrote {out} ({rows} entries)")
+
+    # Creator Hub times out on big uploads: also write 30-row parts.
+    import csv as csvlib
+    import io
+
+    parsed = list(csvlib.reader(io.StringIO(csv)))
+    header, body = parsed[0], [r for r in parsed[1:] if any(r)]
+    parts = ROOT / "localization" / "upload"
+    parts.mkdir(exist_ok=True)
+    for old in parts.glob("*.csv"):
+        old.unlink()
+    for i in range(0, len(body), 30):
+        buf = io.StringIO()
+        writer = csvlib.writer(buf, lineterminator="\n")
+        writer.writerow(header)
+        writer.writerows(body[i : i + 30])
+        (parts / f"part{i // 30 + 1}.csv").write_text(buf.getvalue(), encoding="utf-8")
+    print(f"wrote {len(range(0, len(body), 30))} upload parts to {parts}")
     return 0
 
 
