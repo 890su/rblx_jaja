@@ -43,6 +43,14 @@ export type PlayerProfile = {
 	playtimeTotal: number,
 	flags: { [string]: boolean }, -- one-time FTUE beats, rewards claimed
 	index: { [string]: boolean }, -- creature ids ever hatched (collection book)
+	shieldUntil: number, -- os.time() until which the station can't be raided
+	stats: PlayerStats,
+}
+
+export type PlayerStats = {
+	steals: number,
+	defends: number, -- thieves caught during a chase
+	timesRobbed: number,
 }
 
 return nil

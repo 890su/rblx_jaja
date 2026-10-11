@@ -1,12 +1,14 @@
 --!strict
 -- +1 Speed per second while moving (GDD §4.1). Server measures movement from
 -- root-part position deltas, so a client can't claim speed it didn't earn.
--- Also enforces zone gates and flags impossible movement (teleports).
+-- Also enforces zone gates, rubber-bands impossible movement (teleports) and
+-- applies temporary buffs (owner chase bonus).
 
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Speed = require(Shared.Config.Speed)
+local Steal = require(Shared.Config.Steal)
 local Zones = require(Shared.Config.Zones)
 local Theme = require(Shared.Theme)
 local Remotes = require(Shared.Remotes)
@@ -17,10 +19,15 @@ local WorldService = require(script.Parent.WorldService)
 local TICK = 1
 local TELEPORT_SLACK = 1.6 -- allowed multiple of WalkSpeed * dt before flagging
 local TELEPORT_FLAT = 25 -- studs of slack for physics/latency
+local STRIKE_WINDOW = 60
+local STRIKES_TO_KICK = 10
 
 local SpeedService = {}
 
-local lastPosition: { [Player]: Vector3 } = {}
+type Track = { root: BasePart, position: Vector3 }
+
+local tracked: { [Player]: Track } = {}
+local strikes: { [Player]: { number } } = {}
 local notify: RemoteEvent
 
 local function rootOf(player: Player): (BasePart?, Humanoid?)
@@ -36,10 +43,16 @@ local function rootOf(player: Player): (BasePart?, Humanoid?)
 	return root, humanoid
 end
 
-function SpeedService.walkSpeedFor(speed: number, carrying: boolean): number
+function SpeedService.walkSpeedFor(speed: number, carrying: boolean, chasing: boolean?): number
 	local walk = Speed.BASE_WALKSPEED + Speed.WALKSPEED_COEFFICIENT * math.sqrt(speed)
 	walk = math.min(walk, Speed.WALKSPEED_CAP)
-	return if carrying then walk * Speed.CARRY_MULTIPLIER else walk
+	if carrying then
+		walk *= Speed.CARRY_MULTIPLIER
+	end
+	if chasing then
+		walk *= 1 + Steal.OWNER_CHASE_SPEED_BONUS
+	end
+	return walk
 end
 
 function SpeedService.gainMultiplier(player: Player): number
@@ -58,18 +71,37 @@ function SpeedService.isZoneUnlocked(player: Player, zoneIndex: number): boolean
 	return profile.speed >= zone.speedGate and profile.rebirths >= zone.rebirthGate
 end
 
--- Re-applies WalkSpeed from authoritative state (call after carry changes).
+-- Call before any server-initiated teleport so it isn't flagged as cheating.
+function SpeedService.markTeleport(player: Player)
+	tracked[player] = nil
+end
+
+-- Re-applies WalkSpeed from authoritative state (call after carry/buff changes).
 function SpeedService.apply(player: Player)
 	local profile = DataService.get(player)
 	local _, humanoid = rootOf(player)
 	if profile and humanoid then
 		local carrying = player:GetAttribute("Carrying") ~= nil
-		humanoid.WalkSpeed = SpeedService.walkSpeedFor(profile.speed, carrying)
+		local chaseUntil = (player:GetAttribute("ChaseUntil") :: number?) or 0
+		local chasing = chaseUntil > workspace:GetServerTimeNow()
+		humanoid.WalkSpeed = SpeedService.walkSpeedFor(profile.speed, carrying, chasing)
 	end
+end
+
+local function addStrike(player: Player): number
+	local now = os.clock()
+	local list = strikes[player] or {}
+	strikes[player] = list
+	table.insert(list, now)
+	while list[1] and now - list[1] > STRIKE_WINDOW do
+		table.remove(list, 1)
+	end
+	return #list
 end
 
 local function pushBehindGate(player: Player, root: BasePart, zoneIndex: number)
 	local gateZ = WorldService.gateZ(zoneIndex)
+	SpeedService.markTeleport(player)
 	local character = player.Character :: Model
 	character:PivotTo(CFrame.new(root.Position.X, root.Position.Y + 2, gateZ + 8))
 	local zone = Zones.ZONES[zoneIndex]
@@ -81,23 +113,38 @@ local function tickPlayer(player: Player)
 	local profile = DataService.get(player)
 	local root, humanoid = rootOf(player)
 	if not profile or not root or not humanoid then
-		lastPosition[player] = nil
+		tracked[player] = nil
 		return
 	end
 	local position = root.Position
-	local previous = lastPosition[player]
-	lastPosition[player] = position
-	if not previous then
+	local previous = tracked[player]
+	-- New character (respawn) or after a server teleport: start fresh.
+	if not previous or previous.root ~= root then
+		tracked[player] = { root = root, position = position }
+		SpeedService.apply(player)
 		return
 	end
 
-	local delta = Vector3.new(position.X - previous.X, 0, position.Z - previous.Z).Magnitude
+	local delta =
+		Vector3.new(position.X - previous.position.X, 0, position.Z - previous.position.Z).Magnitude
 	local maxDistance = humanoid.WalkSpeed * TICK * TELEPORT_SLACK + TELEPORT_FLAT
 	if delta > maxDistance then
-		-- Our own spawns/pivots can land here once; only log for now.
-		-- Week 3 turns this into rubber-banding + strike count.
-		warn(`[SpeedService] {player.Name} moved {math.floor(delta)} studs in {TICK}s`)
-	elseif delta >= Speed.MIN_MOVE_STUDS_PER_TICK then
+		-- Rubber-band to the last trusted position.
+		local count = addStrike(player)
+		warn(
+			`[SpeedService] {player.Name} moved {math.floor(delta)} studs in {TICK}s (strike {count})`
+		)
+		if count >= STRIKES_TO_KICK then
+			player:Kick("Unusual movement detected.")
+			return
+		end
+		local character = player.Character :: Model
+		root.AssemblyLinearVelocity = Vector3.zero
+		character:PivotTo(CFrame.new(previous.position))
+		return
+	end
+	previous.position = position
+	if delta >= Speed.MIN_MOVE_STUDS_PER_TICK then
 		local gain = Speed.GAIN_PER_SECOND * SpeedService.gainMultiplier(player)
 		DataService.setSpeed(player, profile.speed + gain)
 	end
@@ -108,7 +155,6 @@ local function tickPlayer(player: Player)
 		for i = 2, zoneIndex do
 			if not SpeedService.isZoneUnlocked(player, i) then
 				pushBehindGate(player, root, i)
-				lastPosition[player] = nil
 				break
 			end
 		end
@@ -120,7 +166,8 @@ end
 function SpeedService.init()
 	notify = Remotes.event("Notify")
 	Players.PlayerRemoving:Connect(function(player)
-		lastPosition[player] = nil
+		tracked[player] = nil
+		strikes[player] = nil
 	end)
 end
 

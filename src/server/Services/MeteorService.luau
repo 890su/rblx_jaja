@@ -1,9 +1,7 @@
 --!strict
 -- Meteors on the track (GDD §4.2–4.3): server-timed spawning per zone with
--- server-rolled rarity, pickup via ProximityPrompt, carrying (slowed), drop on
--- death, and auto-placing on a pedestal when the carrier enters their station.
-
-local Players = game:GetService("Players")
+-- server-rolled rarity and pickup via ProximityPrompt. Carrying, delivery and
+-- drop-on-death are handled by CarryService.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
@@ -16,21 +14,15 @@ local Remotes = require(Shared.Remotes)
 
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
-local StationService = require(script.Parent.StationService)
-local SpeedService = require(script.Parent.SpeedService)
+local CarryService = require(script.Parent.CarryService)
 
 local PICKUP_DISTANCE = 14 -- server check; prompt range is 10
 local DROPPED_LIFETIME = 10
-local CARRY_CHECK_PERIOD = 0.2
-
-export type Carry = { creatureId: string, rarity: Types.Rarity, mutation: string?, visual: BasePart }
 
 local MeteorService = {}
 
 local rng = Random.new()
 local alive: { [number]: number } = {} -- zone index -> live meteor count
-local carrying: { [Player]: Carry } = {}
-local fullWarnedAt: { [Player]: number } = {}
 local fieldFolder: Folder
 local notify: RemoteEvent
 
@@ -62,7 +54,7 @@ end
 local spawnMeteor: (zoneIndex: number, position: Vector3, rarity: Types.Rarity, lifetime: number?) -> ()
 
 local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped: boolean)
-	if carrying[player] or meteor:GetAttribute("Taken") then
+	if CarryService.get(player) or meteor:GetAttribute("Taken") then
 		return
 	end
 	local character = player.Character
@@ -95,23 +87,26 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 	end
 	meteor:Destroy()
 
-	local visual = makeMeteorPart(rarity)
-	visual.Massless = true
-	visual.Anchored = false
-	visual.CFrame = root.CFrame * CFrame.new(0, 4.5, 0)
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = visual
-	weld.Part1 = root
-	weld.Parent = visual
-	visual.Parent = character
-
 	-- Creature and mutation are decided at pickup (server RNG); the hatch only
 	-- reveals them. The zone picks the creature pool.
 	local creature = Creatures.pick(rarity, zoneIndex, rng)
-	carrying[player] =
-		{ creatureId = creature.id, rarity = rarity, mutation = rollMutation(), visual = visual }
-	player:SetAttribute("Carrying", rarity)
-	SpeedService.apply(player)
+	CarryService.begin(player, {
+		state = { creatureId = creature.id, rarity = rarity, mutation = rollMutation() },
+		fresh = true,
+		onLost = function(_, carry, position)
+			if position then
+				local dropZone = math.max(WorldService.zoneIndexAt(position), 1)
+				spawnMeteor(dropZone, position, carry.state.rarity, DROPPED_LIFETIME)
+			end
+		end,
+		onDelivered = function(owner, carry)
+			notify:FireClient(
+				owner,
+				`{carry.state.rarity} {Theme.ITEM} placed — hatching!`,
+				"success"
+			)
+		end,
+	})
 	notify:FireClient(
 		player,
 		`{rarity} {Theme.ITEM}{oneInText(zoneIndex, rarity)}! Bring it home`,
@@ -153,88 +148,11 @@ spawnMeteor = function(
 	end
 end
 
-local function clearCarry(player: Player)
-	local carry = carrying[player]
-	if not carry then
-		return
-	end
-	carrying[player] = nil
-	if carry.visual.Parent then
-		carry.visual:Destroy()
-	end
-	player:SetAttribute("Carrying", nil)
-	SpeedService.apply(player)
-end
-
-local function dropCarry(player: Player, position: Vector3)
-	local carry = carrying[player]
-	if not carry then
-		return
-	end
-	clearCarry(player)
-	local zoneIndex = math.max(WorldService.zoneIndexAt(position), 1)
-	spawnMeteor(zoneIndex, position, carry.rarity, DROPPED_LIFETIME)
-end
-
-local function checkDeliveries()
-	for player, carry in carrying do
-		local plot = StationService.getPlot(player)
-		local character = player.Character
-		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-		if plot and root and WorldService.isInPlot(plot, root.Position) then
-			if StationService.tryPlace(player, carry.creatureId, carry.mutation) then
-				clearCarry(player)
-				notify:FireClient(
-					player,
-					`{carry.rarity} {Theme.ITEM} placed — hatching!`,
-					"success"
-				)
-			elseif os.clock() - (fullWarnedAt[player] or 0) > 5 then
-				fullWarnedAt[player] = os.clock()
-				notify:FireClient(player, "All pedestals are full!", "warning")
-			end
-		end
-	end
-end
-
--- Exposed for the Steal system (week 3) and admin/testing tools.
-function MeteorService.getCarry(player: Player): Carry?
-	return carrying[player]
-end
-
 function MeteorService.init()
 	notify = Remotes.event("Notify")
 	fieldFolder = Instance.new("Folder")
 	fieldFolder.Name = "Meteors"
 	fieldFolder.Parent = workspace
-
-	local function watchCharacter(player: Player, character: Model)
-		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-		humanoid.Died:Connect(function()
-			local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
-			if root then
-				dropCarry(player, root.Position)
-			else
-				clearCarry(player)
-			end
-		end)
-	end
-	local function onPlayer(player: Player)
-		player.CharacterAdded:Connect(function(character)
-			watchCharacter(player, character)
-		end)
-		if player.Character then
-			task.spawn(watchCharacter, player, player.Character)
-		end
-	end
-	Players.PlayerAdded:Connect(onPlayer)
-	for _, player in Players:GetPlayers() do
-		onPlayer(player)
-	end
-	Players.PlayerRemoving:Connect(function(player)
-		clearCarry(player)
-		fullWarnedAt[player] = nil
-	end)
 end
 
 function MeteorService.start()
@@ -248,10 +166,6 @@ function MeteorService.start()
 				task.wait(zone.spawnIntervalSeconds)
 			end
 		end)
-	end
-	while true do
-		task.wait(CARRY_CHECK_PERIOD)
-		checkDeliveries()
 	end
 end
 

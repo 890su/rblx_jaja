@@ -15,6 +15,7 @@ local Remotes = require(Shared.Remotes)
 local Income = require(script.Parent.Parent.Data.Income)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
+local SpeedService = require(script.Parent.SpeedService)
 
 type Plot = WorldService.Plot
 
@@ -81,6 +82,7 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 		local label, orb = ensureView(pedestal)
 		local state = profile and profile.pedestals[tostring(slot)]
 		local unlocked = profile ~= nil and slot <= profile.pedestalCount
+		pedestal:SetAttribute("Occupied", state ~= nil)
 		pedestal.Transparency = if unlocked then 0 else 0.7
 		if state then
 			local color = Theme.RARITY_COLORS[state.rarity]
@@ -116,6 +118,7 @@ end
 local function spawnAtPlot(player: Player, character: Model)
 	local plot = playerPlot[player]
 	if plot then
+		SpeedService.markTeleport(player)
 		character:PivotTo(plot.spawn)
 	end
 end
@@ -201,33 +204,97 @@ function StationService.getPlot(player: Player): Plot?
 	return playerPlot[player]
 end
 
--- Places a meteor (already rolled into a creature) on the first free unlocked
--- pedestal. Returns success.
-function StationService.tryPlace(player: Player, creatureId: string, mutation: string?): boolean
-	local creature = Creatures.BY_ID[creatureId]
-	if not creature then
-		return false
+function StationService.ownerOf(plot: Plot): Player?
+	return plotOwner[plot.index]
+end
+
+function StationService.creatureCount(profile: Types.PlayerProfile): number
+	local count = 0
+	for _ in profile.pedestals do
+		count += 1
 	end
-	local rarity = creature.rarity
-	local profile = DataService.get(player)
-	local plot = playerPlot[player]
-	if not profile or not plot then
-		return false
-	end
+	return count
+end
+
+function StationService.hasFreePedestal(profile: Types.PlayerProfile): boolean
 	for slot = 1, profile.pedestalCount do
-		local key = tostring(slot)
-		if not profile.pedestals[key] then
-			profile.pedestals[key] = {
-				creatureId = creatureId,
-				rarity = rarity,
-				mutation = mutation,
-				hatchAt = os.time() + Rarity.INFO[rarity].hatchSeconds,
-			}
-			refreshPlot(plot, profile)
+		if not profile.pedestals[tostring(slot)] then
 			return true
 		end
 	end
 	return false
+end
+
+function StationService.refresh(player: Player)
+	local plot = playerPlot[player]
+	local profile = DataService.get(player)
+	if plot and profile then
+		refreshPlot(plot, profile)
+	end
+end
+
+-- Puts an existing pedestal state (e.g. stolen or returned) on a free unlocked
+-- pedestal, preferring `preferredSlot`. Keeps hatch timer and mutation.
+function StationService.placeState(
+	player: Player,
+	state: Types.PedestalState,
+	preferredSlot: string?
+): boolean
+	local profile = DataService.get(player)
+	local plot = playerPlot[player]
+	if not profile or not plot or not Creatures.BY_ID[state.creatureId] then
+		return false
+	end
+	local key: string? = nil
+	if
+		preferredSlot
+		and not profile.pedestals[preferredSlot]
+		and tonumber(preferredSlot) :: number <= profile.pedestalCount
+	then
+		key = preferredSlot
+	else
+		for slot = 1, profile.pedestalCount do
+			if not profile.pedestals[tostring(slot)] then
+				key = tostring(slot)
+				break
+			end
+		end
+	end
+	if not key then
+		return false
+	end
+	profile.pedestals[key] = table.clone(state)
+	refreshPlot(plot, profile)
+	return true
+end
+
+-- Places a freshly picked-up meteor and starts its hatch timer.
+function StationService.placeNew(player: Player, creatureId: string, mutation: string?): boolean
+	local creature = Creatures.BY_ID[creatureId]
+	if not creature then
+		return false
+	end
+	return StationService.placeState(player, {
+		creatureId = creatureId,
+		rarity = creature.rarity,
+		mutation = mutation,
+		hatchAt = os.time() + Rarity.INFO[creature.rarity].hatchSeconds,
+	})
+end
+
+-- Removes and returns the state on a pedestal (used by stealing).
+function StationService.takeState(player: Player, slot: string): Types.PedestalState?
+	local profile = DataService.get(player)
+	local state = profile and profile.pedestals[slot]
+	if not profile or not state then
+		return nil
+	end
+	profile.pedestals[slot] = nil
+	local plot = playerPlot[player]
+	if plot then
+		refreshPlot(plot, profile)
+	end
+	return state
 end
 
 function StationService.init()

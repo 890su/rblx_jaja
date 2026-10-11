@@ -1,0 +1,383 @@
+--!strict
+-- Stealing and chase-back (GDD §4.5). A thief holds the Steal prompt on another
+-- player's pedestal and carries the creature home. The owner gets a speed buff
+-- and CHASE_SECONDS to catch the thief and take it back. Every rule is checked
+-- here on the server; the client only hides prompts that would be rejected.
+
+local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Types = require(Shared.Types)
+local Steal = require(Shared.Config.Steal)
+local Theme = require(Shared.Theme)
+local Remotes = require(Shared.Remotes)
+
+local DataService = require(script.Parent.DataService)
+local WorldService = require(script.Parent.WorldService)
+local StationService = require(script.Parent.StationService)
+local SpeedService = require(script.Parent.SpeedService)
+local CarryService = require(script.Parent.CarryService)
+
+type Plot = WorldService.Plot
+type Chase = { victim: Player, slot: string, endsAt: number, creatureName: string }
+
+local TICK = 0.2
+local HOLD_TOLERANCE = 0.25 -- seconds of latency slack on the prompt hold time
+
+local StealService = {}
+
+local lockedUntil: { [Player]: number } = {}
+local inStation: { [Player]: boolean } = {}
+local lastStealAt: { [Player]: number } = {}
+local lastVictimAt: { [Player]: { [Player]: number } } = {}
+local holdBegan: { [Player]: number } = {}
+local chases: { [Player]: Chase } = {} -- keyed by thief
+local notify: RemoteEvent
+
+local function rootOf(player: Player): BasePart?
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not character or not humanoid or humanoid.Health <= 0 then
+		return nil
+	end
+	return character:FindFirstChild("HumanoidRootPart") :: BasePart?
+end
+
+local function nameOf(state: Types.PedestalState): string
+	return Theme.CREATURE_NAMES[state.creatureId] or state.rarity
+end
+
+function StealService.isLocked(owner: Player): boolean
+	if (lockedUntil[owner] or 0) > os.clock() then
+		return true
+	end
+	local profile = DataService.get(owner)
+	return profile ~= nil and profile.shieldUntil > os.time()
+end
+
+function StealService.isProtected(owner: Player): boolean
+	local profile = DataService.get(owner)
+	if not profile then
+		return true
+	end
+	if profile.playtimeTotal < Steal.NEW_PLAYER_PROTECTION_SECONDS then
+		return true
+	end
+	return profile.rebirths == 0
+		and StationService.creatureCount(profile) < Steal.PROTECTION_MIN_CREATURES
+end
+
+-- Returns nil if allowed, otherwise a player-facing reason.
+local function rejectReason(
+	thief: Player,
+	victim: Player,
+	slot: string,
+	pedestal: BasePart
+): string?
+	local thiefProfile = DataService.get(thief)
+	local victimProfile = DataService.get(victim)
+	if thief == victim or not thiefProfile or not victimProfile then
+		return "Can't steal here"
+	end
+	local state = victimProfile.pedestals[slot]
+	if not state then
+		return "Nothing to steal"
+	end
+	if CarryService.get(thief) then
+		return "Your hands are full"
+	end
+	local root = rootOf(thief)
+	if not root or (root.Position - pedestal.Position).Magnitude > Steal.MAX_STEAL_DISTANCE then
+		return "Too far away"
+	end
+	local began = holdBegan[thief]
+	if not began or os.clock() - began < Steal.PROMPT_HOLD_SECONDS - HOLD_TOLERANCE then
+		return "Hold to steal"
+	end
+	if not StationService.hasFreePedestal(thiefProfile) then
+		return "Your pedestals are full"
+	end
+	if StealService.isLocked(victim) then
+		return `{victim.DisplayName}'s {Theme.BASE} is locked`
+	end
+	if StealService.isProtected(victim) then
+		return `{victim.DisplayName} is protected (new player)`
+	end
+	local now = os.clock()
+	local sinceLast = now - (lastStealAt[thief] or -math.huge)
+	if sinceLast < Steal.THIEF_COOLDOWN_SECONDS then
+		return `Wait {math.ceil(Steal.THIEF_COOLDOWN_SECONDS - sinceLast)}s to steal again`
+	end
+	local victims = lastVictimAt[thief]
+	if victims and now - (victims[victim] or -math.huge) < Steal.SAME_VICTIM_COOLDOWN_SECONDS then
+		return `You robbed {victim.DisplayName} recently`
+	end
+	if
+		state.rarity == "Mythic"
+		and StationService.creatureCount(victimProfile) < Steal.MYTHIC_MIN_VICTIM_CREATURES
+	then
+		return "That Mythic is protected"
+	end
+	return nil
+end
+
+local function setThiefHighlight(thief: Player, on: boolean)
+	local character = thief.Character
+	if not character then
+		return
+	end
+	local existing = character:FindFirstChild("ThiefHighlight")
+	if on and not existing then
+		local highlight = Instance.new("Highlight")
+		highlight.Name = "ThiefHighlight"
+		highlight.FillColor = Color3.fromRGB(255, 60, 60)
+		highlight.OutlineColor = Color3.fromRGB(255, 220, 220)
+		highlight.FillTransparency = 0.6
+		highlight.Parent = character
+	elseif not on and existing then
+		existing:Destroy()
+	end
+end
+
+local function endChase(thief: Player, clearVictimBuff: boolean)
+	local chase = chases[thief]
+	if not chase then
+		return
+	end
+	chases[thief] = nil
+	setThiefHighlight(thief, false)
+	thief:SetAttribute("ChaseVictim", nil)
+	if clearVictimBuff and chase.victim.Parent == Players then
+		chase.victim:SetAttribute("ChaseUntil", nil)
+		SpeedService.apply(chase.victim)
+	end
+end
+
+local function returnToVictim(victim: Player, state: Types.PedestalState, slot: string): boolean
+	if victim.Parent ~= Players then
+		return false
+	end
+	return StationService.placeState(victim, state, slot)
+end
+
+local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: BasePart)
+	local victim = StationService.ownerOf(plot)
+	if not victim then
+		return
+	end
+	local reason = rejectReason(thief, victim, slot, pedestal)
+	holdBegan[thief] = nil
+	if reason then
+		notify:FireClient(thief, reason, "warning")
+		return
+	end
+
+	local state = StationService.takeState(victim, slot)
+	if not state then
+		return
+	end
+	local creatureName = nameOf(state)
+	local began = CarryService.begin(thief, {
+		state = state,
+		fresh = false,
+		onLost = function(lostBy, carry)
+			-- Thief died or left: the creature goes back to its owner.
+			local chase = chases[lostBy]
+			endChase(lostBy, true)
+			local owner = if chase then chase.victim else victim
+			if returnToVictim(owner, carry.state, slot) then
+				notify:FireClient(owner, `Your {creatureName} came back home!`, "success")
+			end
+		end,
+		onDelivered = function(by)
+			endChase(by, true)
+			local thiefProfile = DataService.get(by)
+			if thiefProfile then
+				thiefProfile.stats.steals += 1
+			end
+			local victimProfile = DataService.get(victim)
+			if victimProfile then
+				victimProfile.stats.timesRobbed += 1
+			end
+			notify:FireClient(by, `You stole {creatureName}!`, "success")
+			if victim.Parent == Players then
+				notify:FireClient(
+					victim,
+					`{by.DisplayName} got away with your {creatureName}`,
+					"warning"
+				)
+			end
+		end,
+	})
+	if not began then
+		StationService.placeState(victim, state, slot)
+		return
+	end
+
+	local now = os.clock()
+	lastStealAt[thief] = now
+	lastVictimAt[thief] = lastVictimAt[thief] or {}
+	lastVictimAt[thief][victim] = now
+	chases[thief] = {
+		victim = victim,
+		slot = slot,
+		endsAt = now + Steal.CHASE_SECONDS,
+		creatureName = creatureName,
+	}
+	setThiefHighlight(thief, true)
+	thief:SetAttribute("ChaseVictim", victim.UserId)
+	victim:SetAttribute("ChaseUntil", workspace:GetServerTimeNow() + Steal.CHASE_SECONDS)
+	SpeedService.apply(victim)
+	task.delay(Steal.CHASE_SECONDS + 0.1, function()
+		if victim.Parent == Players then
+			SpeedService.apply(victim)
+		end
+	end)
+
+	notify:FireClient(
+		thief,
+		`Stolen {creatureName}! Run home before {victim.DisplayName} catches you!`,
+		"pickup"
+	)
+	notify:FireClient(
+		victim,
+		`{thief.DisplayName} stole your {creatureName}! Catch them!`,
+		"warning"
+	)
+end
+
+local function tickChases()
+	local now = os.clock()
+	for thief, chase in chases do
+		local victim = chase.victim
+		if victim.Parent ~= Players or now > chase.endsAt then
+			endChase(thief, false)
+			continue
+		end
+		local thiefRoot, victimRoot = rootOf(thief), rootOf(victim)
+		if
+			thiefRoot
+			and victimRoot
+			and (thiefRoot.Position - victimRoot.Position).Magnitude <= Steal.CATCH_DISTANCE
+		then
+			local carry = CarryService.clear(thief)
+			endChase(thief, true)
+			if carry and returnToVictim(victim, carry.state, chase.slot) then
+				local victimProfile = DataService.get(victim)
+				if victimProfile then
+					victimProfile.stats.defends += 1
+				end
+				notify:FireClient(
+					victim,
+					`Caught {thief.DisplayName}! {chase.creatureName} is back`,
+					"success"
+				)
+				notify:FireClient(thief, `{victim.DisplayName} caught you!`, "warning")
+			end
+		end
+	end
+end
+
+local function tickStations()
+	for _, plot in WorldService.getPlots() do
+		local owner = StationService.ownerOf(plot)
+		if owner then
+			local root = rootOf(owner)
+			local inside = root ~= nil and WorldService.isInPlot(plot, root.Position)
+			if inside and not inStation[owner] then
+				-- Lock refreshes every time the owner comes home (VIP bonus: week 5).
+				lockedUntil[owner] = os.clock() + Steal.BASE_LOCK_SECONDS
+			end
+			inStation[owner] = inside
+		end
+		local remaining = if owner then math.max(0, (lockedUntil[owner] or 0) - os.clock()) else 0
+		local profile = owner and DataService.get(owner)
+		if profile and profile.shieldUntil > os.time() then
+			remaining = math.max(remaining, profile.shieldUntil - os.time())
+		end
+		plot.model:SetAttribute("OwnerUserId", if owner then owner.UserId else nil)
+		plot.model:SetAttribute("LockedFor", math.ceil(remaining))
+		plot.model:SetAttribute("Protected", owner ~= nil and StealService.isProtected(owner))
+		local field = plot.model:FindFirstChild("LockField") :: BasePart?
+		if field then
+			field.Transparency = if remaining > 0 then 0.75 else 1
+		end
+	end
+end
+
+local function setupPlot(plot: Plot)
+	local field = Instance.new("Part")
+	field.Name = "LockField"
+	field.Anchored = true
+	field.CanCollide = false
+	field.CanQuery = false
+	field.CanTouch = false
+	field.Material = Enum.Material.ForceField
+	field.Color = Color3.fromRGB(90, 170, 255)
+	field.Transparency = 1
+	field.Size = Vector3.new(62, 30, 62)
+	field.Position = plot.center + Vector3.new(0, 15, 0)
+	field.Parent = plot.model
+
+	for slot, pedestal in plot.pedestals do
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.Name = "StealPrompt"
+		prompt.ActionText = "Steal"
+		prompt.ObjectText = ""
+		prompt.HoldDuration = Steal.PROMPT_HOLD_SECONDS
+		prompt.MaxActivationDistance = Steal.MAX_STEAL_DISTANCE - 2
+		prompt.RequiresLineOfSight = false
+		prompt.KeyboardKeyCode = Enum.KeyCode.F
+		prompt.Parent = pedestal
+		CollectionService:AddTag(prompt, "StealPrompt")
+		prompt.PromptButtonHoldBegan:Connect(function(player)
+			holdBegan[player] = os.clock()
+		end)
+		prompt.PromptButtonHoldEnded:Connect(function(player)
+			task.defer(function()
+				holdBegan[player] = nil
+			end)
+		end)
+		prompt.Triggered:Connect(function(player)
+			tryStealFrom(player, plot, tostring(slot), pedestal)
+		end)
+	end
+end
+
+-- Studio QA only (DebugService): clears cooldowns and the station lock.
+function StealService.debugReset(player: Player)
+	lastStealAt[player] = nil
+	lastVictimAt[player] = nil
+	lockedUntil[player] = nil
+end
+
+function StealService.init()
+	notify = Remotes.event("Notify")
+	for _, plot in WorldService.getPlots() do
+		setupPlot(plot)
+	end
+	DataService.onRemoving(function(player)
+		-- Thief leaving mid-chase is handled by CarryService.onLost.
+		for thief, chase in chases do
+			if chase.victim == player then
+				endChase(thief, false)
+			end
+		end
+		lockedUntil[player] = nil
+		inStation[player] = nil
+		lastStealAt[player] = nil
+		lastVictimAt[player] = nil
+		holdBegan[player] = nil
+	end)
+end
+
+function StealService.start()
+	while true do
+		task.wait(TICK)
+		tickChases()
+		tickStations()
+	end
+end
+
+return StealService

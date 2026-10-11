@@ -34,6 +34,8 @@ local TEMPLATE: Profile = {
 	playtimeTotal = 0,
 	flags = {},
 	index = {},
+	shieldUntil = 0,
+	stats = { steals = 0, defends = 0, timesRobbed = 0 },
 }
 
 local DataService = {}
