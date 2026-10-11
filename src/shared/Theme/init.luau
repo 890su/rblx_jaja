@@ -5,7 +5,7 @@
 local deepFreeze = require(script.Parent.Util.deepFreeze)
 
 return deepFreeze({
-	GAME_TITLE = "Meteor Rush",
+	GAME_TITLE = "Meteor Heist",
 	CURRENCY = "Stardust",
 	ITEM = "Meteor",
 	CREATURE = "Star Creature",

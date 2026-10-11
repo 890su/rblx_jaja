@@ -1,5 +1,7 @@
 # Monetization setup (Creator Dashboard)
 
+**Status 2026-10-11:** all 5 passes and 8 products created, on sale, managed pricing (regional + optimization) ON, IDs written to `Products.luau`. Trading/gifting declared as not allowed. Private servers: set in Studio (Game Settings → Monetization).
+
 Code is ready; items show "Coming soon" until their IDs are filled in
 `src/shared/Config/Products.luau` (`id = 0` → real ID).
 

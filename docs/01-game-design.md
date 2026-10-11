@@ -1,6 +1,6 @@
 # Meteor Rush — Game Design Document
 
-Version 0.2 · 2026-10-11 (added §4.2b Crater Canyons) · Working title (validate via thumbnail A/B before content spend).
+Version 0.3 · 2026-10-11 · **Public title: "Meteor Heist"** (set in Creator Hub 2026-10-11; "Meteor Rush" remains the internal codename in docs/code) · Working title (validate via thumbnail A/B before content spend).
 Source research: `reports/Простые трендовые игры Roblox.md`.
 
 ## 1. Concept

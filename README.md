@@ -1,4 +1,4 @@
-# Meteor Rush
+# Meteor Heist
 
 Roblox game built with [Rojo](https://rojo.space). Design and plans: `docs/` (start with `docs/01-game-design.md`).
 

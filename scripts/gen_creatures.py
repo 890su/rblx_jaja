@@ -42,7 +42,7 @@ CREATURES = {
     "void_viper": ("Epic", "a dark purple snake with a starry void pattern"),
     "solar_stag": ("Epic", "a golden deer with sun-ray antlers"),
     "plasma_panda": ("Epic", "a panda with glowing cyan plasma patches"),
-    "aurora_axolotl": ("Epic", "an axolotl with aurora colored glowing frills"),
+    "aurora_axolotl": ("Epic", "a pink axolotl salamander with glowing rainbow gills"),
     "ion_ibex": ("Epic", "an ibex with electric blue curled horns crackling with energy"),
     "nova_drake": ("Legendary", "a small dragon with exploding star wings, orange and white"),
     "galaxy_griffin": ("Legendary", "a griffin with galaxy patterned wings"),
