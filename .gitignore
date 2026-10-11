@@ -20,3 +20,6 @@ Thumbs.db
 
 # Type-check cache
 .luau/
+
+# Python
+__pycache__/
