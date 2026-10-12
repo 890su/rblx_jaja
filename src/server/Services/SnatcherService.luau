@@ -4,7 +4,11 @@
 -- fills that guard's alert meter (yellow "?"); a full meter starts a chase
 -- (red) that pulls in nearby guards. Guards within earshot of a pickup start
 -- alert at once (further in noisy deep zones).
--- During a chase only telegraphed attacks drop the egg: the locked dash and,
+-- During a chase an alarm line runs ahead of the carrier and every idle
+-- guard it touches joins in; chasers left far behind hand off and go back to
+-- their posts.
+-- Only telegraphed attacks drop the egg: the dash (a yellow laser sight that
+-- leads the runner, then locks red) and,
 -- from the attack zone, Undertale-style ground attacks (shared ArenaPatterns
 -- math, server hit checks). From the hound zone the guard that starts the
 -- chase tears open a portal and a Void Hound leaps out.
@@ -34,10 +38,14 @@ type Drone = {
 	offset: CFrame, -- pivot -> root
 	hover: number, -- pivot height above the ground plane
 	label: TextLabel,
-	line: Part,
+	line: Part, -- dash path on the ground
+	aimEnd: Attachment, -- laser sight end (the sight starts at the root)
+	sight: { Beam },
+	trail: Trail,
 	indicator: BasePart?,
 	zone: number,
 	meteor: BasePart?,
+	post: BasePart?, -- the egg it guarded before joining a chase
 	home: Vector3, -- patrol centre (the egg, or where it was)
 	orphanUntil: number?, -- egg taken: keep patrolling until then
 	yaw: number, -- vision / facing direction
@@ -52,6 +60,7 @@ type Drone = {
 	bornAt: number,
 	phase: string,
 	phaseUntil: number,
+	lockAt: number, -- warning: the sight freezes from here
 	nextAttack: number,
 	position: Vector3,
 	origin: Vector3,
@@ -89,6 +98,8 @@ local COLORS = {
 	alert = Color3.fromRGB(255, 205, 65),
 	chase = Color3.fromRGB(255, 65, 90),
 	recover = Color3.fromRGB(190, 145, 255),
+	aim = Color3.fromRGB(255, 215, 50),
+	lock = Color3.fromRGB(255, 30, 45),
 }
 
 local function rootOf(player: Player): BasePart?
@@ -201,7 +212,7 @@ local function state(drone: Drone, phase: string)
 		elseif phase == "recover" then COLORS.recover
 		elseif phase == "warning" then COLORS.alert
 		else COLORS.chase
-	drone.label.Text = if phase == "warning"
+	drone.label.Text = if phase == "warning" or phase == "lock"
 		then "DODGE!"
 		elseif phase == "dash" then "ATTACK"
 		elseif phase == "guard" then "EGG GUARD"
@@ -223,8 +234,25 @@ local function state(drone: Drone, phase: string)
 			part.Color = color
 		end
 	end
-	drone.line.Transparency = if phase == "warning" then 0.25 elseif phase == "dash" then 0.05 else 1
-	drone.line.Color = color
+	-- Dash telegraph: yellow sight while aiming, red once locked, then a
+	-- streak along the red path.
+	local aiming = phase == "warning" or phase == "lock"
+	local sightColor = if phase == "warning" then COLORS.aim else COLORS.lock
+	drone.line.Transparency = if phase == "warning"
+		then 0.78
+		elseif phase == "lock" then 0.45
+		elseif phase == "dash" then 0.6
+		else 1
+	drone.line.Color = sightColor
+	for _, beam in drone.sight do
+		beam.Enabled = aiming
+		beam.Color = ColorSequence.new(
+			if beam.Name == "SightCore"
+				then sightColor:Lerp(Color3.new(1, 1, 1), 0.5)
+				else sightColor
+		)
+	end
+	drone.trail.Enabled = phase == "dash"
 end
 
 local function isHauling(drone: Drone): boolean
@@ -236,6 +264,36 @@ local function setSpotting(drone: Drone, spotting: boolean)
 		drone.spotting = spotting
 		drone.model:SetAttribute("Spotting", spotting)
 	end
+end
+
+-- Register a drone as one of `meteor`'s guards, patrolling around it.
+local function guard(drone: Drone, meteor: BasePart)
+	local list = guards[meteor] or {}
+	guards[meteor] = list
+	table.insert(list, drone)
+	drone.meteor = meteor
+	drone.home = Vector3.new(meteor.Position.X, drone.hover, meteor.Position.Z)
+	drone.orphanUntil = nil
+	meteor:SetAttribute("Guarded", true)
+end
+
+local function laser(
+	name: string,
+	width: number,
+	transparency: number,
+	a0: Attachment,
+	a1: Attachment
+): Beam
+	local beam = Instance.new("Beam")
+	beam.Name = name
+	beam.Attachment0, beam.Attachment1 = a0, a1
+	beam.Width0, beam.Width1 = width, width
+	beam.FaceCamera, beam.Segments = true, 1
+	beam.LightEmission, beam.LightInfluence = 1, 0
+	beam.Transparency = NumberSequence.new(transparency)
+	beam.Enabled = false
+	beam.Parent = a0
+	return beam
 end
 
 local function spawn(kind: string, zone: number, position: Vector3, meteor: BasePart?): Drone?
@@ -291,6 +349,30 @@ local function spawn(kind: string, zone: number, position: Vector3, meteor: Base
 		"AttackWarning", true, false, false, false
 	line.Material, line.Transparency, line.CastShadow = Enum.Material.Neon, 1, false
 	line.Parent = folder
+	-- Laser sight from the drone's body to the dash endpoint (body height).
+	local eye = Instance.new("Attachment")
+	eye.Name = "AimEye"
+	eye.Parent = root
+	local aimEnd = Instance.new("Attachment")
+	aimEnd.Name = "AimEnd"
+	aimEnd.Parent = workspace.Terrain
+	local sight = {
+		laser("SightHalo", 1.1, 0.75, eye, aimEnd),
+		laser("SightCore", 0.16, 0.05, eye, aimEnd),
+	}
+	-- Dash streak.
+	local top, bottom = Instance.new("Attachment"), Instance.new("Attachment")
+	top.Position, bottom.Position = Vector3.new(0, 0.9, 0), Vector3.new(0, -0.9, 0)
+	top.Parent, bottom.Parent = root, root
+	local trail = Instance.new("Trail")
+	trail.Attachment0, trail.Attachment1 = top, bottom
+	trail.Lifetime, trail.MinLength = 0.3, 0.1
+	trail.FaceCamera, trail.LightEmission, trail.LightInfluence = true, 1, 0
+	trail.Color = ColorSequence.new(COLORS.lock)
+	trail.Transparency = NumberSequence.new(0.15, 1)
+	trail.WidthScale = NumberSequence.new(1, 0.2)
+	trail.Enabled = false
+	trail.Parent = root
 	local home = meteor and Vector3.new(meteor.Position.X, hover, meteor.Position.Z) or position
 	local drone: Drone = {
 		kind = kind,
@@ -300,9 +382,13 @@ local function spawn(kind: string, zone: number, position: Vector3, meteor: Base
 		hover = hover,
 		label = label,
 		line = line,
+		aimEnd = aimEnd,
+		sight = sight,
+		trail = trail,
 		indicator = indicator,
 		zone = zone,
-		meteor = meteor,
+		meteor = nil,
+		post = nil,
 		home = home,
 		orphanUntil = nil,
 		yaw = yaw,
@@ -317,6 +403,7 @@ local function spawn(kind: string, zone: number, position: Vector3, meteor: Base
 		bornAt = 0,
 		phase = "guard",
 		phaseUntil = 0,
+		lockAt = 0,
 		nextAttack = 0,
 		position = position,
 		origin = position,
@@ -335,10 +422,7 @@ local function spawn(kind: string, zone: number, position: Vector3, meteor: Base
 	state(drone, "guard")
 	table.insert(drones, drone)
 	if meteor then
-		local list = guards[meteor] or {}
-		guards[meteor] = list
-		table.insert(list, drone)
-		meteor:SetAttribute("Guarded", true)
+		guard(drone, meteor)
 	end
 	return drone
 end
@@ -370,6 +454,7 @@ local function despawn(index: number)
 	unguard(drone)
 	table.remove(drones, index)
 	drone.line:Destroy()
+	drone.aimEnd:Destroy()
 	drone.model:Destroy()
 end
 
@@ -395,6 +480,7 @@ local function activate(drone: Drone, player: Player, factor: number, delay: num
 	if not root then
 		return
 	end
+	drone.post = drone.post or drone.meteor
 	unguard(drone)
 	drone.target, drone.carry, drone.factor = player, CarryService.get(player), factor
 	drone.alert, drone.alertTarget = 0, nil
@@ -403,6 +489,22 @@ local function activate(drone: Drone, player: Player, factor: number, delay: num
 	drone.previousTarget = root.Position
 	drone.model:SetAttribute("TargetUserId", player.UserId)
 	state(drone, "chase")
+end
+
+-- Chase over for this drone: back to its egg if that is still out in the
+-- field, else it patrols here for a while and then leaves.
+local function release(drone: Drone, now: number)
+	drone.target, drone.carry, drone.waitMeteor = nil, nil, nil
+	drone.model:SetAttribute("TargetUserId", nil)
+	local post = drone.post
+	drone.post = nil
+	if post and post.Parent and not post:GetAttribute("Taken") then
+		guard(drone, post)
+	else
+		drone.home = Vector3.new(drone.position.X, drone.hover, drone.position.Z)
+		drone.orphanUntil = now + Config.ORPHAN_SECONDS
+	end
+	state(drone, "guard")
 end
 
 -- A purple ring tears open at the guard; the hound leaps out after a beat.
@@ -731,20 +833,49 @@ local function stepGuard(
 	return true
 end
 
-local function warning(drone: Drone, root: BasePart, now: number)
-	local direction, endpoint = Combat.plan(drone.position, root.Position)
-	-- Telegraph ends at the blocking wall; the dash uses this same endpoint.
+local function dashSpeed(drone: Drone): number
+	return if drone.zone == 1 then Config.FIRST_ZONE_DASH_SPEED else Config.DASH_SPEED
+end
+
+local function warningSeconds(drone: Drone): number
+	return if drone.zone == 1 then Config.FIRST_ZONE_WARNING_SECONDS else Config.WARNING_SECONDS
+end
+
+-- Where the carrier will be when a dash launched `untilDash` seconds from now
+-- reaches them (at hover height).
+local function predict(drone: Drone, root: BasePart, untilDash: number): Vector3
+	local velocity = root.AssemblyLinearVelocity
+	local flat = Vector3.new(velocity.X, 0, velocity.Z)
+	local here = Vector3.new(root.Position.X, drone.hover, root.Position.Z)
+	local speed = dashSpeed(drone)
+	local lead = untilDash + (here - drone.position).Magnitude / speed
+	lead = untilDash + (here + flat * lead - drone.position).Magnitude / speed
+	local ahead = flat * lead * (if drone.zone == 1 then Config.FIRST_ZONE_DASH_PREDICT else 1)
+	if ahead.Magnitude > Config.ATTACK_MAX_LEAD then
+		ahead = ahead.Unit * Config.ATTACK_MAX_LEAD
+	end
+	return here + ahead
+end
+
+-- Point the dash (and its telegraph) at `point`. It ends at a blocking wall;
+-- the dash uses this same endpoint.
+local function aim(drone: Drone, point: Vector3)
+	local direction, endpoint = Combat.plan(drone.position, point)
 	local move = blockedMove(drone.position, endpoint - drone.position)
 	drone.origin, drone.direction, drone.endpoint = drone.position, direction, drone.position + move
-	local length = move.Magnitude
-	drone.line.Size = Vector3.new(Config.HIT_RADIUS * 2, 0.12, math.max(0.1, length))
+	drone.line.Size = Vector3.new(Config.HIT_RADIUS * 2, 0.12, math.max(0.1, move.Magnitude))
 	local midpoint = (drone.origin + drone.endpoint) / 2
 	drone.line.CFrame = CFrame.lookAt(
 		Vector3.new(midpoint.X, 0.65, midpoint.Z),
 		Vector3.new(midpoint.X, 0.65, midpoint.Z) + direction
 	)
-	drone.phaseUntil = now
-		+ (if drone.zone == 1 then Config.FIRST_ZONE_WARNING_SECONDS else Config.WARNING_SECONDS)
+	drone.aimEnd.WorldPosition = drone.endpoint
+end
+
+local function warning(drone: Drone, point: Vector3, now: number)
+	aim(drone, point)
+	drone.phaseUntil = now + warningSeconds(drone)
+	drone.lockAt = drone.phaseUntil - Config.LOCK_SECONDS
 	state(drone, "warning")
 end
 
@@ -762,15 +893,11 @@ end
 local function stepRegroup(index: number, drone: Drone, now: number, dt: number): boolean
 	local meteor = drone.waitMeteor :: BasePart
 	if not meteor.Parent or now - drone.bornAt > Config.REGROUP_SECONDS then
-		drone.waitMeteor, drone.target, drone.carry = nil, nil, nil
-		drone.model:SetAttribute("TargetUserId", nil)
 		if drone.kind == "hound" then
 			despawn(index)
 			return false
 		end
-		drone.home = Vector3.new(drone.position.X, drone.hover, drone.position.Z)
-		drone.orphanUntil = now + Config.ORPHAN_SECONDS
-		state(drone, "guard")
+		release(drone, now)
 		return true
 	end
 	local angle = now * 1.3 + drone.orbit
@@ -808,12 +935,15 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 	local delta = target - drone.position
 	if drone.phase == "chase" then
 		local distance = delta.Magnitude
+		-- Aim where the runner is going, so a fast carrier cannot just
+		-- outrun the telegraph.
+		local point = predict(drone, root, warningSeconds(drone))
 		if
-			distance <= Config.ATTACK_RANGE
-			and now >= drone.nextAttack
-			and not workspace:Raycast(drone.position, delta, rayParams)
+			now >= drone.nextAttack
+			and (point - drone.position).Magnitude <= Config.ATTACK_RANGE
+			and not workspace:Raycast(drone.position, point - drone.position, rayParams)
 		then
-			warning(drone, root, now)
+			warning(drone, point, now)
 		elseif distance > Config.STANDOFF_DISTANCE then
 			local humanoid = (player.Character :: Model):FindFirstChildOfClass("Humanoid")
 			local speed =
@@ -827,12 +957,19 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 			drone.position += blockedMove(drone.position, move)
 		end
 	elseif drone.phase == "warning" then
+		-- The yellow sight tracks the runner, then locks red.
+		if now >= drone.lockAt then
+			state(drone, "lock")
+		else
+			aim(drone, predict(drone, root, drone.phaseUntil - now))
+		end
+	elseif drone.phase == "lock" then
 		-- Facing and endpoint stay locked even if the player moves sideways.
 		if now >= drone.phaseUntil then
 			state(drone, "dash")
 		end
 	elseif drone.phase == "dash" then
-		local speed = if drone.zone == 1 then Config.FIRST_ZONE_DASH_SPEED else Config.DASH_SPEED
+		local speed = dashSpeed(drone)
 		local remaining = (drone.endpoint - drone.position).Magnitude
 		local from = drone.position
 		local move = blockedMove(from, drone.direction * math.min(speed * dt, remaining))
@@ -859,7 +996,9 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 		state(drone, "chase")
 	end
 	drone.previousTarget = root.Position
-	local facing = if drone.phase == "warning" or drone.phase == "dash"
+	local facing = if drone.phase == "warning"
+			or drone.phase == "lock"
+			or drone.phase == "dash"
 		then drone.direction
 		elseif delta.Magnitude > 0.01 then delta.Unit
 		else drone.direction
@@ -1047,10 +1186,7 @@ function Service.reclaimLater(meteor: BasePart, zone: number, dropper: Player?)
 		hauler.alert, hauler.alertTarget = 0, nil
 		setSpotting(hauler, false)
 		-- Registered as the egg's guard: grabbing it back alerts this drone.
-		local list = guards[meteor] or {}
-		guards[meteor] = list
-		table.insert(list, hauler)
-		hauler.meteor = meteor
+		guard(hauler, meteor)
 		meteor:SetAttribute("ExpiresAt", math.huge)
 		state(hauler, "fetch")
 		if dropper and dropper.Parent == Players then
@@ -1143,6 +1279,96 @@ local function stepHauler(drone: Drone, now: number, dt: number)
 	place(drone, CFrame.lookAt(pos, pos + facingOf(drone.yaw)))
 end
 
+local function flatDistance(a: Vector3, b: Vector3): number
+	return Vector2.new(a.X - b.X, a.Z - b.Z).Magnitude
+end
+
+-- The chase relay: an alarm line runs ahead of each chased carrier and idle
+-- guards it touches join the chase; chasers left far behind hand off (the
+-- nearest one always stays on).
+local function stepRelay(now: number)
+	for _, player in Players:GetPlayers() do
+		local carry = CarryService.get(player)
+		local root = rootOf(player)
+		if
+			not carry
+			or not root
+			or player:GetAttribute("ArenaActive") == true
+			or player:GetAttribute("ArenaPrep") == true
+		then
+			continue
+		end
+		local chasers: { Drone } = {}
+		for _, drone in drones do
+			if
+				drone.target == player
+				and drone.kind == "drone"
+				and drone.waitMeteor == nil
+				and drone.carry == carry
+			then
+				table.insert(chasers, drone)
+			end
+		end
+		if #chasers == 0 then
+			continue
+		end
+		local factor = chasers[1].factor
+		table.sort(chasers, function(a, b)
+			return flatDistance(a.position, root.Position) < flatDistance(b.position, root.Position)
+		end)
+		for i = #chasers, 2, -1 do
+			local drone = chasers[i]
+			if
+				(drone.phase == "chase" or drone.phase == "recover")
+				and flatDistance(drone.position, root.Position) > Config.RELAY_DROP_DISTANCE
+			then
+				release(drone, now)
+				table.remove(chasers, i)
+			end
+		end
+		local velocity = root.AssemblyLinearVelocity
+		local flat = Vector3.new(velocity.X, 0, velocity.Z)
+		local speed = flat.Magnitude
+		if speed < 4 then
+			continue
+		end
+		local forward = flat / speed
+		local reach = math.clamp(
+			speed * Config.RELAY_AHEAD_SECONDS,
+			Config.RELAY_MIN_AHEAD,
+			Config.RELAY_MAX_AHEAD
+		)
+		local count = #chasers
+		for _, drone in drones do
+			if count >= Config.RELAY_MAX_CHASERS then
+				break
+			end
+			if
+				drone.target == nil
+				and drone.kind == "drone"
+				and drone.zone >= Config.RELAY_FROM_ZONE
+				and not isHauling(drone)
+			then
+				local offset = Vector3.new(
+					drone.position.X - root.Position.X,
+					0,
+					drone.position.Z - root.Position.Z
+				)
+				local along = offset:Dot(forward)
+				if
+					along >= 0
+					and along <= reach
+					and offset:Cross(forward).Magnitude <= Config.RELAY_HALF_WIDTH
+				then
+					activate(drone, player, factor, 0)
+					drone.nextAttack = now + Config.RELAY_GRACE
+					count += 1
+				end
+			end
+		end
+	end
+end
+
 local function step(dt: number)
 	local now = os.clock()
 	local positions: { Vector3 } = {}
@@ -1185,6 +1411,7 @@ local function step(dt: number)
 			end
 		end
 	end
+	stepRelay(now)
 	stepAttacks(all)
 end
 

@@ -17,14 +17,18 @@ local config = {
 	MAX_CHASE_SPEED = 40,
 	FIRST_TIME_FACTOR = 0.55,
 	PICKUP_GRACE = 1.5, -- chase start -> first possible attack
-	WARNING_SECONDS = 0.9,
+	-- Dash: a yellow laser sight tracks where the carrier will be, turns red
+	-- and freezes for LOCK_SECONDS, then the drone dashes along it.
+	WARNING_SECONDS = 0.9, -- whole telegraph, lock included
 	FIRST_ZONE_WARNING_SECONDS = 1.25,
+	LOCK_SECONDS = 0.35,
 	RECOVERY_SECONDS = 1.4,
-	ATTACK_RANGE = 22,
+	ATTACK_RANGE = 34, -- the predicted target this close starts the telegraph
 	STANDOFF_DISTANCE = 13,
-	DASH_DISTANCE = 27,
-	DASH_SPEED = 65,
-	FIRST_ZONE_DASH_SPEED = 42,
+	DASH_DISTANCE = 46,
+	DASH_SPEED = 115,
+	FIRST_ZONE_DASH_SPEED = 75,
+	FIRST_ZONE_DASH_PREDICT = 0.5, -- share of the runner's lead aimed for in zone 1
 	HIT_RADIUS = 2.8,
 	SERVER_TICK = 1 / 30,
 	GIVE_UP_SECONDS = 30,
@@ -49,6 +53,17 @@ local config = {
 	ALERT_DECAY = 0.8,
 	ALERT_TURN_RATE = math.rad(100), -- tracking turn speed while alert
 	ALARM_RADIUS = 55, -- guards this close join when one starts a chase
+	-- Relay: during a chase an alarm line runs ahead of the carrier; idle
+	-- guards it touches join the chase, and chasers left far behind hand off
+	-- and return to their posts.
+	RELAY_FROM_ZONE = 2,
+	RELAY_AHEAD_SECONDS = 1.6, -- the line runs this much travel time ahead
+	RELAY_MIN_AHEAD = 45,
+	RELAY_MAX_AHEAD = 160,
+	RELAY_HALF_WIDTH = 40, -- corridor half-width either side of the path
+	RELAY_MAX_CHASERS = 5,
+	RELAY_DROP_DISTANCE = 110,
+	RELAY_GRACE = 0.3, -- seconds before a relayed guard may aim
 	-- Pickup noise: guards this close always hear it; from the noisy zone the
 	-- radius grows. Heard guards start alert with a half-full meter.
 	PICKUP_HEARING_RADIUS = 16,
