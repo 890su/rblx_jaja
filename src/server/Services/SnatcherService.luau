@@ -61,6 +61,7 @@ type Drone = {
 	phase: string,
 	phaseUntil: number,
 	lockAt: number, -- warning: the sight freezes from here
+	dashSpeed: number, -- set while aiming, frozen at the lock
 	nextAttack: number,
 	position: Vector3,
 	origin: Vector3,
@@ -91,6 +92,8 @@ local nextWaveId: { [Player]: number } = {}
 local lastPoint: { [Player]: Vector3 } = {}
 local spottedNoticeAt: { [Player]: number } = {}
 local houndFor: { [CarryService.Carry]: boolean } = setmetatable({}, { __mode = "k" }) :: any
+-- A player's very first chase stays a gentle one-on-one (no relay).
+local introChase: { [CarryService.Carry]: boolean } = setmetatable({}, { __mode = "k" }) :: any
 
 local FLOOR_TOP = 0.2
 local COLORS = {
@@ -404,6 +407,7 @@ local function spawn(kind: string, zone: number, position: Vector3, meteor: Base
 		phase = "guard",
 		phaseUntil = 0,
 		lockAt = 0,
+		dashSpeed = Config.DASH_SPEED,
 		nextAttack = 0,
 		position = position,
 		origin = position,
@@ -573,6 +577,7 @@ local function startChase(spotter: Drone, player: Player)
 	if profile and not profile.flags.snatcherIntro then
 		profile.flags.snatcherIntro = true
 		count, factor, hound = 1, Config.FIRST_TIME_FACTOR, false
+		introChase[carry] = true
 	end
 	local already = chasersOf(player)
 	if already >= count then
@@ -833,26 +838,54 @@ local function stepGuard(
 	return true
 end
 
-local function dashSpeed(drone: Drone): number
-	return if drone.zone == 1 then Config.FIRST_ZONE_DASH_SPEED else Config.DASH_SPEED
+-- Zone 1's softer dash (slower, longer telegraph, half the lead) is for
+-- zone-1 eggs only; a deep-zone egg run through zone 1 gets the full thing.
+local function gentle(drone: Drone): boolean
+	local carry = drone.carry
+	return drone.zone == 1 and (carry == nil or (carry.originZone or 1) <= 1)
+end
+
+-- The zone's dash speed, but always well above the carrier's current running
+-- speed: nobody simply outruns a dash.
+local function dashSpeedFor(drone: Drone, root: BasePart): number
+	local velocity = root.AssemblyLinearVelocity
+	local running = Vector2.new(velocity.X, velocity.Z).Magnitude
+	local base = if gentle(drone) then Config.FIRST_ZONE_DASH_SPEED else Config.DASH_SPEED
+	return math.max(base, running * Config.DASH_SPEED_FACTOR)
+end
+
+local function dashLength(speed: number): number
+	return math.max(Config.DASH_DISTANCE, speed * Config.DASH_SECONDS)
+end
+
+local function hitRadius(speed: number): number
+	return math.max(Config.HIT_RADIUS, speed * Config.DASH_HIT_SECONDS)
 end
 
 local function warningSeconds(drone: Drone): number
-	return if drone.zone == 1 then Config.FIRST_ZONE_WARNING_SECONDS else Config.WARNING_SECONDS
+	return if gentle(drone) then Config.FIRST_ZONE_WARNING_SECONDS else Config.WARNING_SECONDS
 end
 
 -- Where the carrier will be when a dash launched `untilDash` seconds from now
--- reaches them (at hover height).
-local function predict(drone: Drone, root: BasePart, untilDash: number): Vector3
+-- (at `speed`) reaches them, assuming they keep running straight (at hover
+-- height).
+local function predict(drone: Drone, root: BasePart, untilDash: number, speed: number): Vector3
 	local velocity = root.AssemblyLinearVelocity
 	local flat = Vector3.new(velocity.X, 0, velocity.Z)
+		* (if gentle(drone) then Config.FIRST_ZONE_DASH_PREDICT else 1)
 	local here = Vector3.new(root.Position.X, drone.hover, root.Position.Z)
-	local speed = dashSpeed(drone)
-	local lead = untilDash + (here - drone.position).Magnitude / speed
-	lead = untilDash + (here + flat * lead - drone.position).Magnitude / speed
-	local ahead = flat * lead * (if drone.zone == 1 then Config.FIRST_ZONE_DASH_PREDICT else 1)
-	if ahead.Magnitude > Config.ATTACK_MAX_LEAD then
-		ahead = ahead.Unit * Config.ATTACK_MAX_LEAD
+	-- Runner's offset when the dash starts, then the flight time t solving
+	-- |start + flat * t| = speed * t (one positive root: speed > runner).
+	local start = here + flat * untilDash - drone.position
+	local a = flat:Dot(flat) - speed * speed
+	local b = 2 * start:Dot(flat)
+	local c = start:Dot(start)
+	local flight = if a < -1e-6
+		then (-b - math.sqrt(math.max(0, b * b - 4 * a * c))) / (2 * a)
+		else start.Magnitude / math.max(speed, 1)
+	local ahead = flat * (untilDash + flight)
+	if ahead.Magnitude > Config.DASH_MAX_LEAD then
+		ahead = ahead.Unit * Config.DASH_MAX_LEAD
 	end
 	return here + ahead
 end
@@ -860,10 +893,11 @@ end
 -- Point the dash (and its telegraph) at `point`. It ends at a blocking wall;
 -- the dash uses this same endpoint.
 local function aim(drone: Drone, point: Vector3)
-	local direction, endpoint = Combat.plan(drone.position, point)
+	local direction, endpoint = Combat.plan(drone.position, point, dashLength(drone.dashSpeed))
 	local move = blockedMove(drone.position, endpoint - drone.position)
 	drone.origin, drone.direction, drone.endpoint = drone.position, direction, drone.position + move
-	drone.line.Size = Vector3.new(Config.HIT_RADIUS * 2, 0.12, math.max(0.1, move.Magnitude))
+	drone.line.Size =
+		Vector3.new(hitRadius(drone.dashSpeed) * 2, 0.12, math.max(0.1, move.Magnitude))
 	local midpoint = (drone.origin + drone.endpoint) / 2
 	drone.line.CFrame = CFrame.lookAt(
 		Vector3.new(midpoint.X, 0.65, midpoint.Z),
@@ -872,7 +906,8 @@ local function aim(drone: Drone, point: Vector3)
 	drone.aimEnd.WorldPosition = drone.endpoint
 end
 
-local function warning(drone: Drone, point: Vector3, now: number)
+local function warning(drone: Drone, point: Vector3, speed: number, now: number)
+	drone.dashSpeed = speed
 	aim(drone, point)
 	drone.phaseUntil = now + warningSeconds(drone)
 	drone.lockAt = drone.phaseUntil - Config.LOCK_SECONDS
@@ -937,20 +972,27 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 		local distance = delta.Magnitude
 		-- Aim where the runner is going, so a fast carrier cannot just
 		-- outrun the telegraph.
-		local point = predict(drone, root, warningSeconds(drone))
+		local dashSpeed = dashSpeedFor(drone, root)
+		local point = predict(drone, root, warningSeconds(drone), dashSpeed)
+		local intercept = point - drone.position
+		local range = Config.ATTACK_RANGE * dashLength(dashSpeed) / Config.DASH_DISTANCE
 		if
 			now >= drone.nextAttack
-			and (point - drone.position).Magnitude <= Config.ATTACK_RANGE
-			and not workspace:Raycast(drone.position, point - drone.position, rayParams)
+			and intercept.Magnitude <= range
+			and not workspace:Raycast(drone.position, intercept, rayParams)
 		then
-			warning(drone, point, now)
-		elseif distance > Config.STANDOFF_DISTANCE then
+			warning(drone, point, dashSpeed, now)
+		elseif distance > Config.STANDOFF_DISTANCE and intercept.Magnitude > 0.5 then
+			-- Head for the intercept point: guards ahead cut the runner off
+			-- instead of flying back toward where they are now.
 			local humanoid = (player.Character :: Model):FindFirstChildOfClass("Humanoid")
 			local speed =
 				Combat.chaseSpeed(if humanoid then humanoid.WalkSpeed else 16, drone.factor)
-			local move = delta.Unit * math.min(speed * dt, distance - Config.STANDOFF_DISTANCE)
+			local heading = intercept.Unit
+			local move = heading
+				* math.min(speed * dt, intercept.Magnitude, distance - Config.STANDOFF_DISTANCE)
 			-- Slide along walls during chase; a dash stops at the first wall.
-			local hit = workspace:Raycast(drone.position, move + delta.Unit * 1.5, rayParams)
+			local hit = workspace:Raycast(drone.position, move + heading * 1.5, rayParams)
 			if hit then
 				move -= hit.Normal * move:Dot(hit.Normal)
 			end
@@ -961,7 +1003,8 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 		if now >= drone.lockAt then
 			state(drone, "lock")
 		else
-			aim(drone, predict(drone, root, drone.phaseUntil - now))
+			drone.dashSpeed = dashSpeedFor(drone, root)
+			aim(drone, predict(drone, root, drone.phaseUntil - now, drone.dashSpeed))
 		end
 	elseif drone.phase == "lock" then
 		-- Facing and endpoint stay locked even if the player moves sideways.
@@ -969,14 +1012,20 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 			state(drone, "dash")
 		end
 	elseif drone.phase == "dash" then
-		local speed = dashSpeed(drone)
+		local speed = drone.dashSpeed
 		local remaining = (drone.endpoint - drone.position).Magnitude
 		local from = drone.position
 		local move = blockedMove(from, drone.direction * math.min(speed * dt, remaining))
 		drone.position += move
 		if
 			math.abs(root.Position.Y - drone.hover) < 6
-			and Combat.hits(from, drone.position, drone.previousTarget, root.Position)
+			and Combat.hits(
+				from,
+				drone.position,
+				drone.previousTarget,
+				root.Position,
+				hitRadius(speed)
+			)
 			and not workspace:Raycast(drone.position, root.Position - drone.position, rayParams)
 		then
 			knockOut(
@@ -1279,6 +1328,26 @@ local function stepHauler(drone: Drone, now: number, dt: number)
 	place(drone, CFrame.lookAt(pos, pos + facingOf(drone.yaw)))
 end
 
+-- A red ring bursts from a guard the alarm line just reached.
+local function alarmPing(drone: Drone)
+	local ring = Instance.new("Part")
+	ring.Name, ring.Shape = "AlarmPing", Enum.PartType.Cylinder
+	ring.Anchored, ring.CanCollide, ring.CanQuery, ring.CanTouch = true, false, false, false
+	ring.Material, ring.Color, ring.CastShadow = Enum.Material.Neon, COLORS.lock, false
+	ring.Transparency = 0.2
+	ring.Size = Vector3.new(0.2, 2, 2)
+	ring.CFrame = CFrame.new(drone.position) * CFrame.Angles(0, 0, math.rad(90))
+	ring.Parent = folder
+	TweenService:Create(
+		ring,
+		TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Size = Vector3.new(0.2, 16, 16), Transparency = 1 }
+	):Play()
+	task.delay(0.55, function()
+		ring:Destroy()
+	end)
+end
+
 local function flatDistance(a: Vector3, b: Vector3): number
 	return Vector2.new(a.X - b.X, a.Z - b.Z).Magnitude
 end
@@ -1293,6 +1362,7 @@ local function stepRelay(now: number)
 		if
 			not carry
 			or not root
+			or introChase[carry]
 			or player:GetAttribute("ArenaActive") == true
 			or player:GetAttribute("ArenaPrep") == true
 		then
@@ -1316,19 +1386,23 @@ local function stepRelay(now: number)
 		table.sort(chasers, function(a, b)
 			return flatDistance(a.position, root.Position) < flatDistance(b.position, root.Position)
 		end)
+		local velocity = root.AssemblyLinearVelocity
+		local flat = Vector3.new(velocity.X, 0, velocity.Z)
+		local speed = flat.Magnitude
+		-- Only chasers the runner has left behind hand off; the ones the line
+		-- just woke up ahead are far away too, but still to come.
 		for i = #chasers, 2, -1 do
 			local drone = chasers[i]
+			local behind = speed < 4 or (drone.position - root.Position):Dot(flat) < 0
 			if
 				(drone.phase == "chase" or drone.phase == "recover")
+				and behind
 				and flatDistance(drone.position, root.Position) > Config.RELAY_DROP_DISTANCE
 			then
 				release(drone, now)
 				table.remove(chasers, i)
 			end
 		end
-		local velocity = root.AssemblyLinearVelocity
-		local flat = Vector3.new(velocity.X, 0, velocity.Z)
-		local speed = flat.Magnitude
 		if speed < 4 then
 			continue
 		end
@@ -1343,12 +1417,7 @@ local function stepRelay(now: number)
 			if count >= Config.RELAY_MAX_CHASERS then
 				break
 			end
-			if
-				drone.target == nil
-				and drone.kind == "drone"
-				and drone.zone >= Config.RELAY_FROM_ZONE
-				and not isHauling(drone)
-			then
+			if drone.target == nil and drone.kind == "drone" and not isHauling(drone) then
 				local offset = Vector3.new(
 					drone.position.X - root.Position.X,
 					0,
@@ -1362,6 +1431,7 @@ local function stepRelay(now: number)
 				then
 					activate(drone, player, factor, 0)
 					drone.nextAttack = now + Config.RELAY_GRACE
+					alarmPing(drone)
 					count += 1
 				end
 			end

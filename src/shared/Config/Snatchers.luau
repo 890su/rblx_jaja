@@ -25,10 +25,19 @@ local config = {
 	RECOVERY_SECONDS = 1.4,
 	ATTACK_RANGE = 34, -- the predicted target this close starts the telegraph
 	STANDOFF_DISTANCE = 13,
-	DASH_DISTANCE = 46,
+	DASH_DISTANCE = 46, -- at the base speed; faster dashes reach further
 	DASH_SPEED = 115,
 	FIRST_ZONE_DASH_SPEED = 75,
+	-- A dash is always this much faster than the carrier is running, and lasts
+	-- about DASH_SECONDS, so a fast runner faces a longer, faster dash (and
+	-- ATTACK_RANGE grows with it).
+	DASH_SPEED_FACTOR = 1.4,
+	DASH_SECONDS = 0.4,
+	-- Hit radius grows with dash speed (a fast runner crosses 2.8 studs in a
+	-- fraction of a server tick): at least HIT_RADIUS, else speed x this.
+	DASH_HIT_SECONDS = 0.025,
 	FIRST_ZONE_DASH_PREDICT = 0.5, -- share of the runner's lead aimed for in zone 1
+	DASH_MAX_LEAD = 260, -- studs of path prediction for the dash (fast carriers need ~1.3 s)
 	HIT_RADIUS = 2.8,
 	SERVER_TICK = 1 / 30,
 	GIVE_UP_SECONDS = 30,
@@ -56,12 +65,12 @@ local config = {
 	-- Relay: during a chase an alarm line runs ahead of the carrier; idle
 	-- guards it touches join the chase, and chasers left far behind hand off
 	-- and return to their posts.
-	RELAY_FROM_ZONE = 2,
-	RELAY_AHEAD_SECONDS = 1.6, -- the line runs this much travel time ahead
-	RELAY_MIN_AHEAD = 45,
-	RELAY_MAX_AHEAD = 160,
-	RELAY_HALF_WIDTH = 40, -- corridor half-width either side of the path
-	RELAY_MAX_CHASERS = 5,
+	-- (Not during a player's very first chase.)
+	RELAY_AHEAD_SECONDS = 2.2, -- the line runs this much travel time ahead
+	RELAY_MIN_AHEAD = 60,
+	RELAY_MAX_AHEAD = 260,
+	RELAY_HALF_WIDTH = 90, -- the line's reach either side of the path
+	RELAY_MAX_CHASERS = 6,
 	RELAY_DROP_DISTANCE = 110,
 	RELAY_GRACE = 0.3, -- seconds before a relayed guard may aim
 	-- Pickup noise: guards this close always hear it; from the noisy zone the
