@@ -1,4 +1,5 @@
 Key,Source,Context,Example
+steal_too_far,Too far away,,
 steal_wait,Wait {seconds}s to steal again,,
 storage_manage,{count} stored creatures · open Station,,
 training_button,Run Training {level} → {next} · {amount} Stardust,,
@@ -28,4 +29,3 @@ zone_locked,{zone} needs {speed} Speed,,
 ,Stardust,,
 ,Golden,,
 ,Starborn,,
-,Shop,,

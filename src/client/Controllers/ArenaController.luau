@@ -1,5 +1,6 @@
 --!strict
--- Void Run view. The camera rises smoothly to a top-down shot that fits the
+-- Void Run view, plus the ground attacks guards cast during an ordinary chase
+-- (same wave format, drawn with the normal camera). The camera rises smoothly to a top-down shot that fits the
 -- runner's lane across the screen and follows them toward home. Attack waves
 -- arrive from the server and are drawn with the same pattern math the server
 -- uses for hit checks.
@@ -37,6 +38,7 @@ local modeStarted = 0
 local fromCFrame = CFrame.new()
 local fromFov = 70
 local folder: Folder? = nil
+local fieldFolder: Folder? = nil -- ground attacks outside the Void Run
 local parts: { [string]: Part } = {}
 local emitters: { [string]: Model } = {}
 local waves: { Patterns.Wave } = {}
@@ -110,6 +112,10 @@ end
 local function clearVisuals()
 	if folder then
 		folder:Destroy()
+	end
+	if fieldFolder then
+		fieldFolder:Destroy()
+		fieldFolder = nil
 	end
 	folder, playerHighlight = nil, nil
 	parts, emitters, waves = {}, {}, {}
@@ -261,7 +267,7 @@ local function emitterFor(id: string, hazard: Patterns.Hazard, laneX: number, wo
 	(model :: Model):PivotTo(CFrame.lookAt(at, look))
 end
 
-local function drawHazards(now: number, world: Instance, laneX: number)
+local function drawHazards(now: number, world: Instance)
 	local seen: { [string]: boolean } = {}
 	local seenEmitters: { [string]: boolean } = {}
 	local blueActive, orangeActive = false, false
@@ -295,7 +301,7 @@ local function drawHazards(now: number, world: Instance, laneX: number)
 				p.CFrame = CFrame.new(position.X, 0.5 + height / 2, position.Y)
 				if wave.kind == "blaster" then
 					seenEmitters[hazard.id] = true
-					emitterFor(hazard.id, hazard, laneX, world)
+					emitterFor(hazard.id, hazard, wave.laneX, world)
 				end
 			elseif hazard.shape == "capsule" then
 				local finish = hazard.finish :: Vector2
@@ -344,8 +350,29 @@ local function drawHazards(now: number, world: Instance, laneX: number)
 		else Color3.fromRGB(255, 235, 180)
 end
 
+-- Guards' ground attacks during an ordinary chase: hazards only, no camera.
+local function renderField()
+	if #waves == 0 then
+		if fieldFolder then
+			drawHazards(workspace:GetServerTimeNow(), fieldFolder)
+			fieldFolder:Destroy()
+			fieldFolder = nil
+			parts, emitters = {}, {}
+		end
+		return
+	end
+	if not fieldFolder then
+		local created = Instance.new("Folder")
+		created.Name = "LocalFieldAttacks"
+		created.Parent = workspace
+		fieldFolder = created
+	end
+	drawHazards(workspace:GetServerTimeNow(), fieldFolder :: Folder)
+end
+
 local function render(dt: number)
 	if mode == "off" then
+		renderField()
 		return
 	end
 	local view = saved
@@ -398,7 +425,7 @@ local function render(dt: number)
 		nextSweep = os.clock() + 0.5
 		hideClutter()
 	end
-	drawHazards(now, world, laneX)
+	drawHazards(now, world)
 
 	local lives = (player:GetAttribute("ArenaLives") :: number?) or Arena.LIVES
 	status.Text = Locale.t("arena_status", {
@@ -470,6 +497,12 @@ function ArenaController.start()
 			enter()
 		else
 			exit()
+		end
+	end)
+	-- Losing the egg ends any ground attacks aimed at us.
+	player:GetAttributeChangedSignal("Carrying"):Connect(function()
+		if player:GetAttribute("Carrying") == nil and mode == "off" then
+			waves = {}
 		end
 	end)
 	player.CharacterRemoving:Connect(function()

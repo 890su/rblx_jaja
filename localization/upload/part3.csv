@@ -1,4 +1,5 @@
 Key,Source,Context,Example
+speed_training,{source} · +{gain}/s · Pace {pace},,
 starter_pack,Starter Pack unlocked! Enjoy your new creatures,,
 station_carry_replaced,Meteor placed! The previous creature is safe in storage,,
 station_changed,Your station changed. Select the creature again,,
@@ -28,4 +29,3 @@ steal_recent,You robbed {player} recently,,
 steal_started_thief,Stolen {creature}! Run home before {player} catches you!,,
 steal_started_victim,{player} stole your {creature}! Catch them!,,
 steal_success,You stole {creature}!,,
-steal_too_far,Too far away,,

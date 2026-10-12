@@ -21,4 +21,31 @@ function Combat.hits(from: Vector3, to: Vector3, playerBefore: Vector3, playerNo
 	return (a + line * t).Magnitude <= Config.HIT_RADIUS
 end
 
+-- Can a guard at `origin` facing `facing` (horizontal) see `point`? Inside
+-- the vision sector, or anywhere within the hearing circle.
+function Combat.inVision(origin: Vector3, facing: Vector3, point: Vector3): boolean
+	local d = Vector2.new(point.X - origin.X, point.Z - origin.Z)
+	local distance = d.Magnitude
+	if distance <= Config.HEARING_RADIUS then
+		return true
+	end
+	if distance > Config.VISION_RANGE + 1 then
+		return false
+	end
+	local flat = Vector2.new(facing.X, facing.Z)
+	if flat.Magnitude < 1e-3 then
+		return false
+	end
+	local cos = d:Dot(flat.Unit) / distance
+	-- Widen by the body radius at this distance so edges are not pixel-exact.
+	local slack = math.asin(math.min(1, 1 / distance))
+	return cos >= math.cos(Config.VISION_HALF_ANGLE + slack)
+end
+
+-- Alert meter fill per second for a carrier inside a beam.
+function Combat.alertRate(moving: boolean, zone: number): number
+	local rate = if moving then Config.ALERT_FILL_MOVING else Config.ALERT_FILL_STILL
+	return if zone <= 1 then rate * Config.ALERT_FIRST_ZONE_SCALE else rate
+end
+
 return table.freeze(Combat)
