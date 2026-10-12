@@ -16,6 +16,7 @@ local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
 local StealService = require(script.Parent.StealService)
 local EventService = require(script.Parent.EventService)
+local SpeedService = require(script.Parent.SpeedService)
 local MonetizationService = require(script.Parent.MonetizationService)
 
 local DebugService = {}
@@ -30,6 +31,14 @@ local function find(who: any): Player?
 end
 
 local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
+	-- teleport <player> <x> <y> <z>: a server teleport with anti-cheat grace.
+	teleport = function(player, x, y, z)
+		assert(player and player.Character, "no character")
+		local before = player.Character:GetPivot().Position
+		SpeedService.markTeleport(player)
+		player.Character:PivotTo(CFrame.new(tonumber(x) or 0, tonumber(y) or 3, tonumber(z) or 0))
+		return { before.X, before.Y, before.Z }
+	end,
 	-- give <player> <creatureId> : hatched creature on a free pedestal
 	give = function(player, creatureId)
 		local creature = Creatures.BY_ID[creatureId]

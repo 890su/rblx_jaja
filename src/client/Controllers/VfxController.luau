@@ -4,6 +4,7 @@
 -- Driven by streamed instances and the server "Fx" remote.
 
 local Debris = game:GetService("Debris")
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
@@ -158,15 +159,10 @@ end
 function VfxController.start()
 	Remotes.event("Fx").OnClientEvent:Connect(onFx)
 	-- Field meteors (stream in and out) and carried meteors on characters.
-	local function watch(container: Instance)
-		container.ChildAdded:Connect(decorateMeteor)
-		for _, child in container:GetChildren() do
-			decorateMeteor(child)
-		end
+	CollectionService:GetInstanceAddedSignal("FieldMeteor"):Connect(decorateMeteor)
+	for _, meteor in CollectionService:GetTagged("FieldMeteor") do
+		decorateMeteor(meteor)
 	end
-	task.spawn(function()
-		watch(workspace:WaitForChild("Meteors"))
-	end)
 	workspace.DescendantAdded:Connect(function(descendant)
 		if descendant.Name == "CarriedMeteor" then
 			task.defer(decorateMeteor, descendant)

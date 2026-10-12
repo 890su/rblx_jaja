@@ -18,6 +18,7 @@ local player = Players.LocalPlayer
 local HudController = {}
 
 local speedLabel: TextLabel
+local speedHint: TextLabel
 local coinsLabel: TextLabel
 local zoneLabel: TextLabel
 local carryLabel: TextLabel
@@ -74,6 +75,20 @@ local function refreshStats()
 	end
 end
 
+local function refreshSpeedHint()
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local pace = if humanoid
+		then (humanoid:GetAttribute("TargetWalkSpeed") :: number?) or humanoid.WalkSpeed
+		else 16
+	local gain = (player:GetAttribute("SpeedGainPerSecond") :: number?) or 0
+	speedHint.Text = Locale.t("speed_training", {
+		source = Locale.ref((player:GetAttribute("SpeedGainSource") :: string?) or "Idle"),
+		gain = tostring(math.round(gain * 10) / 10),
+		pace = math.floor(pace),
+	})
+end
+
 -- Server sends a Locale key + args; rendered in the player's language.
 local function toast(key: string, args: Locale.Args?, kind: string?)
 	local message = Locale.t(key, args)
@@ -107,6 +122,12 @@ function HudController.init()
 		Size = UDim2.new(0.35, 0, 0.09, 0),
 		TextColor3 = Color3.fromRGB(120, 220, 255),
 	})
+	speedHint = label("SpeedHint", gui, {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromScale(0.5, 0.095),
+		Size = UDim2.fromScale(0.65, 0.025),
+		TextColor3 = Color3.fromRGB(190, 220, 235),
+	})
 	coinsLabel = label("Coins", gui, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 12, 0.5, 0),
@@ -116,7 +137,7 @@ function HudController.init()
 	})
 	zoneLabel = label("Zone", gui, {
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0.1, 4),
+		Position = UDim2.new(0.5, 0, 0.125, 4),
 		Size = UDim2.new(0.3, 0, 0.04, 0),
 	})
 	carryLabel = label("Carry", gui, {
@@ -130,7 +151,7 @@ function HudController.init()
 	toastFrame.Name = "Toasts"
 	toastFrame.BackgroundTransparency = 1
 	toastFrame.AnchorPoint = Vector2.new(0.5, 0)
-	toastFrame.Position = UDim2.new(0.5, 0, 0.16, 0)
+	toastFrame.Position = UDim2.new(0.5, 0, 0.18, 0)
 	toastFrame.Size = UDim2.new(0.5, 0, 0.3, 0)
 	local layout = Instance.new("UIListLayout")
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -150,6 +171,7 @@ function HudController.start()
 
 	local lastZone = -1
 	while true do
+		refreshSpeedHint()
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if root then

@@ -14,6 +14,9 @@ local Canyons = require(Shared.Config.Canyons)
 local Maze = require(Shared.Util.Maze)
 local Notifier = require(script.Parent.Parent.Util.Notifier)
 local Theme = require(Shared.Theme)
+local EnvironmentBuild = require(script.Parent.Parent.Util.EnvironmentBuild)
+local ArenaWorldBuild = require(script.Parent.Parent.Util.ArenaWorldBuild)
+local CryoCapsuleBuild = require(script.Parent.Parent.Util.CryoCapsuleBuild)
 
 export type Plot = {
 	index: number,
@@ -55,6 +58,33 @@ local function part(props: { [string]: any }, parent: Instance): Part
 	return p
 end
 
+-- Billboard sign with one localized term (auto-translated per viewer).
+local function billboard(
+	adornee: BasePart,
+	text: string,
+	offset: Vector3,
+	size: Vector2,
+	color: Color3,
+	maxDistance: number
+)
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.fromOffset(size.X, size.Y)
+	gui.StudsOffset = offset
+	gui.MaxDistance = maxDistance
+	gui.LightInfluence = 0
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.TextScaled = true
+	label.Font = Enum.Font.FredokaOne
+	label.TextColor3 = color
+	label.TextStrokeTransparency = 0.2
+	label.Text = text
+	label.Parent = gui
+	gui.Parent = adornee
+	return gui
+end
+
 local function buildPlot(index: number, count: number, parent: Instance): Plot
 	local x = (index - (count + 1) / 2) * PLOT_PITCH
 	local center = Vector3.new(x, FLOOR_TOP, PLOT_Z)
@@ -76,14 +106,22 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 	for slot = 1, PEDESTAL_SLOTS do
 		local row = (slot - 1) // 5
 		local col = (slot - 1) % 5
-		local pedestal = part({
-			Name = `Pedestal{slot}`,
-			Size = Vector3.new(6, 2, 6),
-			Position = center + Vector3.new((col - 2) * 11, 1, 8 + row * 12),
-			Color = Color3.fromRGB(90, 95, 120),
-			Material = Enum.Material.SmoothPlastic,
-		}, model)
-		pedestal:SetAttribute("Slot", slot)
+		local pedestal = CryoCapsuleBuild.create(
+			model,
+			center + Vector3.new((col - 2) * 11, 1, 8 + row * 12),
+			slot
+		)
+		-- Owner-only unlock button (visibility handled by StationController).
+		local unlock = Instance.new("ProximityPrompt")
+		unlock.Name = "UnlockPrompt"
+		unlock.ActionText = "Unlock"
+		unlock.HoldDuration = 0.3
+		unlock.MaxActivationDistance = 10
+		unlock.RequiresLineOfSight = false
+		unlock.KeyboardKeyCode = Enum.KeyCode.E
+		unlock.Enabled = false
+		unlock.Parent = pedestal
+		CollectionService:AddTag(unlock, "UnlockPrompt")
 		pedestals[slot] = pedestal
 	end
 
@@ -122,30 +160,137 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 	end
 	collectorGui.Parent = collector
 
+	billboard(
+		collector,
+		"Collect Stardust",
+		Vector3.new(0, 6, 0),
+		Vector2.new(170, 34),
+		Color3.fromRGB(255, 225, 110),
+		70
+	)
+	local creaturesSign = part({
+		Name = "CreaturesSign",
+		Size = Vector3.new(0.5, 0.5, 0.5),
+		Position = center + Vector3.new(0, 9, 14),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	}, model)
+	billboard(
+		creaturesSign,
+		"Your creatures earn Stardust",
+		Vector3.zero,
+		Vector2.new(260, 34),
+		Color3.fromRGB(190, 240, 255),
+		70
+	)
+
+	-- Treadmill: rubber belt (detection part "Treadmill") with frame, rollers,
+	-- handrails and a console screen. Arrows on the belt scroll client-side.
+	local treadCenter = center + Vector3.new(20, 0, -12)
 	local treadmill = part({
 		Name = "Treadmill",
-		Size = Vector3.new(8, 0.6, 14),
-		Position = center + Vector3.new(20, 0.3, -12),
-		Color = Color3.fromRGB(40, 40, 50),
-		Material = Enum.Material.DiamondPlate,
+		Size = Vector3.new(6, 0.7, 14),
+		Position = treadCenter + Vector3.new(0, 0.35, 0),
+		Color = Color3.fromRGB(28, 28, 34),
+		Material = Enum.Material.SmoothPlastic,
 	}, model)
-	local treadGui = Instance.new("SurfaceGui")
-	treadGui.Face = Enum.NormalId.Top
-	local treadLabel = Instance.new("TextLabel")
-	treadLabel.Size = UDim2.fromScale(1, 1)
-	treadLabel.BackgroundTransparency = 1
-	treadLabel.TextScaled = true
-	treadLabel.Font = Enum.Font.FredokaOne
-	treadLabel.TextColor3 = Color3.fromRGB(120, 220, 255)
-	treadLabel.Text = "TREADMILL · stand here for Speed"
-	treadLabel.Rotation = 90
-	treadLabel.Parent = treadGui
-	treadGui.Parent = treadmill
+	for side = -1, 1, 2 do
+		part({
+			Name = "TreadFrame",
+			Size = Vector3.new(1, 1.1, 15),
+			Position = treadCenter + Vector3.new(side * 3.5, 0.55, 0),
+			Color = Color3.fromRGB(150, 160, 180),
+			Material = Enum.Material.Metal,
+		}, model)
+		-- Handrail post + rail along each side at the front half.
+		part({
+			Name = "TreadPost",
+			Size = Vector3.new(0.4, 4, 0.4),
+			Position = treadCenter + Vector3.new(side * 3.5, 3, -6.5),
+			Color = Color3.fromRGB(150, 160, 180),
+			Material = Enum.Material.Metal,
+		}, model)
+		part({
+			Name = "TreadRail",
+			Size = Vector3.new(0.35, 0.35, 6),
+			Position = treadCenter + Vector3.new(side * 3.5, 4.8, -3.7),
+			Color = Color3.fromRGB(80, 220, 255),
+			Material = Enum.Material.Neon,
+		}, model)
+	end
+	for _, z in { -7, 7 } do
+		local roller = part({
+			Name = "TreadRoller",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(6.4, 1.2, 1.2),
+			Color = Color3.fromRGB(60, 60, 70),
+			Material = Enum.Material.Metal,
+		}, model)
+		roller.CFrame = CFrame.new(treadCenter + Vector3.new(0, 0.6, z))
+	end
+	local console = part({
+		Name = "TreadConsole",
+		Size = Vector3.new(7, 2.6, 0.5),
+		Color = Color3.fromRGB(30, 34, 48),
+		Material = Enum.Material.Metal,
+	}, model)
+	console.CFrame = CFrame.new(treadCenter + Vector3.new(0, 5.4, -6.8))
+		* CFrame.Angles(math.rad(-25), 0, 0)
+	local screen = Instance.new("SurfaceGui")
+	screen.Face = Enum.NormalId.Back -- faces the runner (+Z side)
+	screen.LightInfluence = 0
+	screen.Parent = console
+	for _, spec in
+		{
+			{ text = "TREADMILL", y = 0.05, h = 0.45, color = Color3.fromRGB(120, 230, 255) },
+			{
+				text = "+Speed while you stand here",
+				y = 0.52,
+				h = 0.4,
+				color = Color3.fromRGB(255, 230, 120),
+			},
+		}
+	do
+		local label = Instance.new("TextLabel")
+		label.BackgroundTransparency = 1
+		label.Position = UDim2.fromScale(0.04, spec.y)
+		label.Size = UDim2.fromScale(0.92, spec.h)
+		label.TextScaled = true
+		label.Font = Enum.Font.FredokaOne
+		label.TextColor3 = spec.color
+		label.Text = spec.text
+		label.Parent = screen
+	end
+	-- Neon chevrons on the belt; FeedbackController slides them from the back
+	-- of the belt toward the console so it reads as a running treadmill.
+	local chevrons = Instance.new("Folder")
+	chevrons.Name = "BeltChevrons"
+	chevrons:SetAttribute("BeltCFrame", CFrame.new(treadCenter + Vector3.new(0, 0.72, 0)))
+	chevrons:SetAttribute("BeltLength", 12)
+	for i = 0, 4 do
+		for side = -1, 1, 2 do
+			local arm = part({
+				Name = "BeltChevron",
+				Size = Vector3.new(0.5, 0.06, 2.4),
+				Color = Color3.fromRGB(90, 210, 255),
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+				CanQuery = false,
+				CanTouch = false,
+			}, chevrons)
+			arm:SetAttribute("Phase", i / 5)
+			arm:SetAttribute("Side", side)
+			arm.CFrame = CFrame.new(treadCenter + Vector3.new(0, -5, 0)) -- placed client-side
+		end
+	end
+	chevrons.Parent = model
+	CollectionService:AddTag(chevrons, "TreadmillBelt")
 
 	local sign = part({
 		Name = "Sign",
-		Size = Vector3.new(16, 6, 1),
-		Position = center + Vector3.new(0, 6, PLOT_SIZE / 2 - 2),
+		Size = Vector3.new(10, 6, 1),
+		Position = center + Vector3.new(-23, 6, -23),
 		Color = Color3.fromRGB(30, 30, 45),
 	}, model)
 	local gui = Instance.new("SurfaceGui")
@@ -175,7 +320,7 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 	return {
 		index = index,
 		model = model,
-		spawn = CFrame.new(center + Vector3.new(0, 3, 20)) * CFrame.Angles(0, 0, 0),
+		spawn = CFrame.new(center + Vector3.new(0, 3, -2)),
 		pedestals = pedestals,
 		collector = collector,
 		treadmill = treadmill,
@@ -212,6 +357,22 @@ local function buildTrack(parent: Instance)
 				CanCollide = false,
 			}, folder)
 			gate:SetAttribute("ZoneIndex", i)
+			local gateSign = part({
+				Name = "GateSign",
+				Size = Vector3.new(0.5, 0.5, 0.5),
+				Position = Vector3.new(0, 30, z + 2),
+				Transparency = 1,
+				CanCollide = false,
+				CanQuery = false,
+			}, folder)
+			billboard(
+				gateSign,
+				Theme.ZONE_NAMES[i] or `Zone {i}`,
+				Vector3.zero,
+				Vector2.new(320, 60),
+				Color3.fromRGB(255, 255, 255),
+				400
+			)
 			gate:SetAttribute("SpeedGate", zone.speedGate)
 			gate:SetAttribute("RebirthGate", zone.rebirthGate)
 			CollectionService:AddTag(gate, "SpeedGate")
@@ -246,13 +407,73 @@ local function buildTrack(parent: Instance)
 	end
 	zoneStartZ[#Zones.ZONES + 1] = z
 
+	-- Entrance arch over the speed lane + glowing chevrons pointing into the crater.
 	for side = -1, 1, 2 do
 		part({
-			Name = "SideWall",
-			Size = Vector3.new(2, WALL_HEIGHT, -z),
-			Position = Vector3.new(side * (trackHalfWidth + 1), WALL_HEIGHT / 2, z / 2),
-			Transparency = 1,
+			Name = "ArchPillar",
+			Size = Vector3.new(6, 34, 6),
+			Position = Vector3.new(side * 46, 17, -6),
+			Color = Color3.fromRGB(70, 75, 100),
+			Material = Enum.Material.Metal,
 		}, folder)
+	end
+	local beam = part({
+		Name = "ArchBeam",
+		Size = Vector3.new(98, 7, 5),
+		Position = Vector3.new(0, 36, -6),
+		Color = Color3.fromRGB(40, 44, 66),
+		Material = Enum.Material.Metal,
+	}, folder)
+	local archGui = Instance.new("SurfaceGui")
+	archGui.Face = Enum.NormalId.Back -- faces the stations (+Z)
+	archGui.LightInfluence = 0
+	archGui.Parent = beam
+	local archLabel = Instance.new("TextLabel")
+	archLabel.BackgroundTransparency = 1
+	archLabel.Size = UDim2.fromScale(1, 1)
+	archLabel.TextScaled = true
+	archLabel.Font = Enum.Font.FredokaOne
+	archLabel.TextColor3 = Color3.fromRGB(255, 200, 110)
+	archLabel.Text = "CRATER FIELD"
+	archLabel.Parent = archGui
+	billboard(
+		beam,
+		"Meteors this way",
+		Vector3.new(0, -9, 0),
+		Vector2.new(220, 40),
+		Color3.fromRGB(150, 230, 255),
+		160
+	)
+	for i = 1, 9 do
+		local chevronZ = -14 - (i - 1) * 16
+		for side = -1, 1, 2 do
+			local arm = part({
+				Name = "Chevron",
+				Size = Vector3.new(0.8, 0.2, 9),
+				Color = Color3.fromRGB(90, 210, 255),
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+				CanQuery = false,
+			}, folder)
+			-- Two arms meeting at the front form a ^ pointing toward -Z.
+			arm.CFrame = CFrame.new(side * 3.1, FLOOR_TOP + 0.12, chevronZ)
+				* CFrame.Angles(0, math.rad(35) * side, 0)
+		end
+	end
+
+	for side = -1, 1, 2 do
+		for i, zone in Zones.ZONES do
+			part({
+				Name = "SideWall",
+				Size = Vector3.new(2, WALL_HEIGHT, zone.lengthStuds),
+				Position = Vector3.new(
+					side * (trackHalfWidth + 1),
+					WALL_HEIGHT / 2,
+					zoneStartZ[i] - zone.lengthStuds / 2
+				),
+				Transparency = 1,
+			}, folder)
+		end
 	end
 	part({
 		Name = "EndWall",
@@ -368,6 +589,7 @@ local function buildCanyons(day: number)
 	folder.Parent = world
 	canyonFolder = folder
 	canyonDay = day
+	world:SetAttribute("CanyonDay", day)
 end
 
 local function currentDay(): number
@@ -391,6 +613,7 @@ local function setupLighting()
 	local Lighting = game:GetService("Lighting")
 	Lighting.ClockTime = 17.4
 	Lighting.Brightness = 2.4
+	Lighting.Ambient = Color3.fromRGB(90, 95, 120)
 	Lighting.OutdoorAmbient = Color3.fromRGB(120, 110, 150)
 	Lighting.EnvironmentDiffuseScale = 0.6
 	Lighting.EnvironmentSpecularScale = 0.6
@@ -439,21 +662,53 @@ local function setupGround(parent: Instance)
 	}, parent)
 end
 
+-- Crater decor: crystal clusters (ReplicatedStorage.Assets.Decor.Crystal) on
+-- the plain beside the track. Same layout on every server.
+local function scatterDecor(parent: Instance)
+	local assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets")
+	local decor = assets and assets:FindFirstChild("Decor")
+	local crystal = decor and decor:FindFirstChild("Crystal")
+	if not crystal or not crystal:IsA("Model") then
+		return
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "Decor"
+	local rng = Random.new(20261011)
+	for _ = 1, 36 do
+		local side = if rng:NextNumber() < 0.5 then -1 else 1
+		local x = side * rng:NextNumber(trackHalfWidth + 25, trackHalfWidth + 420)
+		local z = rng:NextNumber(-980, 140)
+		local clone = crystal:Clone()
+		clone:ScaleTo(clone:GetScale() * rng:NextNumber(0.8, 2.2))
+		local _, size = clone:GetBoundingBox()
+		clone:PivotTo(
+			CFrame.new(x, FLOOR_TOP + size.Y / 2 - 0.3, z)
+				* CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
+		)
+		clone.Parent = folder
+	end
+	folder.Parent = parent
+end
+
 function WorldService.init()
 	setupLighting()
 	setupMaterials()
 	world = Instance.new("Folder")
 	world.Name = "World"
+	world.Parent = workspace
 	setupGround(world)
 	local plotFolder = Instance.new("Folder")
 	plotFolder.Name = "Plots"
+	plotFolder.Parent = world
 	for i = 1, Economy.SERVER_SIZE do
 		plots[i] = buildPlot(i, Economy.SERVER_SIZE, plotFolder)
+		task.wait() -- flush one station at a time instead of one large subtree
 	end
-	plotFolder.Parent = world
 	buildTrack(world)
+	ArenaWorldBuild.build(world, zoneStartZ)
+	EnvironmentBuild.build(world, trackHalfWidth, zoneStartZ)
 	buildCanyons(currentDay())
-	world.Parent = workspace
+	scatterDecor(world)
 end
 
 function WorldService.start()
@@ -516,7 +771,10 @@ end
 
 function WorldService.isInPlot(plot: Plot, position: Vector3): boolean
 	local offset = position - plot.center
-	return math.abs(offset.X) <= PLOT_SIZE / 2 and math.abs(offset.Z) <= PLOT_SIZE / 2
+	return math.abs(offset.X) <= PLOT_SIZE / 2
+		and math.abs(offset.Z) <= PLOT_SIZE / 2
+		and offset.Y >= -2
+		and offset.Y <= 16
 end
 
 return WorldService

@@ -9,6 +9,7 @@ Usage: python -I scripts/export_locale_csv.py   (after scripts/mcp_sync.py)
 
 import importlib.util
 import sys
+import subprocess
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -40,6 +41,12 @@ def main() -> int:
     out = ROOT / "localization" / "meteor_heist.csv"
     out.parent.mkdir(exist_ok=True)
     previous = set(out.read_text(encoding="utf-8").splitlines()) if out.exists() else set()
+    pending_path = ROOT / "localization" / "upload" / "new.csv"
+    pending = set(pending_path.read_text(encoding="utf-8").splitlines()[1:]) if pending_path.exists() else set()
+    if "--since-head" in sys.argv:
+        baseline = subprocess.run(["git", "show", "HEAD:localization/meteor_heist.csv"], cwd=ROOT,
+                                  capture_output=True, text=True, encoding="utf-8", check=True)
+        previous = set(baseline.stdout.splitlines())
     out.write_text(csv + "\n", encoding="utf-8")
     rows = csv.count("\n")
     print(f"wrote {out} ({rows} entries)")
@@ -62,7 +69,9 @@ def main() -> int:
         (parts / f"part{i // 30 + 1}.csv").write_text(buf.getvalue(), encoding="utf-8")
     print(f"wrote {len(range(0, len(body), 30))} upload parts to {parts}")
     # Only the rows that changed since the last export: usually all you need to upload.
-    delta = [line for line in csv.splitlines()[1:] if line and line not in previous]
+    # Keep earlier pending translations across repeated exports, using only
+    # the latest version of each row from the current source table.
+    delta = [line for line in csv.splitlines()[1:] if line and (line not in previous or line in pending)]
     if previous and delta:
         (parts / "new.csv").write_text("\n".join([csv.splitlines()[0], *delta]) + "\n", encoding="utf-8")
         print(f"wrote {len(delta)} new/changed rows to {parts / 'new.csv'}")

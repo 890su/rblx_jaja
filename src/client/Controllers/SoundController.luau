@@ -25,6 +25,8 @@ local KEY_SOUNDS: { [string]: string } = {
 	training_up = "success",
 	rebirth_done = "hatch",
 	creature_replaced = "coins",
+	snatcher_chasing = "warning",
+	snatcher_grabbed = "impact",
 }
 local KIND_SOUNDS: { [string]: string } = {
 	pickup = "pickup",

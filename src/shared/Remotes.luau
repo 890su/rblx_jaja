@@ -12,6 +12,10 @@ local FOLDER_NAME = "Remotes"
 local EVENT_NAMES: { string } = {
 	"Notify", -- server -> client: (message: string, kind: string?)
 	"ShopState", -- server -> client: (state: Types.ShopState)
+	"RequestShopState", -- client ready / reopening -> server: ()
+	"StationState", -- server -> client: station inventory snapshot
+	"StationAction", -- client -> server: request / swap / sell (validated server-side)
+	"ArenaWave", -- server -> client: (wave: ArenaPatterns.Wave) for the Void Run runner
 	"ShopBuy", -- client -> server: (slot: number)
 	"BuyPedestal", -- client -> server: ()
 	"BuyTraining", -- client -> server: ()

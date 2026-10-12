@@ -4,6 +4,7 @@
 -- drop-on-death are handled by CarryService.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local CollectionService = game:GetService("CollectionService")
 local Types = require(Shared.Types)
 local Zones = require(Shared.Config.Zones)
 local Canyons = require(Shared.Config.Canyons)
@@ -18,10 +19,13 @@ local MeteorVisual = require(script.Parent.Parent.Util.MeteorVisual)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local CarryService = require(script.Parent.CarryService)
+local SnatcherService = require(script.Parent.SnatcherService)
 local TelemetryService = require(script.Parent.TelemetryService)
+local SpeedService = require(script.Parent.SpeedService)
 
 local PICKUP_DISTANCE = 14 -- server check; prompt range is 10
-local DROPPED_LIFETIME = 10
+local DROPPED_LIFETIME = 60 -- time to read the loss message and recover the egg
+local FIELD_LIFETIME = 180
 
 local MeteorService = {}
 
@@ -59,7 +63,9 @@ local spawnMeteor: (
 	position: Vector3,
 	rarity: Types.Rarity,
 	lifetime: number?,
-	boost: number?
+	boost: number?,
+	droppedState: Types.PedestalState?,
+	originZone: number?
 ) -> ()
 
 local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped: boolean)
@@ -79,34 +85,50 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 	if not profile then
 		return
 	end
+	if not SpeedService.isZoneUnlocked(player, zoneIndex) then
+		return
+	end
 
 	local rarity = meteor:GetAttribute("Rarity") :: Types.Rarity
 	local meteorBoost = meteor:GetAttribute("Boost") :: number?
 	-- FTUE: first pickup in the guarantee zone is at least the guaranteed rarity.
 	local guarantee = Zones.FIRST_VISIT_GUARANTEE
 	if zoneIndex == guarantee.zone and not isDropped and not profile.flags.ftueRareGranted then
-		profile.flags.ftueRareGranted = true
 		if Rarity.INFO[rarity].order < Rarity.INFO[guarantee.rarity].order then
 			rarity = guarantee.rarity
 		end
 	end
 
-	meteor:SetAttribute("Taken", true)
-	if not isDropped then
-		alive[zoneIndex] = math.max(0, (alive[zoneIndex] or 1) - 1)
-	end
-	meteor:Destroy()
-
 	-- Creature and mutation are decided at pickup (server RNG); the hatch only
 	-- reveals them. The zone picks the creature pool.
-	local creature = Creatures.pick(rarity, zoneIndex, rng)
-	CarryService.begin(player, {
-		state = { creatureId = creature.id, rarity = rarity, mutation = rollMutation() },
+	local droppedId = meteor:GetAttribute("DroppedCreatureId") :: string?
+	local creature = if droppedId
+		then Creatures.BY_ID[droppedId]
+		else Creatures.pick(rarity, zoneIndex, rng)
+	local began = CarryService.begin(player, {
+		state = {
+			creatureId = creature.id,
+			rarity = rarity,
+			mutation = if isDropped
+				then meteor:GetAttribute("DroppedMutation") :: string?
+				else rollMutation(),
+		},
 		fresh = true,
+		-- Dropped eggs remember where they came from, so re-grabbing one in
+		-- zone 1 still counts as a deep-zone egg for the Void Run.
+		originZone = (meteor:GetAttribute("OriginZone") :: number?) or zoneIndex,
 		onLost = function(_, carry, position)
 			if position then
 				local dropZone = math.max(WorldService.zoneIndexAt(position), 1)
-				spawnMeteor(dropZone, position, carry.state.rarity, DROPPED_LIFETIME)
+				spawnMeteor(
+					dropZone,
+					position,
+					carry.state.rarity,
+					DROPPED_LIFETIME,
+					nil,
+					carry.state,
+					carry.originZone
+				)
 			end
 		end,
 		onDelivered = function(owner, carry)
@@ -119,6 +141,18 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 			)
 		end,
 	})
+	if not began then
+		return
+	end
+	if zoneIndex == guarantee.zone and not isDropped then
+		profile.flags.ftueRareGranted = true
+	end
+	meteor:SetAttribute("Taken", true)
+	if meteor:GetAttribute("Counted") then
+		alive[zoneIndex] = math.max(0, (alive[zoneIndex] or 1) - 1)
+	end
+	SnatcherService.onPickup(player, zoneIndex, rarity, meteor)
+	meteor:Destroy()
 	TelemetryService.funnel(player, "FirstPickup")
 	Notifier.send(
 		player,
@@ -133,15 +167,22 @@ spawnMeteor = function(
 	position: Vector3,
 	rarity: Types.Rarity,
 	lifetime: number?,
-	boost: number?
+	boost: number?,
+	droppedState: Types.PedestalState?,
+	originZone: number?
 )
 	local meteor = makeMeteorPart(rarity)
 	meteor.Anchored = true
 	meteor.Position = position
 	meteor:SetAttribute("Boost", boost)
+	meteor:SetAttribute("ZoneIndex", zoneIndex)
+	meteor:SetAttribute("OriginZone", originZone or zoneIndex)
 	MeteorVisual.attach(meteor, false)
 
-	local isDropped = lifetime ~= nil
+	local isDropped = droppedState ~= nil
+	meteor:SetAttribute("DroppedCreatureId", if droppedState then droppedState.creatureId else nil)
+	meteor:SetAttribute("DroppedMutation", if droppedState then droppedState.mutation else nil)
+	meteor:SetAttribute("Counted", lifetime == nil)
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.ActionText = "Grab"
 	prompt.ObjectText = rarity -- localized term; odds shown as numbers below
@@ -173,15 +214,21 @@ spawnMeteor = function(
 	end)
 
 	meteor.Parent = fieldFolder
-	if lifetime then
-		task.delay(lifetime, function()
-			if meteor.Parent then
-				meteor:Destroy()
-			end
-		end)
-	else
+	CollectionService:AddTag(meteor, "FieldMeteor")
+	if not isDropped then
+		SnatcherService.guardMeteor(meteor, zoneIndex)
+	end
+	if not lifetime then
 		alive[zoneIndex] = (alive[zoneIndex] or 0) + 1
 	end
+	task.delay(lifetime or FIELD_LIFETIME, function()
+		if meteor.Parent then
+			if meteor:GetAttribute("Counted") then
+				alive[zoneIndex] = math.max(0, (alive[zoneIndex] or 1) - 1)
+			end
+			meteor:Destroy()
+		end
+	end)
 end
 
 -- Server Luck product: multiplier on non-Common spawn weights while active.
@@ -209,7 +256,7 @@ function MeteorService.spawnEvent(
 		* (if inCanyon then Canyons.RARITY_BOOST else 1)
 		* MeteorService.luckBoost()
 	local rarity = Odds.roll(zone.weights, Rarity.ORDER, eventRng, totalBoost)
-	spawnMeteor(zoneIndex, position, rarity, lifetime, totalBoost)
+	spawnMeteor(zoneIndex, position, rarity, lifetime, totalBoost, nil)
 end
 
 function MeteorService.init()
@@ -219,15 +266,31 @@ function MeteorService.init()
 end
 
 function MeteorService.start()
+	workspace.World:GetAttributeChangedSignal("CanyonDay"):Connect(function()
+		-- Remove pickups in the previous maze so none remain inside new walls.
+		for _, meteor in fieldFolder:GetChildren() do
+			local zoneIndex = meteor:GetAttribute("ZoneIndex") :: number?
+			if zoneIndex and zoneIndex >= Canyons.FROM_ZONE then
+				if meteor:GetAttribute("Counted") then
+					alive[zoneIndex] = math.max(0, (alive[zoneIndex] or 1) - 1)
+				end
+				meteor:Destroy()
+			end
+		end
+	end)
 	for zoneIndex, zone in Zones.ZONES do
 		task.spawn(function()
 			while true do
 				if (alive[zoneIndex] or 0) < zone.maxMeteors then
 					local position, inCanyon = WorldService.randomPointInZone(zoneIndex, rng)
+					if zoneIndex == 1 then
+						-- Early pickups are visible from every station, before a long run.
+						position = Vector3.new(position.X, position.Y, rng:NextNumber(-330, -160))
+					end
 					local boost = (if inCanyon then Canyons.RARITY_BOOST else 1)
 						* MeteorService.luckBoost()
 					local rarity = Odds.roll(zone.weights, Rarity.ORDER, rng, boost)
-					spawnMeteor(zoneIndex, position, rarity, nil, boost)
+					spawnMeteor(zoneIndex, position, rarity, nil, boost, nil)
 				end
 				task.wait(zone.spawnIntervalSeconds)
 			end

@@ -1,7 +1,7 @@
 --!strict
 -- Meteor Shop (coins) and pedestal upgrades. Offers come from the global clock
 -- (ShopOffers.forCycle), stock is tracked per player per cycle in the profile
--- so rejoining can't refill it. Bought meteors go straight onto a pedestal.
+-- so rejoining can't refill it. Bought meteors use a free pedestal or storage.
 
 local Players = game:GetService("Players")
 
@@ -10,6 +10,7 @@ local Types = require(Shared.Types)
 local Economy = require(Shared.Config.Economy)
 local Events = require(Shared.Config.Events)
 local Shop = require(Shared.Config.Shop)
+local Rarity = require(Shared.Config.Rarity)
 local Theme = require(Shared.Theme)
 local Clock = require(Shared.Clock)
 local Format = require(Shared.Util.Format)
@@ -21,6 +22,7 @@ local Notifier = require(script.Parent.Parent.Util.Notifier)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
+local WorldService = require(script.Parent.WorldService)
 local TelemetryService = require(script.Parent.TelemetryService)
 
 local ShopService = {}
@@ -104,9 +106,15 @@ local function onBuy(player: Player, slot: unknown)
 		Notifier.send(player, "shop_sold_out", nil, "warning")
 	elseif profile.coins < offer.price then
 		Notifier.send(player, "not_enough_coins", nil, "warning")
-	elseif not StationService.hasFreePedestal(player) then
-		Notifier.send(player, "pedestals_full", nil, "warning")
-	elseif StationService.placeNew(player, offer.creatureId, nil) then
+	else
+		local outcome = StationService.give(player, {
+			creatureId = offer.creatureId,
+			rarity = offer.rarity,
+			hatchAt = os.time() + Rarity.INFO[offer.rarity].hatchSeconds,
+		})
+		if outcome == "failed" then
+			return
+		end
 		DataService.addCoins(player, -offer.price)
 		bought[key] = (bought[key] or 0) + 1
 		TelemetryService.economy(player, "sink", offer.price, "Shop", offer.creatureId)
@@ -114,7 +122,7 @@ local function onBuy(player: Player, slot: unknown)
 		local name = Theme.CREATURE_NAMES[offer.creatureId] or offer.rarity
 		Notifier.send(
 			player,
-			"shop_bought",
+			if outcome == "stored" then "shop_bought_storage" else "shop_bought",
 			{ rarity = Locale.ref(offer.rarity), creature = Locale.ref(name) },
 			"success"
 		)
@@ -178,7 +186,33 @@ function ShopService.init()
 	shopState = Remotes.event("ShopState")
 	refreshCycle()
 	Remotes.event("ShopBuy").OnServerEvent:Connect(onBuy)
+	Remotes.event("RequestShopState").OnServerEvent:Connect(function(player)
+		if buyLimit:allow(player) then
+			pushState(player)
+		end
+	end)
 	Remotes.event("BuyPedestal").OnServerEvent:Connect(onBuyPedestal)
+	-- Unlock button on the next locked pedestal of your own station.
+	for _, plot in WorldService.getPlots() do
+		for _, pedestal in plot.pedestals do
+			local prompt = pedestal:FindFirstChild("UnlockPrompt") :: ProximityPrompt?
+			if prompt then
+				prompt.Triggered:Connect(function(player)
+					local character = player.Character
+					local root = character
+						and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+					if
+						StationService.ownerOf(plot) == player
+						and pedestal:GetAttribute("UnlockCost")
+						and root
+						and (root.Position - pedestal.Position).Magnitude <= 14
+					then
+						onBuyPedestal(player)
+					end
+				end)
+			end
+		end
+	end
 	Remotes.event("BuyTraining").OnServerEvent:Connect(onBuyTraining)
 	DataService.onLoaded(function(player)
 		pushState(player)

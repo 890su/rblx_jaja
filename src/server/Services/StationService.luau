@@ -24,6 +24,9 @@ local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local SpeedService = require(script.Parent.SpeedService)
 local TelemetryService = require(script.Parent.TelemetryService)
+local RateLimit = require(script.Parent.Parent.Util.RateLimit)
+local StationInventory = require(Shared.Util.StationInventory)
+local CryoCapsuleBuild = require(script.Parent.Parent.Util.CryoCapsuleBuild)
 
 type Plot = WorldService.Plot
 
@@ -39,6 +42,8 @@ local autoBankedFlushAt: { [Player]: number } = {}
 local AUTO_BANK_LOG_PERIOD = 60
 
 local fx: RemoteEvent
+local inventoryRemote: RemoteEvent
+local inventoryLimit = RateLimit.new(8, 3)
 
 local isHatched = Income.isHatched
 local incomeOf = Income.ofPedestal
@@ -78,34 +83,10 @@ function StationService.incomePerSecond(player: Player, profile: Types.PlayerPro
 	return Income.perSecond(profile, os.time(), StationService.passIncomeMultiplier(player))
 end
 
--- Billboard: "Label" holds a translatable term (creature / rarity / Empty /
--- Locked, auto-localized per viewer), "Value" holds numbers only.
+-- Lower panel: creature name. Upper plate: income or hatch timer.
 local function ensureView(pedestal: BasePart): (TextLabel, TextLabel, Part)
-	local gui = pedestal:FindFirstChild("Info") :: BillboardGui?
-	if not gui then
-		local newGui = Instance.new("BillboardGui")
-		newGui.Name = "Info"
-		newGui.Size = UDim2.fromOffset(120, 40)
-		newGui.StudsOffset = Vector3.new(0, 6, 0)
-		newGui.MaxDistance = 60
-		for _, spec in
-			{ { name = "Label", y = 0, h = 0.55 }, { name = "Value", y = 0.55, h = 0.45 } }
-		do
-			local label = Instance.new("TextLabel")
-			label.Name = spec.name
-			label.Position = UDim2.fromScale(0, spec.y)
-			label.Size = UDim2.fromScale(1, spec.h)
-			label.BackgroundTransparency = 1
-			label.TextScaled = true
-			label.Font = Enum.Font.FredokaOne
-			label.TextStrokeTransparency = 0.3
-			label.TextColor3 = Color3.new(1, 1, 1)
-			label.AutoLocalize = spec.name == "Label"
-			label.Parent = newGui
-		end
-		newGui.Parent = pedestal
-		gui = newGui
-	end
+	local gui = assert(CryoCapsuleBuild.info(pedestal), "Capsule has no status panel")
+	local value = assert(CryoCapsuleBuild.topValue(pedestal), "Capsule has no upper display")
 	local orb = pedestal:FindFirstChild("Orb") :: Part?
 	if not orb then
 		local newOrb = Instance.new("Part")
@@ -115,15 +96,13 @@ local function ensureView(pedestal: BasePart): (TextLabel, TextLabel, Part)
 		newOrb.Anchored = true
 		newOrb.CanCollide = false
 		newOrb.CanQuery = false
+		newOrb.CanTouch = false
 		newOrb.Material = Enum.Material.Neon
-		newOrb.CFrame = pedestal.CFrame + Vector3.new(0, 3.2, 0)
+		newOrb.CFrame = pedestal.CFrame + Vector3.new(0, 3, 0)
 		newOrb.Parent = pedestal
 		orb = newOrb
 	end
-	local info = gui :: BillboardGui
-	return info:FindFirstChild("Label") :: TextLabel,
-		info:FindFirstChild("Value") :: TextLabel,
-		orb :: Part
+	return gui:FindFirstChild("Label") :: TextLabel, value, orb :: Part
 end
 
 -- Puts the creature's 3D model (ReplicatedStorage.Assets.Creatures.<id>) on the
@@ -154,8 +133,21 @@ local function showCreature(pedestal: BasePart, state: Types.PedestalState?): bo
 	local model = template:Clone()
 	model.Name = "Creature"
 	local box, size = model:GetBoundingBox()
-	local target = pedestal.Position + Vector3.new(0, pedestal.Size.Y / 2 + size.Y / 2 + 0.05, 0)
+	-- Fit the entire bounding box inside the circular chamber, including wings.
+	local diameter = math.sqrt(size.X * size.X + size.Z * size.Z)
+	local fit = math.min(1, 5.1 / math.max(0.01, diameter), 5.8 / math.max(0.01, size.Y))
+	if fit < 1 then
+		model:ScaleTo(model:GetScale() * fit)
+		box, size = model:GetBoundingBox()
+	end
+	local floorOffset = (pedestal:GetAttribute("DisplayFloorOffset") :: number?) or 0.65
+	local target = pedestal.Position + Vector3.new(0, floorOffset + size.Y / 2, 0)
 	model:PivotTo(model:GetPivot() + (target - box.Position))
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") then
+			p.Anchored, p.CanCollide, p.CanTouch, p.CanQuery = true, false, false, false
+		end
+	end
 	if state.mutation == "Golden" then
 		local highlight = Instance.new("Highlight")
 		highlight.FillColor = Color3.fromRGB(255, 200, 40)
@@ -179,16 +171,65 @@ end
 local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 	local now = os.time()
 	local owner = plotOwner[plot.index]
+	plot.model:SetAttribute("OwnerUserId", if owner then owner.UserId else nil)
 	local capacity = if profile and owner then StationService.capacity(owner, profile) else 0
+	if owner and profile then
+		owner:SetAttribute("StorageCount", #profile.storage)
+		owner:SetAttribute("StationCapacity", capacity)
+		owner:SetAttribute("StationOccupied", StationService.creatureCount(profile))
+	end
+	local hasExpansion = hasPass(owner, "Expansion")
+	local displayedMultiplier = if profile and owner
+		then Income.multiplier(profile, StationService.passIncomeMultiplier(owner))
+		else 1
+	local nextCost = if profile and profile.pedestalCount < Economy.PEDESTALS_MAX_COINS
+		then Economy.PEDESTAL_COSTS[profile.pedestalCount - Economy.PEDESTALS_START + 1]
+		else nil
 	for slot, pedestal in plot.pedestals do
 		local label, value, orb = ensureView(pedestal)
 		local state = profile and profile.pedestals[tostring(slot)]
 		local unlocked = profile ~= nil and slot <= capacity
 		pedestal:SetAttribute("Occupied", state ~= nil)
-		pedestal.Transparency = if unlocked then 0 else 0.7
-		pedestal.Color = if hasPass(owner, "VIP")
-			then Color3.fromRGB(230, 185, 60)
-			else Color3.fromRGB(90, 95, 120)
+		pedestal:SetAttribute("Income", if state then incomeOf(state) else nil)
+		pedestal:SetAttribute("Unlocked", unlocked)
+		if not state or not isHatched(state, now) then
+			pedestal:SetAttribute("IncomePulseAmount", nil)
+			pedestal:SetAttribute("IncomePulseAt", nil)
+			pedestal:SetAttribute("IncomePulseRarity", nil)
+		end
+		-- What a locked pedestal offers its owner (read by StationController).
+		local isNextUnlock = profile ~= nil
+			and not unlocked
+			and nextCost ~= nil
+			and slot == capacity + 1
+		local isExpansionOffer = profile ~= nil
+			and not unlocked
+			and not hasExpansion
+			and slot > Economy.PEDESTALS_MAX_COINS
+		pedestal:SetAttribute("UnlockCost", if isNextUnlock then nextCost else nil)
+		pedestal:SetAttribute("ExpansionOffer", isExpansionOffer or nil)
+		local capsuleColor = if state
+			then Theme.RARITY_COLORS[state.rarity]
+			else Color3.fromRGB(95, 225, 255)
+		local hatching = state ~= nil and not isHatched(state, now)
+		local capsuleStatus = if not profile
+			then "OFFLINE"
+			elseif not unlocked then "Locked"
+			elseif hatching then "Hatching"
+			elseif state then "ACTIVE"
+			else "Ready"
+		local capsuleProgress = if hatching and state
+			then 1 - ((state.hatchAt :: number) - now) / Rarity.INFO[state.rarity].hatchSeconds
+			elseif state then 1
+			else 0
+		CryoCapsuleBuild.update(
+			pedestal,
+			unlocked,
+			capsuleColor,
+			capsuleStatus,
+			hasPass(owner, "VIP"),
+			capsuleProgress
+		)
 		if state then
 			local color = Theme.RARITY_COLORS[state.rarity]
 			label.TextColor3 = color
@@ -196,15 +237,15 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 				local hasModel = showCreature(pedestal, state)
 				orb.Transparency = if hasModel then 1 else 0
 				orb.Color = color
-				orb.Size = Vector3.new(4, 4, 4)
+				orb.Size = Vector3.new(3.4, 3.4, 3.4)
 				label.Text = Theme.CREATURE_NAMES[state.creatureId] or state.rarity
-				value.Text = `+{Format.short(incomeOf(state))}/s`
+				value.Text = `+{Format.amount(incomeOf(state) * displayedMultiplier)}/s`
 					.. (if state.mutation then " ★" else "")
 			else
 				showCreature(pedestal, nil)
 				orb.Transparency = 0.25
 				orb.Color = color
-				orb.Size = Vector3.new(2.5, 2.5, 2.5)
+				orb.Size = Vector3.new(2.8, 3.4, 2.8)
 				label.Text = state.rarity
 				value.Text = Format.duration((state.hatchAt :: number) - now)
 			end
@@ -213,7 +254,10 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 			orb.Transparency = 1
 			label.TextColor3 = Color3.new(1, 1, 1)
 			label.Text = if not profile then "" elseif unlocked then "Empty" else "Locked"
-			value.Text = ""
+			value.Text = if isNextUnlock
+				then `🔒 {Format.short(nextCost :: number)}`
+				elseif isExpansionOffer then "🔒 R$"
+				else ""
 		end
 	end
 end
@@ -390,10 +434,14 @@ function StationService.placeState(
 	end
 	local capacity = StationService.capacity(player, profile)
 	local key: string? = nil
+	local preferredNumber = if preferredSlot then tonumber(preferredSlot) else nil
 	if
 		preferredSlot
 		and not profile.pedestals[preferredSlot]
-		and tonumber(preferredSlot) :: number <= capacity
+		and preferredNumber ~= nil
+		and preferredNumber % 1 == 0
+		and preferredNumber >= 1
+		and preferredNumber <= capacity
 	then
 		key = preferredSlot
 	else
@@ -440,6 +488,7 @@ function StationService.give(
 		return "placed"
 	end
 	table.insert(profile.storage, table.clone(state))
+	StationService.refresh(player)
 	return "stored"
 end
 
@@ -490,16 +539,156 @@ function StationService.takeState(player: Player, slot: string): Types.PedestalS
 	return state
 end
 
+-- Explicit carry replacement keeps the former occupant in storage.
+function StationService.replaceSlot(
+	player: Player,
+	slot: number,
+	state: Types.PedestalState
+): boolean
+	local profile = DataService.get(player)
+	local plot = playerPlot[player]
+	if
+		not profile
+		or not plot
+		or not Creatures.BY_ID[state.creatureId]
+		or slot % 1 ~= 0
+		or slot < 1
+		or slot > StationService.capacity(player, profile)
+	then
+		return false
+	end
+	local key = tostring(slot)
+	local old = profile.pedestals[key]
+	if not old then
+		return false
+	end
+	profile.pedestals[key] = table.clone(state)
+	table.insert(profile.storage, old)
+	refreshPlot(plot, profile)
+	StationService.pushInventory(player)
+	return true
+end
+
+function StationService.pushInventory(player: Player)
+	local profile = DataService.get(player)
+	if not profile then
+		return
+	end
+	local function item(state: Types.PedestalState?): any
+		return if state
+			then {
+				creatureId = state.creatureId,
+				rarity = state.rarity,
+				mutation = state.mutation,
+				hatchAt = state.hatchAt,
+				income = incomeOf(state),
+				key = StationInventory.key(state),
+			}
+			else nil
+	end
+	local slots, storage = {}, {}
+	for slot = 1, StationService.capacity(player, profile) do
+		slots[tostring(slot)] = item(profile.pedestals[tostring(slot)])
+	end
+	for index, state in profile.storage do
+		storage[index] = item(state)
+	end
+	inventoryRemote:FireClient(
+		player,
+		{ capacity = StationService.capacity(player, profile), slots = slots, storage = storage }
+	)
+end
+
+local function inventoryAction(
+	player: Player,
+	action: unknown,
+	slot: unknown,
+	index: unknown,
+	expectedSlot: unknown,
+	expectedStored: unknown
+)
+	if not inventoryLimit:allow(player) then
+		return
+	end
+	if action == "request" then
+		StationService.pushInventory(player)
+		return
+	end
+	local profile = DataService.get(player)
+	local plot = playerPlot[player]
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not profile or not plot or not root or not humanoid or humanoid.Health <= 0 then
+		return
+	end
+	if not WorldService.isInPlot(plot, root.Position) then
+		Notifier.send(player, "station_manage_home", nil, "warning")
+		StationService.pushInventory(player)
+		return
+	end
+	if
+		typeof(slot) ~= "number"
+		or slot % 1 ~= 0
+		or slot < 1
+		or slot > StationService.capacity(player, profile)
+		or typeof(expectedSlot) ~= "string"
+	then
+		return
+	end
+	local key = tostring(slot)
+	local state = profile.pedestals[key]
+	local changed = false
+	if action == "swap" and typeof(index) == "number" and typeof(expectedStored) == "string" then
+		changed = StationInventory.exchange(
+			profile,
+			slot,
+			index,
+			expectedSlot,
+			expectedStored,
+			StationService.capacity(player, profile)
+		)
+		if changed then
+			Notifier.send(player, "station_swapped", nil, "success")
+		end
+	elseif action == "sell" and state and StationInventory.key(state) == expectedSlot then
+		local value = math.floor(incomeOf(state) * Economy.SELL_SECONDS)
+		profile.pedestals[key] = nil
+		DataService.addCoins(player, value)
+		TelemetryService.economy(player, "source", value, "Sell", state.creatureId)
+		Notifier.send(player, "station_sold", { amount = Format.short(value) }, "coins")
+		changed = true
+	end
+	if changed then
+		refreshPlot(plot, profile)
+	else
+		Notifier.send(player, "station_changed", nil, "warning")
+	end
+	StationService.pushInventory(player)
+end
+
 local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProfile)
 	-- Treadmill: AFK speed while standing on your own treadmill.
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if root then
 		local offset = root.Position - plot.treadmill.Position
-		if math.abs(offset.X) <= 4.5 and math.abs(offset.Z) <= 7.5 and offset.Y < 6 then
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		local onTreadmill = humanoid ~= nil
+			and humanoid.Health > 0
+			and math.abs(offset.X) <= 4.5
+			and math.abs(offset.Z) <= 7.5
+			and offset.Y >= 0
+			and offset.Y < 6
+		if player:GetAttribute("OnTreadmill") ~= onTreadmill then
+			player:SetAttribute("OnTreadmill", onTreadmill)
+		end
+		if onTreadmill then
 			local gain = Speed.GAIN_PER_SECOND * Speed.TREADMILL_RATE_NO_PASS
 			DataService.setSpeed(player, profile.speed + gain * SpeedService.gainMultiplier(player))
 		end
+	else
+		player:SetAttribute("OnTreadmill", false)
 	end
 
 	-- Overflow storage drains onto free pedestals.
@@ -510,7 +699,20 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 	local now = os.time()
 	profile.lastOnline = now
 	profile.playtimeTotal += Economy.INCOME_TICK_SECONDS
+	local incomeMultiplier = Income.multiplier(profile, StationService.passIncomeMultiplier(player))
+	local incomeThisTick = 0
+	local pulseAt = workspace:GetServerTimeNow()
 	for slot, state in profile.pedestals do
+		if isHatched(state, now) then
+			local amount = incomeOf(state) * incomeMultiplier * Economy.INCOME_TICK_SECONDS
+			incomeThisTick += amount
+			local pedestal = plot.pedestals[tonumber(slot) :: number]
+			if pedestal then
+				pedestal:SetAttribute("IncomePulseAmount", amount)
+				pedestal:SetAttribute("IncomePulseRarity", state.rarity)
+				pedestal:SetAttribute("IncomePulseAt", pulseAt)
+			end
+		end
 		if isHatched(state, now) and not profile.index[state.creatureId] then
 			profile.index[state.creatureId] = true
 			Notifier.send(
@@ -533,8 +735,8 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 			TelemetryService.funnel(player, "FirstHatch")
 		end
 	end
-	storedCoins[player] = (storedCoins[player] or 0)
-		+ StationService.incomePerSecond(player, profile) * Economy.INCOME_TICK_SECONDS
+	-- The displayed per-capsule payouts and banked income are the same amounts.
+	storedCoins[player] = (storedCoins[player] or 0) + incomeThisTick
 	if hasPass(player, "OfflinePlus") then
 		bank(player, plot, true) -- Auto-collect
 	end
@@ -551,6 +753,8 @@ end
 
 function StationService.init()
 	fx = Remotes.event("Fx")
+	inventoryRemote = Remotes.event("StationState")
+	Remotes.event("StationAction").OnServerEvent:Connect(inventoryAction)
 	DataService.onLoaded(assignPlot)
 	DataService.onRemoving(function(player, profile)
 		-- Bank uncollected coins so leaving never loses income.

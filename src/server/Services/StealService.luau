@@ -33,7 +33,7 @@ local lockedUntil: { [Player]: number } = {}
 local inStation: { [Player]: boolean } = {}
 local lastStealAt: { [Player]: number } = {}
 local lastVictimAt: { [Player]: { [Player]: number } } = {}
-local holdBegan: { [Player]: number } = {}
+local holdBegan: { [Player]: { prompt: ProximityPrompt, at: number } } = {}
 local chases: { [Player]: Chase } = {} -- keyed by thief
 
 local function rootOf(player: Player): BasePart?
@@ -93,7 +93,11 @@ local function rejectReason(
 		return "steal_too_far"
 	end
 	local began = holdBegan[thief]
-	if not began or os.clock() - began < Steal.PROMPT_HOLD_SECONDS - HOLD_TOLERANCE then
+	if
+		not began
+		or began.prompt.Parent ~= pedestal
+		or os.clock() - began.at < Steal.PROMPT_HOLD_SECONDS - HOLD_TOLERANCE
+	then
 		return "steal_hold"
 	end
 	if not StationService.hasFreePedestal(thief) then
@@ -159,7 +163,10 @@ local function returnToVictim(victim: Player, state: Types.PedestalState, slot: 
 	if victim.Parent ~= Players then
 		return false
 	end
-	return StationService.placeState(victim, state, slot)
+	if StationService.placeState(victim, state, slot) then
+		return true
+	end
+	return StationService.give(victim, state) ~= "failed"
 end
 
 local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: BasePart)
@@ -183,6 +190,8 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 	local began = CarryService.begin(thief, {
 		state = state,
 		fresh = false,
+		owner = victim,
+		ownerSlot = slot,
 		onLost = function(lostBy, carry)
 			-- Thief died or left: the creature goes back to its owner.
 			local chase = chases[lostBy]
@@ -348,11 +357,14 @@ local function setupPlot(plot: Plot)
 		prompt.Parent = pedestal
 		CollectionService:AddTag(prompt, "StealPrompt")
 		prompt.PromptButtonHoldBegan:Connect(function(player)
-			holdBegan[player] = os.clock()
+			holdBegan[player] = { prompt = prompt, at = os.clock() }
 		end)
 		prompt.PromptButtonHoldEnded:Connect(function(player)
+			local held = holdBegan[player]
 			task.defer(function()
-				holdBegan[player] = nil
+				if holdBegan[player] == held then
+					holdBegan[player] = nil
+				end
 			end)
 		end)
 		prompt.Triggered:Connect(function(player)
@@ -372,8 +384,23 @@ function StealService.init()
 	for _, plot in WorldService.getPlots() do
 		setupPlot(plot)
 	end
-	DataService.onRemoving(function(player)
-		-- Thief leaving mid-chase is handled by CarryService.onLost.
+	DataService.onRemoving(function(player, profile)
+		-- Thief leaving mid-chase is handled by CarryService.onLost. An owner
+		-- leaving takes the creature home: it is written back into their
+		-- profile before it saves, so nothing is lost if the thief then dies.
+		for _, thief in CarryService.carriersOf(player) do
+			local carry = CarryService.clear(thief)
+			endChase(thief, false)
+			if carry then
+				local slot = carry.ownerSlot
+				if slot and not profile.pedestals[slot] then
+					profile.pedestals[slot] = carry.state
+				else
+					table.insert(profile.storage, carry.state)
+				end
+				Notifier.send(thief, "steal_owner_left", { player = player.DisplayName }, "warning")
+			end
+		end
 		for thief, chase in chases do
 			if chase.victim == player then
 				endChase(thief, false)

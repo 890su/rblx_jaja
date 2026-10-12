@@ -11,6 +11,8 @@ local Speed = require(Shared.Config.Speed)
 local Economy = require(Shared.Config.Economy)
 local Steal = require(Shared.Config.Steal)
 local Zones = require(Shared.Config.Zones)
+local Canyons = require(Shared.Config.Canyons)
+local ArenaPatterns = require(Shared.Util.ArenaPatterns)
 local Theme = require(Shared.Theme)
 local Locale = require(Shared.Locale)
 
@@ -35,6 +37,7 @@ type Track = { root: BasePart, position: Vector3 }
 local tracked: { [Player]: Track } = {}
 local strikes: { [Player]: { number } } = {}
 local graceUntil: { [Player]: number } = {}
+local trainingMoving: { [Player]: boolean } = {}
 
 local function rootOf(player: Player): (BasePart?, Humanoid?)
 	local character = player.Character
@@ -83,6 +86,7 @@ end
 -- Call before any server-initiated teleport so it isn't flagged as cheating.
 function SpeedService.markTeleport(player: Player)
 	tracked[player] = nil
+	trainingMoving[player] = false
 	graceUntil[player] = os.clock() + TELEPORT_GRACE
 end
 
@@ -94,7 +98,29 @@ function SpeedService.apply(player: Player)
 		local carrying = player:GetAttribute("Carrying") ~= nil
 		local chaseUntil = (player:GetAttribute("ChaseUntil") :: number?) or 0
 		local chasing = chaseUntil > workspace:GetServerTimeNow()
-		humanoid.WalkSpeed = SpeedService.walkSpeedFor(profile.speed, carrying, chasing)
+		local walkSpeed = SpeedService.walkSpeedFor(profile.speed, carrying, chasing)
+		if player:GetAttribute("ArenaActive") then
+			-- Void Run: a fixed corridor pace derived from the normal speed.
+			walkSpeed =
+				ArenaPatterns.runSpeed(SpeedService.walkSpeedFor(profile.speed, false, false))
+		end
+		humanoid.WalkSpeed = walkSpeed
+		-- MovementController ramps the local WalkSpeed toward this target.
+		humanoid:SetAttribute("TargetWalkSpeed", walkSpeed)
+		local treadmill = player:GetAttribute("OnTreadmill") == true
+		local source = if treadmill
+			then "Treadmill"
+			elseif trainingMoving[player] then "Running"
+			else "Idle"
+		local rate = if treadmill
+			then Speed.TREADMILL_RATE_NO_PASS
+			elseif trainingMoving[player] then 1
+			else 0
+		player:SetAttribute("SpeedGainSource", source)
+		player:SetAttribute(
+			"SpeedGainPerSecond",
+			rate * Speed.GAIN_PER_SECOND * SpeedService.gainMultiplier(player)
+		)
 	end
 end
 
@@ -129,6 +155,9 @@ local function tickPlayer(player: Player)
 	local root, humanoid = rootOf(player)
 	if not profile or not root or not humanoid then
 		tracked[player] = nil
+		trainingMoving[player] = false
+		player:SetAttribute("SpeedGainSource", "Idle")
+		player:SetAttribute("SpeedGainPerSecond", 0)
 		return
 	end
 	local position = root.Position
@@ -136,6 +165,7 @@ local function tickPlayer(player: Player)
 	-- New character (respawn) or after a server teleport: start fresh.
 	if not previous or previous.root ~= root or (graceUntil[player] or 0) > os.clock() then
 		tracked[player] = { root = root, position = position }
+		trainingMoving[player] = false
 		SpeedService.apply(player)
 		return
 	end
@@ -159,7 +189,10 @@ local function tickPlayer(player: Player)
 		return
 	end
 	previous.position = position
-	if delta >= Speed.MIN_MOVE_STUDS_PER_TICK then
+	-- Treadmill training is awarded by StationService, never twice per tick.
+	trainingMoving[player] = delta >= Speed.MIN_MOVE_STUDS_PER_TICK
+		and player:GetAttribute("OnTreadmill") ~= true
+	if trainingMoving[player] then
 		local gain = Speed.GAIN_PER_SECOND * SpeedService.gainMultiplier(player)
 		DataService.setSpeed(player, profile.speed + gain)
 	end
@@ -182,10 +215,27 @@ local function tickPlayer(player: Player)
 end
 
 function SpeedService.init()
+	-- Keep carriers out of the new walls after the daily maze reshuffle.
+	workspace.World:GetAttributeChangedSignal("CanyonDay"):Connect(function()
+		for _, player in Players:GetPlayers() do
+			local root = rootOf(player)
+			local character = player.Character
+			if
+				root
+				and character
+				and WorldService.zoneIndexAt(root.Position) >= Canyons.FROM_ZONE
+				and math.abs(root.Position.X) > Canyons.LANE_WIDTH / 2
+			then
+				SpeedService.markTeleport(player)
+				character:PivotTo(CFrame.new(0, 3.2, root.Position.Z))
+			end
+		end
+	end)
 	Players.PlayerRemoving:Connect(function(player)
 		tracked[player] = nil
 		strikes[player] = nil
 		graceUntil[player] = nil
+		trainingMoving[player] = nil
 	end)
 end
 

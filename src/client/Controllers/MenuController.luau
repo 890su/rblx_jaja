@@ -130,6 +130,8 @@ local function refreshShop()
 		return
 	end
 	local coins = (player:GetAttribute("Coins") :: number?) or 0
+	local full = ((player:GetAttribute("StationOccupied") :: number?) or 0)
+		>= ((player:GetAttribute("StationCapacity") :: number?) or math.huge)
 	for slot, entry in cards do
 		local offer = state.offers[slot]
 		local left = state.remaining[slot] or 0
@@ -144,7 +146,11 @@ local function refreshShop()
 				then Locale.t("shop_left", { count = left })
 				else Locale.term("Sold out")
 			entry.buy.Text = Locale.term(
-				if left <= 0 then "Sold out" elseif coins < offer.price then "Too pricey" else "Buy"
+				if left <= 0
+					then "Sold out"
+					elseif coins < offer.price then "Too pricey"
+					elseif full then "Buy to storage"
+					else "Buy"
 			)
 			entry.buy.BackgroundColor3 = if left > 0 and coins >= offer.price
 				then BUTTON_COLOR
@@ -249,6 +255,7 @@ function MenuController.init()
 	local gui = UiKit.gui()
 	UiKit.sideButton(Locale.term("Shop"), Color3.fromRGB(230, 150, 40), 1, function()
 		UiKit.toggle("Shop")
+		Remotes.event("RequestShopState"):FireServer()
 		refreshShop()
 	end)
 	UiKit.sideButton(Locale.term("Rebirth"), Color3.fromRGB(160, 80, 220), 2, function()
@@ -274,8 +281,18 @@ function MenuController.start()
 		shopState = state
 		refreshShop()
 	end)
+	Remotes.event("RequestShopState"):FireServer()
 	for _, attribute in
-		{ "Coins", "Speed", "Rebirths", "NextPedestalCost", "PedestalCount", "NextTrainingCost" }
+		{
+			"Coins",
+			"Speed",
+			"Rebirths",
+			"NextPedestalCost",
+			"PedestalCount",
+			"NextTrainingCost",
+			"StationOccupied",
+			"StationCapacity",
+		}
 	do
 		player:GetAttributeChangedSignal(attribute):Connect(function()
 			if UiKit.isOpen("Shop") then

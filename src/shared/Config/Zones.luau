@@ -10,7 +10,9 @@ local ZONES: { Types.ZoneInfo } = {
 		index = 1,
 		speedGate = 0,
 		rebirthGate = 0,
-		lengthStuds = 1000,
+		-- Shorter: a newcomer at 16 studs/s crosses it in ~30 s, and it hosts
+		-- the Void Run corridor (~15 s at corridor pace).
+		lengthStuds = 500,
 		maxMeteors = 10,
 		spawnIntervalSeconds = 4,
 		weights = { Common = 80, Uncommon = 18, Rare = 2 },

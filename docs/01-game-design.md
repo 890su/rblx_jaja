@@ -39,12 +39,13 @@ Session rhythm: 3–15 min sessions anchored to Meteor Shower (15 min), shop rot
 ## 4. Systems
 
 ### 4.1 Speed
-- `Speed` stat (integer, unbounded, displayed big on HUD). +1 per second while the character is moving (server-tick, validated by server position delta). Treadmill on base: +1/s while standing on it (AFK path, 50% rate without pass).
+- `Speed` is an unbounded training stat; fractional gains are saved and the HUD rounds the displayed number. Running grants +1/s (server-validated movement); standing on the player's own treadmill grants +0.5/s before gain multipliers. Ordinary idle grants nothing; treadmill movement cannot also earn running gains.
 - Movement mapping: `WalkSpeed = 16 + 6 * sqrt(Speed)`, hard cap 400 (MVP). Tune in `Config/Speed`.
+- Carrying multiplies ordinary pace by 0.6 (up to 240 without temporary buffs); the Void Run uses a fixed corridor pace of 30% of normal WalkSpeed, clamped to 24–38. Outside the Void Run, movement ramps up over ~0.9 s and coasts to a stop over ~0.5 s (client `MovementController`; the server WalkSpeed stays authoritative). HUD separately shows the training source, gain rate and movement pace.
 - Multipliers: 2x Speed pass, rebirth bonus (+25% gain per rebirth), friend bonus (+10% per friend in server, cap +30%).
 
 ### 4.2 Track and zones
-- One long straight crater track from the base row. 5 zones × ~1,000 studs. Gates by Speed:
+- One long straight crater track from the base row. Zone 1 is 500 studs (a newcomer at 16 studs/s crosses it in ~30 s; it also hosts the Void Run); zones 2–5 are 1,000 studs each — at their gate speeds (76–400 studs/s) that is a 3–13 s run. Gates by Speed:
 | Zone | Name | Speed gate | Extra gate |
 |---|---|---|---|
 | 1 | Dust Flats | 0 | — |
@@ -78,8 +79,10 @@ Goal: make escaping and chasing a decision ("which way do I run?") without killi
 - Carrying: one meteor at a time; carrier speed ×0.6; dropping on death/reset returns it to the field for 10 s.
 
 ### 4.4 Station (base)
+Pedestal slots are cryo capsules: metal bases and supports, transparent domed chambers and rarity lighting. A large upper plate shows creature income or the hatch countdown; the lower panel shows the creature name, status and hatch progress. Locked capsules stay dim; VIP adds a restrained gold collar. Creature displays fit the chamber, while the original slot anchors keep replacement, unlock and stealing interactions intact.
+Each server income tick produces a floating Stardust amount above the corresponding capsule. Amounts include mutations, Rebirth and coin bonuses; empty and incubating capsules show no earnings. Labels rise and fade, with small offsets between slots and rendering limited to nearby capsules.
 - 8 plots per server (server size 8). Start with 3 pedestals; buy pedestals 4–8 with coins (500 / 2.5K / 10K / 60K / 250K); +2 via Station Expansion pass (10 max).
-- **Full station:** delivering a meteor that earns more than your weakest creature replaces it; the old one sells for income × 30 s (no dead end when full).
+- **Full station:** hold E at a chosen occupied pedestal to replace its creature with the carried meteor; the previous creature is kept in storage. The Station menu exchanges creatures with storage or sells a selected occupant for income × 30 s after confirmation. Shop purchases go to storage when all pedestals are full.
 - **Run Training** (coin sink): 10 levels, +10% speed gain each, cost 2K × 2.2^level.
 - Income ticks on server every 1 s into the "collector"; touch collector to bank (Auto-collect pass skips this).
 - Offline income: 25% rate, cap 12 h (pass: 50%, 24 h). Calculated on join from saved timestamp, server-side.
@@ -91,6 +94,21 @@ Goal: make escaping and chasing a decision ("which way do I run?") without killi
 - Base lock: 30 s after owner enters their station (VIP +10 s). Shield product: 15 min full lock.
 - Protections: new players protected for first 10 min of total playtime and while Rebirth 0 has < 3 creatures; per-thief cooldown 60 s; cannot steal from same victim twice in 5 min; Mythics can be stolen only from players with ≥ 4 creatures.
 - All steal logic server-authoritative (distance checks, prompt validation, rate limits).
+
+### 4.5b Void Snatchers (egg guards and PvE chase)
+Regular and shower field eggs have visible patrolling guards before pickup in all five zones: one per egg in Zone 1, two per egg from Zone 2. Pickup alerts that egg's guards; chasers per zone are 1/2/2/3/4 plus rarity extras (Epic/Legendary +1, Mythic +2), capped at 4. From Zone 3 one guard also tears open a purple portal and a **Void Hound** leaps out 0.7 s later to chase on foot, pouncing with the same telegraph (model: Creator Store "Hellhound" 857040608, scripts and helper parts removed, `Assets.VoidHound`). Zone 1 and the first encounter use a single gentle drone and no hound. Recovering a dropped egg starts a fresh encounter without accumulating previous chasers. Each drone/hound is one welded assembly (one replicated CFrame); idle guards with no player within 300 studs skip their patrol updates.
+
+The player gets 1.5 seconds after pickup before an attack can start. A guard approaches, locks an attack line and shows a yellow floor strip plus DODGE for 0.9 seconds (1.25 in Zone 1). It then dashes along that fixed line, followed by 1.4 seconds of recovery. Contact only drops the egg during the red dash; ordinary patrol, chase and warning contact are harmless. Chase speed is capped at 40 studs/s; dash speed is 65 (42 in Zone 1). Walls block attacks; server collision uses swept relative movement. Chasers give up after 30 seconds and leave upon entering a station or the Void Run. Tunables: `Config/Snatchers`.
+
+### 4.5c Void Run — top-down dodge corridor (reworked 2026-10-12)
+- **Trigger:** only eggs first picked up in Zone 3 or deeper (`OriginZone`, kept by dropped eggs so a fail cannot be laundered). Entering Zone 1 on the way home starts the run; Zone 1–2 eggs never trigger it (FTUE stays calm).
+- **Field:** the whole of Zone 1 (500 studs). Eight 70-stud lanes tile the track, one in front of each station, so nobody is snapped sideways; the runner is confined to the lane they entered. Orange start line, green finish line, "VOID RUN" signs; Zone 1 route beacons and lane edges are omitted so every visible shape in the corridor is an attack.
+- **Camera:** rises smoothly (1.4 s, smoothstep) to a straight top-down shot that fits the lane width on any aspect ratio, home at the top of the screen, following the runner with a 12-stud lead; descends behind the player (0.7 s) when the run ends. Field eggs and idle guards are hidden locally during the run.
+- **Goal:** reach the finish line (station side) with lives left. Three lives, 1.1 s invulnerability after a hit. Losing all lives knocks the egg out where the runner fell (60 s pickup window, any player can grab it); grabbing it again restarts the run from there.
+- **Attacks** (Undertale-inspired, all telegraphed in yellow first): bone walls with a gap (Papyrus/Sans), blue walls that only hurt if you move and orange walls that only hurt if you stand still, Gaster-Blaster beams across or down the lane, ground spears around your predicted position (Undyne), a closing pellet ring with one exit facing the lane centre (Flowey), side crossfire (Undyne/Muffet), a rotating sweeper bar (Asgore/Mettaton), sine fire streams (Toriel/Asriel).
+- **Difficulty:** `level = 0.12·(rarity order − 1) + 0.15·(origin zone − 3) + 0.04·min(rebirths, 10)`, plus up to +0.5 as the runner nears home (cap 1.6). Higher levels unlock advanced kinds (ring 0.15, stream/blaster 0.3, blue/orange 0.55, sweeper 0.6), shorten wave intervals (2.3 s → 0.85 s), allow more simultaneous waves (2 → 4), shorten warnings (0.9 s → 0.45 s) and add projectiles; faster runners face proportionally faster attacks.
+- **Authority:** the server schedules waves (`ArenaWave` remote), checks hits every 1/30 s with the shared pure `ArenaPatterns` math (seeded integer hash, identical on every platform), clamps the lane and owns lives and the finish. Clients only render. Tunables: `Config/Arena`.
+- Treadmill running and the egg-holding pose support both Motor6D and modern AnimationConstraint avatar joints.
 
 ### 4.6 Rebirth
 - Cost: coins `300,000 × 4^n` and Speed ≥ 5,000 × (n+1) (tuned with tools/balance_sim.py: F2P Rebirth 1 ≈ 1h40, Zone 5 ≈ 3h, a new goal every 10–20 min). Resets Speed and coins; keeps creatures and pedestals.

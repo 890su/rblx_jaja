@@ -21,6 +21,8 @@ function UiKit.gui(): ScreenGui
 		local newGui = Instance.new("ScreenGui")
 		newGui.Name = "MainUi"
 		newGui.ResetOnSpawn = false
+		newGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		newGui.DisplayOrder = 10
 		newGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 		gui = newGui
 	end
@@ -89,9 +91,10 @@ function UiKit.sideButton(
 	local b = UiKit.button(
 		side :: Frame,
 		label,
-		{ Size = UDim2.fromScale(1, 0.15), BackgroundColor3 = color, LayoutOrder = order }
+		{ Size = UDim2.fromScale(1, 0.13), BackgroundColor3 = color, LayoutOrder = order }
 	)
 	b.Activated:Connect(onClick)
+	b.Name = `Menu{order}`
 	return b
 end
 
@@ -122,6 +125,19 @@ function UiKit.panel(name: string, title: string): Frame
 	frame.BackgroundColor3 = UiKit.PANEL_COLOR
 	frame.Visible = false
 	frame.ZIndex = 5
+	-- Keep panel contents above the panel even under Global ZIndexBehavior
+	-- (the engine may report Global regardless of what we set).
+	frame.DescendantAdded:Connect(function(descendant)
+		if descendant:IsA("GuiObject") then
+			local depth = 0
+			local node: Instance? = descendant.Parent
+			while node and node ~= frame do
+				depth += 1
+				node = node.Parent
+			end
+			descendant.ZIndex = math.max(descendant.ZIndex, frame.ZIndex + 1 + depth)
+		end
+	end)
 	UiKit.corner(frame, 14)
 	local ratio = Instance.new("UIAspectRatioConstraint")
 	ratio.AspectRatio = 1.5
@@ -134,6 +150,7 @@ function UiKit.panel(name: string, title: string): Frame
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 	local close = UiKit.button(frame, "X", {
+		Name = "Close",
 		Size = UDim2.fromScale(0.07, 0.1),
 		Position = UDim2.fromScale(0.91, 0.02),
 		BackgroundColor3 = Color3.fromRGB(190, 70, 70),

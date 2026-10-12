@@ -18,6 +18,14 @@ function Format.short(value: number): string
 	return text .. SUFFIXES[tier + 1]
 end
 
+-- Preserve fractional rewards from multipliers while keeping big amounts short.
+function Format.amount(value: number): string
+	if math.abs(value) < 1000 then
+		return (string.format("%.2f", value):gsub("0+$", ""):gsub("%.$", ""))
+	end
+	return Format.short(value)
+end
+
 function Format.duration(seconds: number): string
 	local s = math.max(0, math.ceil(seconds))
 	if s >= 3600 then

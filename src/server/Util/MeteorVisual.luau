@@ -7,7 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local MeteorVisual = {}
 
-function MeteorVisual.attach(part: BasePart, welded: boolean)
+function MeteorVisual.attach(part: BasePart, welded: boolean, scale: number?)
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local template = assets and assets:FindFirstChild("Meteor")
 	if not template or not template:IsA("Model") then
@@ -15,6 +15,9 @@ function MeteorVisual.attach(part: BasePart, welded: boolean)
 	end
 	local model = template:Clone()
 	model.Name = "Mesh"
+	if scale then
+		model:ScaleTo(model:GetScale() * scale)
+	end
 	model:PivotTo(part.CFrame)
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("BasePart") then

@@ -102,9 +102,9 @@ def build_chunk(src: str, parent_expr: str, name: str) -> str | None:
     node = node_for(ROOT / src, name)
     lines = ["local parent = " + parent_expr]
     lines.append(f'local old = parent:FindFirstChild({json.dumps(name)})')
-    lines.append("if old then old:Destroy() end")
     emit(node, "root", lines, [0])
     lines.append('root:SetAttribute("SyncedBy", "mcp_sync")')
+    lines.append("if old then old:Destroy() end")
     lines.append("root.Parent = parent")
     lines.append(f'return "synced {name}"')
     return "\n".join(lines)
@@ -159,11 +159,10 @@ class Mcp:
     def studio_id(self, attempts: int = 10) -> str:
         for _ in range(attempts):
             studios = json.loads(self.tool("list_roblox_studios", {})).get("studios", [])
-            # Prefer the edit window (it carries the place name); test-server
-            # and test-client windows are listed with name = null.
-            named = [s for s in studios if s.get("name")]
-            if named or studios:
-                return (named or studios)[0]["id"]
+            if len(studios) == 1:
+                return studios[0]["id"]
+            if len(studios) > 1:
+                raise RuntimeError("Several Studios connected; sync one place at a time to avoid selecting the wrong game")
             time.sleep(1.5)
         raise RuntimeError("No Roblox Studio connected to MCP (open a place, enable Studio as MCP server)")
 
