@@ -352,9 +352,14 @@ local function tick(dt: number)
 				else
 					clampLane(player, character, root, staged.laneX)
 				end
-			elseif prep and (position.Z <= zMin - Arena.PREP_DEPTH - 6 or not onTrack) then
-				endPrep(player) -- turned back toward the crater
-			elseif prep and position.Z >= zMax - FINAL_STRETCH then
+			elseif
+				prep
+				and (
+					position.Z <= zMin - Arena.PREP_DEPTH - 6 -- turned back toward the crater
+					or position.Z >= zMax - FINAL_STRETCH
+					or not onTrack
+				)
+			then
 				endPrep(player)
 			end
 		elseif preps[player] then
