@@ -16,6 +16,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install packages
+        # ServerPackages (ProfileStore) is gitignored; Rojo and the type
+        # checker both need it.
+        run: wally install
+
       - name: Check formatting
         run: stylua --check src
 

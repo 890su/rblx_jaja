@@ -5,6 +5,7 @@
 -- per tick. Game pass effects are read from server-set Player attributes
 -- (Pass_<key>, written by MonetizationService).
 
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -27,6 +28,7 @@ local TelemetryService = require(script.Parent.TelemetryService)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local StationInventory = require(Shared.Util.StationInventory)
 local CryoCapsuleBuild = require(script.Parent.Parent.Util.CryoCapsuleBuild)
+local MeteorVisual = require(script.Parent.Parent.Util.MeteorVisual)
 
 type Plot = WorldService.Plot
 
@@ -168,6 +170,38 @@ local function showCreature(pedestal: BasePart, state: Types.PedestalState?): bo
 	return true
 end
 
+-- While an egg hatches, the capsule holds the meteor itself (same mesh as on
+-- the field, rarity aura); FeedbackController spins it slowly. nil removes it.
+local function showMeteor(pedestal: BasePart, rarity: Types.Rarity?)
+	local key = rarity or ""
+	if pedestal:GetAttribute("MeteorKey") == key then
+		return
+	end
+	pedestal:SetAttribute("MeteorKey", key)
+	local old = pedestal:FindFirstChild("HatchingMeteor")
+	if old then
+		old:Destroy()
+	end
+	if not rarity then
+		return
+	end
+	local meteor = Instance.new("Part")
+	meteor.Name = "HatchingMeteor"
+	meteor.Shape = Enum.PartType.Ball
+	meteor.Size = Vector3.new(2.6, 2.6, 2.6)
+	meteor.Material = Enum.Material.Neon
+	meteor.Color = Theme.RARITY_COLORS[rarity]
+	meteor.Anchored, meteor.CanCollide, meteor.CanQuery, meteor.CanTouch = true, false, false, false
+	local floorOffset = (pedestal:GetAttribute("DisplayFloorOffset") :: number?) or 0.65
+	meteor.CFrame = CFrame.new(pedestal.Position + Vector3.new(0, floorOffset + 2.2, 0))
+	MeteorVisual.attach(meteor, true, 0.85)
+	local glow = Instance.new("PointLight")
+	glow.Color, glow.Range, glow.Brightness = Theme.RARITY_COLORS[rarity], 9, 1.5
+	glow.Parent = meteor
+	meteor.Parent = pedestal
+	CollectionService:AddTag(meteor, "HatchingMeteor")
+end
+
 local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 	local now = os.time()
 	local owner = plotOwner[plot.index]
@@ -234,6 +268,7 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 			local color = Theme.RARITY_COLORS[state.rarity]
 			label.TextColor3 = color
 			if isHatched(state, now) then
+				showMeteor(pedestal, nil)
 				local hasModel = showCreature(pedestal, state)
 				orb.Transparency = if hasModel then 1 else 0
 				orb.Color = color
@@ -243,14 +278,14 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 					.. (if state.mutation then " ★" else "")
 			else
 				showCreature(pedestal, nil)
-				orb.Transparency = 0.25
-				orb.Color = color
-				orb.Size = Vector3.new(2.8, 3.4, 2.8)
+				showMeteor(pedestal, state.rarity)
+				orb.Transparency = 1
 				label.Text = state.rarity
 				value.Text = Format.duration((state.hatchAt :: number) - now)
 			end
 		else
 			showCreature(pedestal, nil)
+			showMeteor(pedestal, nil)
 			orb.Transparency = 1
 			label.TextColor3 = Color3.new(1, 1, 1)
 			label.Text = if not profile then "" elseif unlocked then "Empty" else "Locked"

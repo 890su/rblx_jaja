@@ -75,7 +75,7 @@ Goal: make escaping and chasing a decision ("which way do I run?") without killi
 | Epic | 60 | 20 min | 1 in 40 |
 | Legendary | 250 | 1 h | 1 in 200 |
 | Mythic | 1,200 | 8 h | 1 in 2,000 |
-- ~30 creatures in MVP (≈5 per rarity), each zone has its own pool. Mutation: Golden (2% at hatch, ×2 income). More mutations are live-ops content.
+- ~30 creatures in MVP (≈5 per rarity), each with a home zone. An egg hatches any creature of its rarity, weighted toward the pickup zone (home ×4, neighbouring zone ×2, others ×1), so a zone keeps its flavour without repeats (Common in Zone 1: 46% / 22% / 11% ×3). While hatching, the capsule shows the meteor itself (spinning, rarity aura). Mutation: Golden (2% at hatch, ×2 income). More mutations are live-ops content.
 - Carrying: one meteor at a time; carrier speed ×0.6; dropping on death/reset returns it to the field for 10 s.
 
 ### 4.4 Station (base)

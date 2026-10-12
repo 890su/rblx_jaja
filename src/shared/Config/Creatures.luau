@@ -1,7 +1,9 @@
 --!strict
 -- Creature roster v1 (GDD §4.3): 5 per rarity, each with a home zone. A meteor
--- of rarity R picked up in zone Z hatches a creature of rarity R from zone Z's
--- pool (fallback: nearest lower zone, then any). Display names live in Theme.
+-- of rarity R picked up in zone Z hatches any creature of rarity R, weighted
+-- toward zone Z's own (home 4, neighbour zone 2, others 1) so a zone keeps its
+-- flavour without every Common in zone 1 being the same creature.
+-- Display names live in Theme.
 
 local Types = require(script.Parent.Parent.Types)
 local deepFreeze = require(script.Parent.Parent.Util.deepFreeze)
@@ -75,10 +77,29 @@ local function candidates(rarity: Types.Rarity, zone: number): { Creature }
 	return any
 end
 
+local function weightOf(creature: Creature, zone: number): number
+	local distance = math.abs(creature.zone - zone)
+	return if distance == 0 then 4 elseif distance == 1 then 2 else 1
+end
+
 local function pick(rarity: Types.Rarity, zone: number, rng: Random): Creature
-	local pool = candidates(rarity, zone)
+	local pool: { Creature } = {}
+	local total = 0
+	for _, creature in LIST do
+		if creature.rarity == rarity then
+			table.insert(pool, creature)
+			total += weightOf(creature, zone)
+		end
+	end
 	assert(#pool > 0, `no creature for rarity {rarity}`)
-	return pool[rng:NextInteger(1, #pool)]
+	local roll = rng:NextNumber() * total
+	for _, creature in pool do
+		roll -= weightOf(creature, zone)
+		if roll <= 0 then
+			return creature
+		end
+	end
+	return pool[#pool]
 end
 
 export type Config = {

@@ -142,7 +142,9 @@ function Build.create(parent: Instance, position: Vector3, slot: number): BasePa
 		6.12,
 		6.36,
 		Color3.fromRGB(155, 225, 244),
-		Enum.Material.Glass
+		-- Not Enum.Material.Glass: Glass hides every semi-transparent part behind
+		-- it (the hatching meteor's aura, the interior glow).
+		Enum.Material.SmoothPlastic
 	)
 	glass.Transparency, glass.Reflectance = 0.86, 0.08
 	glass.CanCollide, glass.CanQuery, glass.CastShadow = true, true, false
@@ -152,7 +154,7 @@ function Build.create(parent: Instance, position: Vector3, slot: number): BasePa
 		CFrame.new(floor + Vector3.new(0, 8.15, 0)),
 		Vector3.new(6.12, 2.5, 6.12),
 		glass.Color,
-		Enum.Material.Glass
+		Enum.Material.SmoothPlastic
 	)
 	dome.Shape, dome.Transparency, dome.Reflectance, dome.CastShadow =
 		Enum.PartType.Ball, 0.86, 0.08, false

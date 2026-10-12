@@ -1,6 +1,7 @@
 --!strict
 -- Small readability effects:
 -- * Treadmill belt chevrons slide back-to-front so it reads as a treadmill.
+-- * Meteors hatching in cryo capsules spin and bob slowly (local only).
 -- * "+1" speed popups rise from the character whenever Speed grows, so new
 --   players see that running (or the treadmill) makes them faster.
 
@@ -77,7 +78,24 @@ function FeedbackController.start()
 	player:GetAttributeChangedSignal("Speed"):Connect(onSpeedChanged)
 
 	local offset = 0
+	local homes: { [BasePart]: CFrame } = {}
 	RunService.RenderStepped:Connect(function(dt: number)
+		local now = os.clock()
+		for _, meteor in CollectionService:GetTagged("HatchingMeteor") do
+			if meteor:IsA("BasePart") then
+				local home = homes[meteor]
+				if not home then
+					home = meteor.CFrame
+					homes[meteor] = home
+					meteor.Destroying:Connect(function()
+						homes[meteor] = nil
+					end)
+				end
+				meteor.CFrame = home
+					* CFrame.new(0, math.sin(now * 1.6) * 0.25, 0)
+					* CFrame.Angles(0, now * 0.8, 0)
+			end
+		end
 		offset = (offset + dt * BELT_SPEED) % 1
 		for _, belt in CollectionService:GetTagged("TreadmillBelt") do
 			local beltCFrame = belt:GetAttribute("BeltCFrame") :: CFrame?
