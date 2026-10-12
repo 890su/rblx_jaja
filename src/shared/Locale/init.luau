@@ -43,6 +43,7 @@ local STRINGS: { [string]: string } = {
 	station_selection = "Selected slot {slot} · {name}",
 	snatcher_chasing = "Egg guard alerted! Yellow lane = incoming dash. Step sideways!",
 	snatcher_grabbed = "Dash hit! Your egg dropped here — pick it up to retry",
+	egg_reclaim = "A drone is coming for your egg — grab it before it's flown away!",
 	guard_spotted = "A guard spotted you! Get out of its beam before the bar fills",
 	hound_summoned = "A Void Hound tore through a portal! Watch for its yellow pounce lane",
 	creature_replaced = "Replaced {old} (+{amount} Stardust) — your station got stronger!",
@@ -135,6 +136,8 @@ local STRINGS: { [string]: string } = {
 -- Fixed words and sentences shown as-is (auto-translated when displayed).
 local STATIC_TERMS: { string } = {
 	"VOID RUN",
+	"RECLAIMING",
+	"RETURNING EGG",
 	"Dodge the attacks! Yellow marks warn you.",
 	"BLUE: stand still!",
 	"ORANGE: keep moving!",

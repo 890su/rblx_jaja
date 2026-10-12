@@ -21,6 +21,7 @@ local Remotes = require(Shared.Remotes)
 local Combat = require(Shared.Util.SnatcherCombat)
 local Patterns = require(Shared.Util.ArenaPatterns)
 local Notifier = require(script.Parent.Parent.Util.Notifier)
+local Knockback = require(script.Parent.Parent.Util.Knockback)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local CarryService = require(script.Parent.CarryService)
@@ -58,6 +59,8 @@ type Drone = {
 	endpoint: Vector3,
 	previousTarget: Vector3,
 	orbit: number,
+	cargo: BasePart?, -- reclaim: the dropped egg being fetched / carried
+	haulTo: Vector3?,
 }
 
 type Carrier = { player: Player, root: BasePart, carry: CarryService.Carry, moving: boolean }
@@ -203,12 +206,14 @@ local function state(drone: Drone, phase: string)
 		elseif phase == "guard" then "EGG GUARD"
 		elseif phase == "alert" then alertBar(drone.alert)
 		elseif phase == "recover" then "RECHARGING"
+		elseif phase == "fetch" then "RECLAIMING"
+		elseif phase == "haul" then "RETURNING EGG"
 		else "CHASING"
 	drone.label.TextColor3 = color
 	if drone.indicator then
 		drone.indicator.Color = if phase == "guard"
 			then COLORS.patrol
-			elseif phase == "alert" then COLORS.alert
+			elseif phase == "alert" or phase == "fetch" or phase == "haul" then COLORS.alert
 			else COLORS.chase
 	end
 	for _, part in drone.model:GetDescendants() do
@@ -218,6 +223,10 @@ local function state(drone: Drone, phase: string)
 	end
 	drone.line.Transparency = if phase == "warning" then 0.25 elseif phase == "dash" then 0.05 else 1
 	drone.line.Color = color
+end
+
+local function isHauling(drone: Drone): boolean
+	return drone.phase == "fetch" or drone.phase == "haul"
 end
 
 local function setSpotting(drone: Drone, spotting: boolean)
@@ -313,6 +322,8 @@ local function spawn(kind: string, zone: number, position: Vector3, meteor: Base
 		endpoint = position,
 		previousTarget = position,
 		orbit = rng:NextNumber(0, math.pi * 2),
+		cargo = nil,
+		haulTo = nil,
 	}
 	model:SetAttribute("ZoneIndex", zone)
 	model:SetAttribute("Kind", kind)
@@ -474,6 +485,7 @@ local function startChase(spotter: Drone, player: Player)
 		if
 			drone.target == nil
 			and drone.kind == "drone"
+			and not isHauling(drone)
 			and (drone.position - spotter.position).Magnitude <= Config.ALARM_RADIUS
 		then
 			table.insert(helpers, drone)
@@ -509,7 +521,7 @@ local function startChase(spotter: Drone, player: Player)
 end
 
 local function beginAlert(drone: Drone, player: Player, level: number)
-	if drone.target or drone.kind ~= "drone" then
+	if drone.target or drone.kind ~= "drone" or isHauling(drone) then
 		return
 	end
 	drone.alertTarget = player
@@ -537,6 +549,11 @@ function Service.onPickup(player: Player, zone: number, _rarity: string, meteor:
 			drone.home = Vector3.new(meteor.Position.X, drone.hover, meteor.Position.Z)
 			drone.orphanUntil = os.clock() + Config.ORPHAN_SECONDS
 			unguard(drone)
+			if drone.cargo == meteor then
+				-- Snatched back from a reclaiming drone.
+				drone.cargo, drone.haulTo = nil, nil
+				state(drone, "guard")
+			end
 		end
 	end
 	-- Guards close by always hear the pickup; deep zones are louder.
@@ -706,8 +723,9 @@ local function warning(drone: Drone, root: BasePart, now: number)
 	state(drone, "warning")
 end
 
-local function knockOut(player: Player, root: BasePart, telemetry: string)
+local function knockOut(player: Player, root: BasePart, telemetry: string, from: Vector3?)
 	CarryService.drop(player, root.Position)
+	Knockback.apply(player, from)
 	fieldWaves[player] = nil
 	Notifier.send(player, "snatcher_grabbed", nil, "warning")
 	Telemetry.custom(player, telemetry)
@@ -769,7 +787,8 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 			knockOut(
 				player,
 				root,
-				if drone.kind == "hound" then "HoundCaught" else "SnatcherCaught"
+				if drone.kind == "hound" then "HoundCaught" else "SnatcherCaught",
+				from
 			)
 			despawn(index)
 			return false
@@ -877,7 +896,7 @@ local function stepAttacks(players: { Player })
 		local before = lastPoint[player] or root.Position
 		local middle = (point + Vector2.new(before.X, before.Z)) / 2
 		lastPoint[player] = root.Position
-		local hit = false
+		local hit: Vector3? = nil
 		for i = #waves, 1, -1 do
 			local wave = waves[i]
 			if now > wave.t0 + Patterns.duration(wave) then
@@ -886,7 +905,7 @@ local function stepAttacks(players: { Player })
 			end
 			for _, hazard in Patterns.sample(wave, now) do
 				if Patterns.hits(hazard, point, true) or Patterns.hits(hazard, middle, true) then
-					hit = true
+					hit = Vector3.new(hazard.position.X, root.Position.Y, hazard.position.Y)
 					break
 				end
 			end
@@ -895,11 +914,122 @@ local function stepAttacks(players: { Player })
 			end
 		end
 		if hit then
-			knockOut(player, root, "GroundAttackHit")
+			knockOut(player, root, "GroundAttackHit", hit)
 		elseif #waves == 0 then
 			fieldWaves[player] = nil
 		end
 	end
+end
+
+-- A spot on the open central lane of `zone` (canyons sit beside it).
+local function haulPoint(zone: number, hover: number): Vector3
+	local zMax = WorldService.gateZ(zone)
+	local zMin = WorldService.gateZ(zone + 1)
+	local margin = math.min(40, (zMax - zMin) / 4)
+	return Vector3.new(rng:NextNumber(-30, 30), hover, rng:NextNumber(zMin + margin, zMax - margin))
+end
+
+-- Once grabbed, the egg's mesh is welded to it so moving the egg moves all.
+local function weldCargo(meteor: BasePart)
+	for _, part in meteor:GetDescendants() do
+		if part:IsA("BasePart") and part.Anchored then
+			part.Anchored = false
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0, weld.Part1 = meteor, part
+			weld.Parent = part
+		end
+	end
+end
+
+-- Dropped egg left alone: the nearest idle guard (or a drone flying in)
+-- fetches it and carries it back to its zone, where it is guarded again.
+function Service.reclaimLater(meteor: BasePart, zone: number, dropper: Player?)
+	task.delay(Config.RECLAIM_DELAY, function()
+		if not meteor.Parent or meteor:GetAttribute("Taken") then
+			return
+		end
+		local best: Drone? = nil
+		local bestDistance = Config.RECLAIM_SEARCH_RADIUS
+		for _, drone in drones do
+			if drone.target == nil and drone.kind == "drone" and drone.phase == "guard" then
+				local distance = (drone.position - meteor.Position).Magnitude
+				if distance <= bestDistance then
+					best, bestDistance = drone, distance
+				end
+			end
+		end
+		if not best then
+			best = spawn("drone", zone, meteor.Position + Vector3.new(35, 0, 35), nil)
+		end
+		local hauler = best
+		if not hauler then
+			return
+		end
+		unguard(hauler)
+		hauler.orphanUntil = nil
+		hauler.zone = zone
+		hauler.cargo = meteor
+		hauler.haulTo = haulPoint(zone, hauler.hover)
+		hauler.alert, hauler.alertTarget = 0, nil
+		setSpotting(hauler, false)
+		-- Registered as the egg's guard: grabbing it back alerts this drone.
+		local list = guards[meteor] or {}
+		guards[meteor] = list
+		table.insert(list, hauler)
+		hauler.meteor = meteor
+		meteor:SetAttribute("ExpiresAt", math.huge)
+		state(hauler, "fetch")
+		if dropper and dropper.Parent == Players then
+			Notifier.send(dropper, "egg_reclaim", nil, "warning")
+		end
+	end)
+end
+
+-- Fetch / haul. The hauler flies (ignores walls); the egg hangs below it and
+-- keeps its pickup prompt, so a player can snatch it back on the way.
+local function stepHauler(drone: Drone, now: number, dt: number)
+	local meteor = drone.cargo
+	if not meteor or not meteor.Parent then
+		drone.cargo, drone.haulTo = nil, nil
+		drone.meteor = nil
+		drone.home = drone.position
+		drone.orphanUntil = now + Config.ORPHAN_SECONDS
+		state(drone, "guard")
+		return
+	end
+	local goal = if drone.phase == "fetch"
+		then Vector3.new(meteor.Position.X, drone.hover, meteor.Position.Z)
+		else drone.haulTo :: Vector3
+	local delta = Vector3.new(goal.X - drone.position.X, 0, goal.Z - drone.position.Z)
+	local speed = if drone.phase == "fetch"
+		then Config.RECLAIM_FLY_SPEED
+		else Config.RECLAIM_CARRY_SPEED
+	if delta.Magnitude > 0.05 then
+		drone.position += delta.Unit * math.min(speed * dt, delta.Magnitude)
+		drone.yaw = yawOf(delta)
+	end
+	if drone.phase == "fetch" then
+		if delta.Magnitude < 1.5 then
+			weldCargo(meteor)
+			state(drone, "haul")
+		end
+	else
+		meteor.CFrame = CFrame.new(drone.position - Vector3.new(0, 2.2, 0))
+		if delta.Magnitude < 1.5 then
+			-- Home: set it down as a guarded field egg again.
+			meteor.CFrame = CFrame.new(drone.position.X, FLOOR_TOP + 2, drone.position.Z)
+			meteor:SetAttribute("ExpiresAt", os.clock() + Config.RECLAIM_REST_SECONDS)
+			drone.cargo, drone.haulTo = nil, nil
+			drone.home = Vector3.new(meteor.Position.X, drone.hover, meteor.Position.Z)
+			state(drone, "guard")
+			local extra = (Config.GUARDS_BY_ZONE[drone.zone] or 1) - 1
+			for _ = 1, extra do
+				spawn("drone", drone.zone, meteor.Position + Vector3.new(-12, 0, 0), meteor)
+			end
+		end
+	end
+	local pos = drone.position + Vector3.new(0, math.sin(now * 3 + drone.orbit) * 0.25, 0)
+	place(drone, CFrame.lookAt(pos, pos + facingOf(drone.yaw)))
 end
 
 local function step(dt: number)
@@ -936,7 +1066,11 @@ local function step(dt: number)
 		if drone.target then
 			stepChaser(index, drone, now, dt)
 		else
-			stepGuard(index, drone, now, dt, carriers, positions)
+			if isHauling(drone) then
+				stepHauler(drone, now, dt)
+			else
+				stepGuard(index, drone, now, dt, carriers, positions)
+			end
 		end
 	end
 	stepAttacks(all)

@@ -66,7 +66,7 @@ local spawnMeteor: (
 	boost: number?,
 	droppedState: Types.PedestalState?,
 	originZone: number?
-) -> ()
+) -> Part
 
 local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped: boolean)
 	if CarryService.get(player) or meteor:GetAttribute("Taken") then
@@ -117,10 +117,10 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 		-- Dropped eggs remember where they came from, so re-grabbing one in
 		-- zone 1 still counts as a deep-zone egg for the Void Run.
 		originZone = (meteor:GetAttribute("OriginZone") :: number?) or zoneIndex,
-		onLost = function(_, carry, position)
+		onLost = function(lostBy, carry, position)
 			if position then
 				local dropZone = math.max(WorldService.zoneIndexAt(position), 1)
-				spawnMeteor(
+				local dropped = spawnMeteor(
 					dropZone,
 					position,
 					carry.state.rarity,
@@ -129,6 +129,8 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 					carry.state,
 					carry.originZone
 				)
+				-- After a beat a drone comes to fly the egg back to its zone.
+				SnatcherService.reclaimLater(dropped, carry.originZone or dropZone, lostBy)
 			end
 		end,
 		onDelivered = function(owner, carry)
@@ -170,7 +172,7 @@ spawnMeteor = function(
 	boost: number?,
 	droppedState: Types.PedestalState?,
 	originZone: number?
-)
+): Part
 	local meteor = makeMeteorPart(rarity)
 	meteor.Anchored = true
 	meteor.Position = position
@@ -221,14 +223,22 @@ spawnMeteor = function(
 	if not lifetime then
 		alive[zoneIndex] = (alive[zoneIndex] or 0) + 1
 	end
-	task.delay(lifetime or FIELD_LIFETIME, function()
-		if meteor.Parent then
-			if meteor:GetAttribute("Counted") then
-				alive[zoneIndex] = math.max(0, (alive[zoneIndex] or 1) - 1)
+	-- Expiry is an attribute so a reclaiming drone can extend it.
+	meteor:SetAttribute("ExpiresAt", os.clock() + (lifetime or FIELD_LIFETIME))
+	task.spawn(function()
+		while meteor.Parent do
+			local expires = (meteor:GetAttribute("ExpiresAt") :: number?) or 0
+			if os.clock() >= expires then
+				if meteor:GetAttribute("Counted") then
+					alive[zoneIndex] = math.max(0, (alive[zoneIndex] or 1) - 1)
+				end
+				meteor:Destroy()
+				return
 			end
-			meteor:Destroy()
+			task.wait(math.clamp(expires - os.clock(), 0.1, 5))
 		end
 	end)
+	return meteor
 end
 
 -- Server Luck product: multiplier on non-Common spawn weights while active.

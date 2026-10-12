@@ -65,6 +65,14 @@ local config = {
 	ATTACK_CAST_RANGE = 150, -- fast carriers outrun drones; attacks still reach
 	ATTACK_MAX_LEAD = 120, -- studs of path prediction (carry pace ~90 studs/s in zone 3)
 
+	-- Reclaim: a dropped egg left alone this long is fetched by a drone and
+	-- flown back to its zone (slowly, so it can be snatched back on the way).
+	RECLAIM_DELAY = 5,
+	RECLAIM_SEARCH_RADIUS = 150, -- idle guards this close answer; else one flies in
+	RECLAIM_FLY_SPEED = 30,
+	RECLAIM_CARRY_SPEED = 16,
+	RECLAIM_REST_SECONDS = 180, -- lifetime of the egg once it is back
+
 	-- Void Hound: from this zone, the guard that starts a chase tears open a
 	-- portal and a hound leaps out to chase on foot.
 	HOUND_FROM_ZONE = 3,

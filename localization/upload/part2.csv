@@ -1,4 +1,5 @@
 Key,Source,Context,Example
+odds_title,{name} · odds,,
 odds_total,Total: {pct} · each crate item is rolled independently,,
 pass_unlocked,{pass} unlocked!,,
 pedestal_unlock_button,Unlock pedestal {number} · {amount} Stardust,,
@@ -28,4 +29,3 @@ shower_now,Meteor Shower NOW · {time},,
 shower_started,Meteor Shower! Boosted meteors in the deep zones,,
 shower_warning,Meteor Shower in {seconds} seconds!,,
 snatcher_chasing,Egg guard alerted! Yellow lane = incoming dash. Step sideways!,,
-snatcher_grabbed,Dash hit! Your egg dropped here — pick it up to retry,,

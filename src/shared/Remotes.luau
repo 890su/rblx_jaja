@@ -16,6 +16,7 @@ local EVENT_NAMES: { string } = {
 	"StationState", -- server -> client: station inventory snapshot
 	"StationAction", -- client -> server: request / swap / sell (validated server-side)
 	"ArenaWave", -- server -> client: (wave: ArenaPatterns.Wave) for the Void Run runner
+	"Knockback", -- server -> client: (direction: Vector3, power: number) after a hit
 	"ShopBuy", -- client -> server: (slot: number)
 	"BuyPedestal", -- client -> server: ()
 	"BuyTraining", -- client -> server: ()

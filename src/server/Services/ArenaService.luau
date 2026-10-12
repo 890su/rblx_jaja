@@ -16,6 +16,7 @@ local DataService = require(script.Parent.DataService)
 local SpeedService = require(script.Parent.SpeedService)
 local WorldService = require(script.Parent.WorldService)
 local Notifier = require(script.Parent.Parent.Util.Notifier)
+local Knockback = require(script.Parent.Parent.Util.Knockback)
 local Telemetry = require(script.Parent.TelemetryService)
 
 type Run = {
@@ -93,6 +94,7 @@ local function finish(player: Player, reason: string)
 		retryUntil[player] = workspace:GetServerTimeNow() + Arena.RETRY_GRACE
 		-- The egg drops where the runner fell; grab it again to retry.
 		CarryService.drop(player, if root then root.Position else run.character:GetPivot().Position)
+		Knockback.apply(player, nil)
 		Notifier.send(player, "arena_failed", nil, "warning")
 		Telemetry.custom(player, "ArenaFailed")
 	end
