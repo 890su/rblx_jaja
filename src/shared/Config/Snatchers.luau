@@ -38,7 +38,7 @@ local config = {
 	ORPHAN_SECONDS = 25, -- guards of a taken egg keep patrolling this long
 	-- Vision: a sector on the ground in front of the guard, plus a small
 	-- all-round "hearing" circle so nobody can sneak right up behind it.
-	VISION_RANGE = 26,
+	VISION_RANGE = 52,
 	VISION_HALF_ANGLE = math.rad(50),
 	HEARING_RADIUS = 8,
 	VISION_SWEEP = 0.7, -- radians either side of the travel direction
