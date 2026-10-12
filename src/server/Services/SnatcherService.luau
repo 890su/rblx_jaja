@@ -603,6 +603,11 @@ local function patrol(drone: Drone, now: number, dt: number)
 		+ now * 0.22 * drone.spin
 		+ 2.4 * math.noise(drone.seed + 17.3, now * 0.07)
 	local goal = drone.home + Vector3.new(math.cos(angle), 0, math.sin(angle)) * radius
+	if drone.position.Y > drone.hover then
+		-- Back down after a haul was interrupted high over a wall.
+		local y = math.max(drone.hover, drone.position.Y - Config.DESCEND_SPEED * dt)
+		drone.position = Vector3.new(drone.position.X, y, drone.position.Z)
+	end
 	local delta = Vector3.new(goal.X - drone.position.X, 0, goal.Z - drone.position.Z)
 	if delta.Magnitude > 0.05 then
 		local step = delta.Unit * math.min(Config.PATROL_SPEED * dt, delta.Magnitude)
@@ -985,8 +990,26 @@ function Service.reclaimLater(meteor: BasePart, zone: number, dropper: Player?)
 	end)
 end
 
--- Fetch / haul. The hauler flies (ignores walls); the egg hangs below it and
--- keeps its pickup prompt, so a player can snatch it back on the way.
+-- Height of the tallest wall top under the next `distance` studs of a path
+-- (0 = open ground). Rays drop from above onto the wall blockers only.
+local function obstacleTop(from: Vector3, direction: Vector3, distance: number): number
+	local top = 0
+	local d = 0
+	while d <= distance do
+		local at = from + direction * d
+		local hit =
+			workspace:Raycast(Vector3.new(at.X, 150, at.Z), Vector3.new(0, -160, 0), rayParams)
+		if hit then
+			top = math.max(top, hit.Position.Y)
+		end
+		d += 4
+	end
+	return top
+end
+
+-- Fetch / haul. The hauler flies over canyon walls: it hovers and climbs in
+-- front of a wall, crosses above it, then sinks back down. The egg hangs below
+-- it and keeps its pickup prompt, so a player can snatch it back when it is low.
 local function stepHauler(drone: Drone, now: number, dt: number)
 	local meteor = drone.cargo
 	if not meteor or not meteor.Parent then
@@ -1004,18 +1027,37 @@ local function stepHauler(drone: Drone, now: number, dt: number)
 	local speed = if drone.phase == "fetch"
 		then Config.RECLAIM_FLY_SPEED
 		else Config.RECLAIM_CARRY_SPEED
-	if delta.Magnitude > 0.05 then
-		drone.position += delta.Unit * math.min(speed * dt, delta.Magnitude)
-		drone.yaw = yawOf(delta)
+	local direction = if delta.Magnitude > 0.05 then delta.Unit else Vector3.zero
+	-- Altitude: clear the tallest wall just ahead (and the hanging egg).
+	local hang = if drone.phase == "haul" then 2.2 + 1.2 else 0
+	local ahead = math.min(delta.Magnitude, Config.FLY_LOOKAHEAD)
+	local top = obstacleTop(drone.position, direction, ahead)
+	local wanted = if top > 0
+		then math.max(drone.hover, top + Config.FLY_CLEARANCE + hang)
+		else drone.hover
+	local altitude = drone.position.Y
+	if wanted > altitude then
+		altitude = math.min(wanted, altitude + Config.CLIMB_SPEED * dt)
+	else
+		altitude = math.max(wanted, altitude - Config.DESCEND_SPEED * dt)
 	end
+	local climbing = wanted - altitude > 0.5 -- not high enough yet: hold position
+	local step = if climbing or direction == Vector3.zero
+		then Vector3.zero
+		else direction * math.min(speed * dt, delta.Magnitude)
+	drone.position = Vector3.new(drone.position.X + step.X, altitude, drone.position.Z + step.Z)
+	if direction ~= Vector3.zero then
+		drone.yaw = yawOf(direction)
+	end
+	local landed = delta.Magnitude < 1.5 and altitude <= drone.hover + 0.5
 	if drone.phase == "fetch" then
-		if delta.Magnitude < 1.5 then
+		if landed then
 			weldCargo(meteor)
 			state(drone, "haul")
 		end
 	else
 		meteor.CFrame = CFrame.new(drone.position - Vector3.new(0, 2.2, 0))
-		if delta.Magnitude < 1.5 then
+		if landed then
 			-- Home: set it down as a guarded field egg again.
 			meteor.CFrame = CFrame.new(drone.position.X, FLOOR_TOP + 2, drone.position.Z)
 			meteor:SetAttribute("ExpiresAt", os.clock() + Config.RECLAIM_REST_SECONDS)

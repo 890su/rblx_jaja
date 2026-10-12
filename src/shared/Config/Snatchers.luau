@@ -72,6 +72,11 @@ local config = {
 	RECLAIM_FLY_SPEED = 30,
 	RECLAIM_CARRY_SPEED = 16,
 	RECLAIM_REST_SECONDS = 180, -- lifetime of the egg once it is back
+	-- Haulers fly over canyon walls: look this far ahead, keep this clearance.
+	FLY_LOOKAHEAD = 16,
+	FLY_CLEARANCE = 4,
+	CLIMB_SPEED = 24,
+	DESCEND_SPEED = 10,
 
 	-- Void Hound: from this zone, the guard that starts a chase tears open a
 	-- portal and a hound leaps out to chase on foot.
