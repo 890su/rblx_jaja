@@ -62,7 +62,8 @@ local config = {
 	ATTACK_KINDS = { "spears", "ring", "wall", "blaster" },
 	ATTACK_EVERY_BY_ZONE = { 0, 0, 3.2, 2.7, 2.2 }, -- seconds between casts
 	ATTACK_MAX_LEVEL = 0.6, -- keeps telegraphs >= ~0.7 s in the open field
-	ATTACK_CAST_RANGE = 45,
+	ATTACK_CAST_RANGE = 150, -- fast carriers outrun drones; attacks still reach
+	ATTACK_MAX_LEAD = 120, -- studs of path prediction (carry pace ~90 studs/s in zone 3)
 
 	-- Void Hound: from this zone, the guard that starts a chase tears open a
 	-- portal and a hound leaps out to chase on foot.

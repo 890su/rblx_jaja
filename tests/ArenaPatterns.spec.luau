@@ -175,4 +175,22 @@ for _, kind in Patterns.KINDS do
 	check(`high level reaches {kind}`, seenHigh[kind] == true)
 end
 
+-- Field waves can be turned toward the runner's heading.
+check("axis heading snaps", Patterns.axisHeading(Vector2.new(3, 1)) == Vector2.new(1, 0))
+check("axis heading default", Patterns.axisHeading(Vector2.zero) == Vector2.new(0, 1))
+check("warn time matches level", Patterns.warnTimeFor(0) == 0.9 and Patterns.warnTimeFor(5) == 0.45)
+for seed = 1, 50 do
+	local plain = wave("wall", seed, 0.3)
+	local same = wave("wall", seed, 0.3)
+	same.heading = Vector2.new(0, 1)
+	local a, b = Patterns.sample(plain, plain.t0 + 1), Patterns.sample(same, same.t0 + 1)
+	check("+Z heading is identity", #a == #b and a[1].position == b[1].position)
+	local turned = wave("wall", seed, 0.3)
+	turned.heading = Vector2.new(1, 0)
+	for _, hazard in Patterns.sample(turned, turned.t0 + 1) do
+		local size = hazard.size :: Vector2
+		-- A wall ahead along +X spans Z (thin along X) and sits at x > pivot.
+		check("turned wall is across the path", size.X < size.Y and hazard.position.X > turned.x)
+	end
+end
 return `PASS {passed}`

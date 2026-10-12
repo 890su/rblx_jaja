@@ -834,27 +834,33 @@ local function stepAttacks(players: { Player })
 				Patterns.level(Rarity.INFO[carry.state.rarity].order, math.max(zone, 3), 0),
 				Config.ATTACK_MAX_LEVEL
 			)
-			local anchor = Patterns.anchor(kind)
+			-- Aim where the runner will be when the telegraph ends, and turn
+			-- the pattern so its "forward" follows their direction of travel;
+			-- otherwise running straight leaves every attack behind.
 			local position = root.Position
-			local x, z = position.X, position.Z + 30 -- "lane": ahead, toward home (+Z)
-			if anchor == "player" then
-				z = position.Z
-			elseif anchor == "predict" then
-				local velocity = root.AssemblyLinearVelocity
-				x, z = position.X + velocity.X * 0.7, position.Z + velocity.Z * 0.7
+			local velocity = root.AssemblyLinearVelocity
+			local flat = Vector2.new(velocity.X, velocity.Z)
+			local moving = flat.Magnitude > 4
+			local lead = 0.25 + Patterns.warnTimeFor(level) + 0.1
+			local ahead = if moving then flat * lead else Vector2.zero
+			if ahead.Magnitude > Config.ATTACK_MAX_LEAD then
+				ahead = ahead.Unit * Config.ATTACK_MAX_LEAD
 			end
+			local target = Vector2.new(position.X, position.Z) + ahead
+			local heading = Patterns.axisHeading(if moving then flat else Vector2.new(0, 1))
 			local id = (nextWaveId[player] or 1_000_000) + 1
 			nextWaveId[player] = id
 			local wave: Patterns.Wave = {
 				id = id,
 				kind = kind,
 				t0 = now + 0.25,
-				x = x,
-				z = z,
-				laneX = position.X,
+				x = target.X,
+				z = target.Y,
+				laneX = target.X,
 				seed = rng:NextInteger(1, 1_000_000),
 				level = level,
 				speed = Patterns.attackSpeed(level, 24),
+				heading = heading,
 			}
 			waves = waves or {}
 			table.insert(waves :: { Patterns.Wave }, wave)

@@ -17,6 +17,10 @@ export type Wave = {
 	seed: number, -- integer 1..1e6
 	level: number, -- effective difficulty when spawned
 	speed: number, -- attack speed multiplier
+	-- Open-field waves: the pattern's "forward" (+Z, toward which the player
+	-- runs) is turned to this axis-aligned world direction around (x, z).
+	-- nil in the Void Run, where forward is always +Z.
+	heading: Vector2?,
 }
 
 export type Hazard = {
@@ -45,6 +49,49 @@ Patterns.rand = rand
 
 local function warnTime(wave: Wave): number
 	return math.max(0.45, 0.9 - 0.3 * wave.level)
+end
+
+-- Telegraph length for a wave of this level (servers aim attacks where the
+-- runner will be once it ends).
+function Patterns.warnTimeFor(level: number): number
+	return math.max(0.45, 0.9 - 0.3 * level)
+end
+
+-- Snap a horizontal direction to the nearest world axis (Vector2 = X, Z).
+function Patterns.axisHeading(direction: Vector2): Vector2
+	if direction.Magnitude < 1e-3 then
+		return Vector2.new(0, 1)
+	end
+	if math.abs(direction.X) > math.abs(direction.Y) then
+		return Vector2.new(if direction.X > 0 then 1 else -1, 0)
+	end
+	return Vector2.new(0, if direction.Y > 0 then 1 else -1)
+end
+
+-- Turn hazards built around (wave.x, wave.z) so local +Z points along
+-- `heading` (axis-aligned, so rectangles stay axis-aligned for hit checks).
+local function orient(out: { Hazard }, wave: Wave)
+	local f = wave.heading :: Vector2
+	if f.X == 0 and f.Y == 1 then
+		return
+	end
+	local r = Vector2.new(f.Y, -f.X)
+	local pivot = Vector2.new(wave.x, wave.z)
+	local function turn(p: Vector2): Vector2
+		local d = p - pivot
+		return pivot + r * d.X + f * d.Y
+	end
+	local sideways = math.abs(f.X) > 0.5
+	for _, hazard in out do
+		hazard.position = turn(hazard.position)
+		if hazard.finish then
+			hazard.finish = turn(hazard.finish :: Vector2)
+		end
+		if hazard.size and sideways then
+			local size = hazard.size :: Vector2
+			hazard.size = Vector2.new(size.Y, size.X)
+		end
+	end
 end
 
 local function circle(
@@ -418,6 +465,9 @@ function Patterns.sample(wave: Wave, now: number): { Hazard }
 	local builder = BUILDERS[wave.kind]
 	if builder then
 		builder(out, wave, age, warnTime(wave))
+	end
+	if wave.heading then
+		orient(out, wave)
 	end
 	return out
 end
