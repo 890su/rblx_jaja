@@ -72,10 +72,12 @@ local function step(moveAction: InputAction?, dt: number)
 		end
 		input = flat(camera.CFrame.RightVector) * raw.X - forward * raw.Z
 	end
-	if player:GetAttribute("ArenaActive") then
-		-- In the dodge arena there is no coasting or turn penalty.
-		coastUntil, speed, lastDirection = 0, 0, Vector3.zero
-		humanoid.WalkSpeed = target
+	if player:GetAttribute("ArenaActive") or player:GetAttribute("ArenaPrep") then
+		-- Void Run (and its staging strip): no coasting or turn penalty. A
+		-- faster runner eases down to corridor pace instead of snapping to it.
+		coastUntil, lastDirection = 0, Vector3.zero
+		speed = math.max(target, speed - math.max(MIN_BRAKE, speed / BRAKE_TIME) * dt)
+		humanoid.WalkSpeed = speed
 		if moveAction or controls then
 			humanoid:Move(input, false)
 		end

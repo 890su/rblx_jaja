@@ -152,6 +152,13 @@ local function finishRestore()
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	camera.CameraSubject = if view.subject and view.subject.Parent then view.subject else humanoid
+	-- The default camera cannot start from a straight-down view (its pitch
+	-- clamp errors), e.g. after dying mid-run: tilt it behind the body first.
+	if math.abs(camera.CFrame.LookVector.Y) > 0.95 then
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local at = if root then root.Position else camera.Focus.Position
+		camera.CFrame = CFrame.lookAt(at + Vector3.new(0, 9, -16), at + Vector3.new(0, 2, 0))
+	end
 	camera.CameraType = view.cameraType
 	for gui, enabled in view.guis do
 		if gui.Parent then
@@ -218,13 +225,16 @@ local function enter()
 	for side = -1, 1, 2 do
 		local wall = visual("LaneWall", world)
 		wall.Transparency, wall.CanCollide = 1, true
-		wall.Size = Vector3.new(1, 16, zMax - zMin + 40)
+		-- Walls start before the staging strip so the lane is locked early.
+		local from, to = zMin - Arena.PREP_DEPTH - 12, zMax + 20
+		wall.Size = Vector3.new(1, 16, to - from)
 		-- Inner face at HALF + 1: the body (about 1 stud wide) stops near HALF.
-		wall.Position = Vector3.new(laneX + side * (HALF + 1.5), 7, (zMax + zMin) / 2)
+		wall.Position = Vector3.new(laneX + side * (HALF + 1.5), 7, (from + to) / 2)
 		local glow = visual("LaneGlow", world)
 		glow.Color, glow.Transparency = Color3.fromRGB(150, 120, 255), 0.2
-		glow.Size = Vector3.new(0.5, 0.2, zMax - zMin)
-		glow.Position = Vector3.new(laneX + side * (HALF + 1), 0.4, (zMax + zMin) / 2)
+		local glowFrom = zMin - Arena.PREP_DEPTH
+		glow.Size = Vector3.new(0.5, 0.2, zMax - glowFrom)
+		glow.Position = Vector3.new(laneX + side * (HALF + 1), 0.4, (zMax + glowFrom) / 2)
 	end
 	local character = player.Character
 	if character then
@@ -428,11 +438,19 @@ local function render(dt: number)
 	drawHazards(now, world)
 
 	local lives = (player:GetAttribute("ArenaLives") :: number?) or Arena.LIVES
-	status.Text = Locale.t("arena_status", {
-		hearts = string.rep("♥", math.max(0, lives))
-			.. string.rep("♡", math.max(0, Arena.LIVES - lives)),
-		meters = math.max(0, math.floor(zMax - root.Position.Z)),
-	})
+	if player:GetAttribute("ArenaActive") == true then
+		status.Text = Locale.t("arena_status", {
+			hearts = string.rep("♥", math.max(0, lives))
+				.. string.rep("♡", math.max(0, Arena.LIVES - lives)),
+			meters = math.max(0, math.floor(zMax - root.Position.Z)),
+		})
+	else
+		-- Staging strip: nothing attacks yet.
+		status.Text = Locale.t("arena_prep", {
+			meters = math.max(0, math.floor(zMin - root.Position.Z)),
+		})
+		hint.Text = Locale.term("Stay in your lane. Attacks start at the orange line!")
+	end
 	progress.Size =
 		UDim2.fromScale(math.clamp((root.Position.Z - zMin) / math.max(1, zMax - zMin), 0, 1), 1)
 	local immune = (player:GetAttribute("ArenaIFramesUntil") :: number?) or 0
@@ -492,13 +510,26 @@ function ArenaController.start()
 			table.insert(waves, wave)
 		end
 	end)
-	player:GetAttributeChangedSignal("ArenaActive"):Connect(function()
-		if player:GetAttribute("ArenaActive") then
+	-- Staging (ArenaPrep) and the run (ArenaActive) share one overhead view.
+	-- The server flips one off right after the other on; a short grace keeps
+	-- that hand-over from dropping and re-raising the camera.
+	local function wanted(): boolean
+		return player:GetAttribute("ArenaActive") == true
+			or player:GetAttribute("ArenaPrep") == true
+	end
+	local function changed()
+		if wanted() then
 			enter()
 		else
-			exit()
+			task.delay(0.2, function()
+				if not wanted() then
+					exit()
+				end
+			end)
 		end
-	end)
+	end
+	player:GetAttributeChangedSignal("ArenaActive"):Connect(changed)
+	player:GetAttributeChangedSignal("ArenaPrep"):Connect(changed)
 	-- Losing the egg ends any ground attacks aimed at us.
 	player:GetAttributeChangedSignal("Carrying"):Connect(function()
 		if player:GetAttribute("Carrying") == nil and mode == "off" then

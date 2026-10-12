@@ -34,6 +34,10 @@ local PLOT_PITCH = PLOT_SIZE + PLOT_GAP
 local PLOT_Z = 45 -- plot center Z
 local FLOOR_TOP = 0.2 -- slightly above the default Baseplate to avoid z-fighting
 local WALL_HEIGHT = 80
+-- Invisible walls around the whole playable area: tall enough that no jump,
+-- knockback or fling clears them (SpeedService also pulls strays back in).
+local BOUNDARY_HEIGHT = 300
+local DECK_BACK_Z = PLOT_Z + (PLOT_SIZE + 30) / 2 -- far edge of the station deck
 local PEDESTAL_SLOTS = Economy.PEDESTALS_MAX_COINS + Economy.PEDESTALS_EXPANSION_PASS
 
 local WorldService = {}
@@ -465,20 +469,38 @@ local function buildTrack(parent: Instance)
 		for i, zone in Zones.ZONES do
 			part({
 				Name = "SideWall",
-				Size = Vector3.new(2, WALL_HEIGHT, zone.lengthStuds),
+				Size = Vector3.new(2, BOUNDARY_HEIGHT, zone.lengthStuds),
 				Position = Vector3.new(
 					side * (trackHalfWidth + 1),
-					WALL_HEIGHT / 2,
+					BOUNDARY_HEIGHT / 2,
 					zoneStartZ[i] - zone.lengthStuds / 2
 				),
 				Transparency = 1,
 			}, folder)
 		end
+		-- The station deck is closed off too (it used to be open at the sides
+		-- and back, so players could walk around the outside of the track).
+		part({
+			Name = "StationWall",
+			Size = Vector3.new(2, BOUNDARY_HEIGHT, DECK_BACK_Z + 2),
+			Position = Vector3.new(
+				side * (trackHalfWidth + 1),
+				BOUNDARY_HEIGHT / 2,
+				(DECK_BACK_Z + 2) / 2
+			),
+			Transparency = 1,
+		}, folder)
 	end
 	part({
+		Name = "StationBackWall",
+		Size = Vector3.new(trackHalfWidth * 2 + 4, BOUNDARY_HEIGHT, 2),
+		Position = Vector3.new(0, BOUNDARY_HEIGHT / 2, DECK_BACK_Z + 1),
+		Transparency = 1,
+	}, folder)
+	part({
 		Name = "EndWall",
-		Size = Vector3.new(trackHalfWidth * 2, WALL_HEIGHT, 2),
-		Position = Vector3.new(0, WALL_HEIGHT / 2, z - 1),
+		Size = Vector3.new(trackHalfWidth * 2, BOUNDARY_HEIGHT, 2),
+		Position = Vector3.new(0, BOUNDARY_HEIGHT / 2, z - 1),
 		Transparency = 1,
 	}, folder)
 
@@ -737,6 +759,11 @@ function WorldService.zoneIndexAt(position: Vector3): number
 		end
 	end
 	return #Zones.ZONES
+end
+
+-- The walled playable area (XZ): stations deck + the whole track.
+function WorldService.playBounds(): (number, number, number, number)
+	return -trackHalfWidth, trackHalfWidth, zoneStartZ[#Zones.ZONES + 1], DECK_BACK_Z
 end
 
 -- Z of the gate at the start of zone i (the boundary with zone i-1).

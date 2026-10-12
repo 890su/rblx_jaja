@@ -65,6 +65,13 @@ local config = {
 	ATTACK_CAST_RANGE = 150, -- fast carriers outrun drones; attacks still reach
 	ATTACK_MAX_LEAD = 120, -- studs of path prediction (carry pace ~90 studs/s in zone 3)
 
+	-- After knocking an egg out, chasers circle it (escorting a hauler too).
+	-- Whoever grabs it back is chased at once; otherwise they give up.
+	REGROUP_SECONDS = 25,
+	REGROUP_RADIUS = 10,
+	REGROUP_SPEED = 26,
+	RESUME_GRACE = 0.8, -- seconds before a resumed chaser may attack
+
 	-- Reclaim: a dropped egg left alone this long is fetched by a drone and
 	-- flown back to its zone (slowly, so it can be snatched back on the way).
 	RECLAIM_DELAY = 5,

@@ -21,6 +21,7 @@ local Theme = require(script.Parent.Theme)
 export type Args = { [string]: any }
 
 local STRINGS: { [string]: string } = {
+	arena_prep = "Void Run in {meters} m — get ready!",
 	arena_status = "{hearts}  ·  {meters} m to home",
 	arena_cleared = "Void Run cleared! Your egg made it home",
 	arena_failed = "Knocked out! Your egg dropped here — grab it and run again",
@@ -137,9 +138,11 @@ local STRINGS: { [string]: string } = {
 local STATIC_TERMS: { string } = {
 	"VOID RUN",
 	"RECLAIMING",
+	"HUNTING",
 	"RETURNING EGG",
 	"Dodge the attacks! Yellow marks warn you.",
 	"BLUE: stand still!",
+	"Stay in your lane. Attacks start at the orange line!",
 	"ORANGE: keep moving!",
 	"Meteor",
 	"Station",

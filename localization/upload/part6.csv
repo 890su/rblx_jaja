@@ -1,4 +1,7 @@
 Key,Source,Context,Example
+,Select a creature from storage,,
+,Storage is empty,,
+,Swap selected creature,,
 ,Select a slot first,,
 ,Station slots,,
 ,Storage,,
@@ -26,6 +29,3 @@ Key,Source,Context,Example
 ,Locked,,
 ,Collect,,
 ,TREADMILL · stand here for Speed,,
-,Come back tomorrow!,,
-,Resets Speed and Stardust. Creatures stay.,,
-,Run onto the track! Your Speed grows every second,,

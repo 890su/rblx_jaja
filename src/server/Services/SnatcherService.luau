@@ -60,6 +60,7 @@ type Drone = {
 	previousTarget: Vector3,
 	orbit: number,
 	cargo: BasePart?, -- reclaim: the dropped egg being fetched / carried
+	waitMeteor: BasePart?, -- regroup: the knocked-out egg this chaser hovers over
 	haulTo: Vector3?,
 }
 
@@ -206,6 +207,7 @@ local function state(drone: Drone, phase: string)
 		elseif phase == "guard" then "EGG GUARD"
 		elseif phase == "alert" then alertBar(drone.alert)
 		elseif phase == "recover" then "RECHARGING"
+		elseif phase == "regroup" then "HUNTING"
 		elseif phase == "fetch" then "RECLAIMING"
 		elseif phase == "haul" then "RETURNING EGG"
 		else "CHASING"
@@ -324,6 +326,7 @@ local function spawn(kind: string, zone: number, position: Vector3, meteor: Base
 		orbit = rng:NextNumber(0, math.pi * 2),
 		cargo = nil,
 		haulTo = nil,
+		waitMeteor = nil,
 	}
 	model:SetAttribute("ZoneIndex", zone)
 	model:SetAttribute("Kind", kind)
@@ -543,6 +546,17 @@ function Service.onPickup(player: Player, zone: number, _rarity: string, meteor:
 	if not root then
 		return
 	end
+	-- A knocked-out egg grabbed back: its chasers (and hound) resume at once,
+	-- now after whoever holds it.
+	local resumed = false
+	for _, drone in drones do
+		if drone.waitMeteor == meteor then
+			drone.waitMeteor = nil
+			activate(drone, player, drone.factor, 0)
+			drone.nextAttack = os.clock() + Config.RESUME_GRACE
+			resumed = true
+		end
+	end
 	local list = guards[meteor]
 	if list then
 		for _, drone in table.clone(list) do
@@ -550,11 +564,17 @@ function Service.onPickup(player: Player, zone: number, _rarity: string, meteor:
 			drone.orphanUntil = os.clock() + Config.ORPHAN_SECONDS
 			unguard(drone)
 			if drone.cargo == meteor then
-				-- Snatched back from a reclaiming drone.
+				-- Snatched back from a reclaiming drone: it gives chase.
 				drone.cargo, drone.haulTo = nil, nil
-				state(drone, "guard")
+				activate(drone, player, Config.SPEED_FACTOR, 0)
+				drone.nextAttack = os.clock() + Config.RESUME_GRACE
+				resumed = true
 			end
 		end
+	end
+	if resumed then
+		nextCast[player] = workspace:GetServerTimeNow() + Config.RESUME_GRACE + 0.7
+		Notifier.send(player, "snatcher_chasing", nil, "warning")
 	end
 	-- Guards close by always hear the pickup; deep zones are louder.
 	local radius = if zone >= Config.NOISY_FROM_ZONE
@@ -737,14 +757,47 @@ local function knockOut(player: Player, root: BasePart, telemetry: string, from:
 end
 
 -- Chase behaviour (dash cycle) for one drone. Returns false if despawned.
+-- Circle the knocked-out egg (on the ground, or under a hauling drone) until
+-- someone grabs it back (see onPickup) or the window runs out.
+local function stepRegroup(index: number, drone: Drone, now: number, dt: number): boolean
+	local meteor = drone.waitMeteor :: BasePart
+	if not meteor.Parent or now - drone.bornAt > Config.REGROUP_SECONDS then
+		drone.waitMeteor, drone.target, drone.carry = nil, nil, nil
+		drone.model:SetAttribute("TargetUserId", nil)
+		if drone.kind == "hound" then
+			despawn(index)
+			return false
+		end
+		drone.home = Vector3.new(drone.position.X, drone.hover, drone.position.Z)
+		drone.orphanUntil = now + Config.ORPHAN_SECONDS
+		state(drone, "guard")
+		return true
+	end
+	local angle = now * 1.3 + drone.orbit
+	local goal = Vector3.new(meteor.Position.X, drone.hover, meteor.Position.Z)
+		+ Vector3.new(math.cos(angle), 0, math.sin(angle)) * Config.REGROUP_RADIUS
+	local delta = goal - drone.position
+	if delta.Magnitude > 0.05 then
+		drone.position += delta.Unit * math.min(Config.REGROUP_SPEED * dt, delta.Magnitude)
+	end
+	local facing = flatUnit(meteor.Position - drone.position)
+	drone.yaw = yawOf(facing)
+	local pos = drone.position + Vector3.new(0, math.sin(now * 3 + drone.orbit) * 0.25, 0)
+	place(drone, CFrame.lookAt(pos, pos + facing))
+	return true
+end
+
 local function stepChaser(index: number, drone: Drone, now: number, dt: number): boolean
+	if drone.waitMeteor then
+		return stepRegroup(index, drone, now, dt)
+	end
 	local player = drone.target :: Player
 	local root = rootOf(player)
 	if
 		player.Parent ~= Players
 		or not root
 		or CarryService.get(player) ~= drone.carry
-		or player:GetAttribute("ArenaActive") == true
+		or (player:GetAttribute("ArenaActive") == true or player:GetAttribute("ArenaPrep") == true)
 		or now - drone.bornAt > Config.GIVE_UP_SECONDS
 		or WorldService.zoneIndexAt(root.Position) == 0
 	then
@@ -795,8 +848,7 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 				if drone.kind == "hound" then "HoundCaught" else "SnatcherCaught",
 				from
 			)
-			despawn(index)
-			return false
+			return true -- the drop put this chaser into regroup (see reclaimLater)
 		end
 		if (drone.endpoint - drone.position).Magnitude < 0.1 or move.Magnitude < 0.01 then
 			drone.phaseUntil = now + Config.RECOVERY_SECONDS
@@ -828,7 +880,12 @@ local function stepAttacks(players: { Player })
 	for _, player in players do
 		local root = rootOf(player)
 		local waves = fieldWaves[player]
-		if not root or not CarryService.get(player) or player:GetAttribute("ArenaActive") then
+		if
+			not root
+			or not CarryService.get(player)
+			or player:GetAttribute("ArenaActive")
+			or player:GetAttribute("ArenaPrep")
+		then
 			fieldWaves[player] = nil
 			continue
 		end
@@ -949,6 +1006,18 @@ end
 -- Dropped egg left alone: the nearest idle guard (or a drone flying in)
 -- fetches it and carries it back to its zone, where it is guarded again.
 function Service.reclaimLater(meteor: BasePart, zone: number, dropper: Player?)
+	-- The dropper's chasers keep the hunt alive over the egg itself.
+	if dropper then
+		local now = os.clock()
+		for _, drone in drones do
+			if drone.target == dropper and drone.waitMeteor == nil then
+				drone.waitMeteor, drone.carry = meteor, nil
+				drone.bornAt = now
+				drone.line.Transparency = 1
+				state(drone, "regroup")
+			end
+		end
+	end
 	task.delay(Config.RECLAIM_DELAY, function()
 		if not meteor.Parent or meteor:GetAttribute("Taken") then
 			return
@@ -1088,6 +1157,7 @@ local function step(dt: number)
 				carry
 				and carry.fresh
 				and player:GetAttribute("ArenaActive") ~= true
+				and player:GetAttribute("ArenaPrep") ~= true
 				and WorldService.zoneIndexAt(root.Position) > 0
 			then
 				local before = lastPoint[player] or root.Position

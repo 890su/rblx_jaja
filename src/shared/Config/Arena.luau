@@ -5,6 +5,9 @@ local deepFreeze = require(script.Parent.Parent.Util.deepFreeze)
 return deepFreeze({
 	FROM_ORIGIN_ZONE = 3, -- eggs picked up in this zone or deeper
 	FIELD_ZONE = 1, -- the corridor spans this whole zone
+	-- Staging strip at the end of the previous zone: the camera rises, the
+	-- lane locks and the pace eases down here, before any attack starts.
+	PREP_DEPTH = 70,
 	LANE_WIDTH = 70, -- = plot pitch: eight lanes tile the track, no snapping
 	EDGE_MARGIN = 2.5,
 	LIVES = 3,
@@ -18,7 +21,7 @@ return deepFreeze({
 	SERVER_TICK = 1 / 30,
 	LEAD_TIME = 0.25, -- waves start this far in the future (latency cushion)
 	FIRST_WAVE_DELAY = 1.6, -- camera rise before the first attack
-	AHEAD = 30, -- wave anchor distance in front of the player (toward home)
+	MAX_LEAD = 60, -- studs of path prediction for wave anchors
 	MAX_LEVEL = 1.6,
 	RETRY_GRACE = 2,
 	-- Client camera

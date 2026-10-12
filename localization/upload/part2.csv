@@ -1,4 +1,5 @@
 Key,Source,Context,Example
+odds_buy,Buy · R$ {price},,
 odds_title,{name} · odds,,
 odds_total,Total: {pct} · each crate item is rolled independently,,
 pass_unlocked,{pass} unlocked!,,
@@ -28,4 +29,3 @@ shower_in,Meteor Shower in {time},,
 shower_now,Meteor Shower NOW · {time},,
 shower_started,Meteor Shower! Boosted meteors in the deep zones,,
 shower_warning,Meteor Shower in {seconds} seconds!,,
-snatcher_chasing,Egg guard alerted! Yellow lane = incoming dash. Step sideways!,,

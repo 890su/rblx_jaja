@@ -99,7 +99,7 @@ function SpeedService.apply(player: Player)
 		local chaseUntil = (player:GetAttribute("ChaseUntil") :: number?) or 0
 		local chasing = chaseUntil > workspace:GetServerTimeNow()
 		local walkSpeed = SpeedService.walkSpeedFor(profile.speed, carrying, chasing)
-		if player:GetAttribute("ArenaActive") then
+		if player:GetAttribute("ArenaActive") or player:GetAttribute("ArenaPrep") then
 			-- Void Run: a fixed corridor pace derived from the normal speed.
 			walkSpeed =
 				ArenaPatterns.runSpeed(SpeedService.walkSpeedFor(profile.speed, false, false))
@@ -150,6 +150,37 @@ local function pushBehindGate(player: Player, root: BasePart, zoneIndex: number)
 	)
 end
 
+-- Safety net behind the boundary walls: anyone outside the playable area or
+-- fallen through the floor is put back (home if they fell or flew off).
+local function keepInBounds(player: Player, root: BasePart): boolean
+	local minX, maxX, minZ, maxZ = WorldService.playBounds()
+	local p = root.Position
+	local margin = 3
+	local outside = p.X < minX - margin
+		or p.X > maxX + margin
+		or p.Z < minZ - margin
+		or p.Z > maxZ + margin
+	local lost = p.Y < -15 or p.Y > 350
+	if not outside and not lost then
+		return false
+	end
+	local target: Vector3
+	local home = player:GetAttribute("HomePosition") :: Vector3?
+	if lost and home then
+		target = home + Vector3.new(0, 4, 0)
+	else
+		target = Vector3.new(
+			math.clamp(p.X, minX + 4, maxX - 4),
+			math.max(p.Y, 4),
+			math.clamp(p.Z, minZ + 4, maxZ - 4)
+		)
+	end
+	SpeedService.markTeleport(player)
+	root.AssemblyLinearVelocity = Vector3.zero;
+	(player.Character :: Model):PivotTo(CFrame.new(target) * root.CFrame.Rotation)
+	return true
+end
+
 local function tickPlayer(player: Player)
 	local profile = DataService.get(player)
 	local root, humanoid = rootOf(player)
@@ -158,6 +189,9 @@ local function tickPlayer(player: Player)
 		trainingMoving[player] = false
 		player:SetAttribute("SpeedGainSource", "Idle")
 		player:SetAttribute("SpeedGainPerSecond", 0)
+		return
+	end
+	if keepInBounds(player, root) then
 		return
 	end
 	local position = root.Position

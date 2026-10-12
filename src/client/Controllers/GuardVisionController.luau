@@ -1,9 +1,13 @@
 --!strict
--- Guards' vision drawn on the ground, locally, from each guard's pivot (the
--- server only replicates the drone's CFrame and State/Spotting attributes):
--- a sector in front (VISION_RANGE, ±VISION_HALF_ANGLE) and a faint hearing
--- circle around it. Blue while patrolling, red while a carrier is seen,
--- yellow while the guard is searching; hidden during a chase and the Void Run.
+-- Guards' vision, drawn locally from each guard's pivot (the server only
+-- replicates the drone's CFrame and State/Spotting attributes):
+-- * a light cone in haze: camera-facing Beam sheets fanning from the drone's
+--   eye to the far edge of its vision sector, dense at the eye, fading out;
+-- * a bright laser line along the sector's far edge on the ground;
+-- * a faint ground fill of the sector and of the hearing circle.
+-- Blue while patrolling, red while a carrier is seen, yellow while searching;
+-- hidden during a chase and the Void Run. Beams are GPU-cheap: per frame only
+-- attachment positions move, colours change only when the state does.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -22,8 +26,22 @@ local COLORS = {
 	spotting = Color3.fromRGB(255, 55, 75),
 	search = Color3.fromRGB(255, 205, 65),
 }
+-- Haze: denser near the eye, almost gone at the ground.
+local SHEET_TRANSPARENCY = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0.55),
+	NumberSequenceKeypoint.new(0.6, 0.82),
+	NumberSequenceKeypoint.new(1, 0.93),
+})
 
-type View = { wedges: { WedgePart }, ring: Part }
+type View = {
+	wedges: { WedgePart },
+	ring: Part,
+	eye: Attachment,
+	edge: { Attachment }, -- SLICES + 1 points along the far arc
+	mids: { Attachment }, -- slice midpoints on the arc (sheet ends)
+	beams: { Beam },
+	color: Color3?,
+}
 
 local GuardVisionController = {}
 
@@ -35,12 +53,30 @@ local function newWedge(): WedgePart
 	wedge.Anchored, wedge.CanCollide, wedge.CanQuery, wedge.CanTouch = true, false, false, false
 	wedge.Material = Enum.Material.Neon
 	wedge.CastShadow = false
-	wedge.Transparency = 0.62
+	wedge.Transparency = 0.8
 	wedge.Parent = folder
 	return wedge
 end
 
-local function newView(): View
+local function groundAttachment(): Attachment
+	local attachment = Instance.new("Attachment")
+	attachment.Parent = workspace.Terrain
+	return attachment
+end
+
+local function newBeam(a0: Attachment, a1: Attachment, width0: number, width1: number): Beam
+	local beam = Instance.new("Beam")
+	beam.Attachment0, beam.Attachment1 = a0, a1
+	beam.Width0, beam.Width1 = width0, width1
+	beam.FaceCamera = true
+	beam.LightEmission = 1
+	beam.LightInfluence = 0
+	beam.Segments = 1
+	beam.Parent = folder
+	return beam
+end
+
+local function newView(root: BasePart): View
 	local wedges = {}
 	for _ = 1, SLICES * 2 do
 		table.insert(wedges, newWedge())
@@ -50,10 +86,29 @@ local function newView(): View
 	ring.Anchored, ring.CanCollide, ring.CanQuery, ring.CanTouch = true, false, false, false
 	ring.Material = Enum.Material.Neon
 	ring.CastShadow = false
-	ring.Transparency = 0.82
+	ring.Transparency = 0.88
 	ring.Size = Vector3.new(THICKNESS, Config.HEARING_RADIUS * 2, Config.HEARING_RADIUS * 2)
 	ring.Parent = folder
-	return { wedges = wedges, ring = ring }
+	-- The eye rides on the drone's replicated root, so it follows for free.
+	local eye = Instance.new("Attachment")
+	eye.Name = "VisionEye"
+	eye.Parent = root
+	local edge, mids, beams = {}, {}, {}
+	for _ = 0, SLICES do
+		table.insert(edge, groundAttachment())
+	end
+	local chord = 2 * Config.VISION_RANGE * math.sin(Config.VISION_HALF_ANGLE / SLICES)
+	for i = 1, SLICES do
+		local mid = groundAttachment()
+		table.insert(mids, mid)
+		local sheet = newBeam(eye, mid, 0.3, chord * 1.05)
+		sheet.Transparency = SHEET_TRANSPARENCY
+		table.insert(beams, sheet)
+		local laser = newBeam(edge[i], edge[i + 1], 0.35, 0.35)
+		laser.Transparency = NumberSequence.new(0.1)
+		table.insert(beams, laser)
+	end
+	return { wedges = wedges, ring = ring, eye = eye, edge = edge, mids = mids, beams = beams }
 end
 
 -- Flat triangle a-b-c from two wedges (the classic two-WedgePart method).
@@ -82,24 +137,52 @@ local function draw(view: View, pivot: CFrame, color: Color3)
 	local yaw = math.atan2(look.Z, look.X)
 	local half = Config.VISION_HALF_ANGLE
 	local range = Config.VISION_RANGE
-	local function edge(angle: number): Vector3
+	local function arc(angle: number): Vector3
 		return origin + Vector3.new(math.cos(angle), 0, math.sin(angle)) * range
+	end
+	for i = 0, SLICES do
+		view.edge[i + 1].WorldPosition = arc(yaw - half + i * 2 * half / SLICES)
 	end
 	for i = 1, SLICES do
 		local a0 = yaw - half + (i - 1) * 2 * half / SLICES
 		local a1 = yaw - half + i * 2 * half / SLICES
-		local w1, w2 = view.wedges[i * 2 - 1], view.wedges[i * 2]
-		triangle(origin, edge(a0), edge(a1), w1, w2)
-		w1.Color, w2.Color = color, color
+		view.mids[i].WorldPosition = arc((a0 + a1) / 2)
+		triangle(
+			origin,
+			view.edge[i].WorldPosition,
+			view.edge[i + 1].WorldPosition,
+			view.wedges[i * 2 - 1],
+			view.wedges[i * 2]
+		)
 	end
 	view.ring.CFrame = CFrame.new(origin) * CFrame.Angles(0, 0, math.rad(90))
-	view.ring.Color = color
+	if view.color ~= color then
+		view.color = color
+		local sequence = ColorSequence.new(color)
+		for _, beam in view.beams do
+			beam.Color = sequence
+		end
+		for _, wedge in view.wedges do
+			wedge.Color = color
+		end
+		view.ring.Color = color
+	end
 end
 
 local function destroy(view: View)
 	for _, wedge in view.wedges do
 		wedge:Destroy()
 	end
+	for _, beam in view.beams do
+		beam:Destroy()
+	end
+	for _, attachment in view.edge do
+		attachment:Destroy()
+	end
+	for _, attachment in view.mids do
+		attachment:Destroy()
+	end
+	view.eye:Destroy()
 	view.ring:Destroy()
 end
 
@@ -108,6 +191,7 @@ local function update()
 	local snatchers = workspace:FindFirstChild("Snatchers")
 	local seen: { [Model]: boolean } = {}
 	local inRun = player:GetAttribute("ArenaActive") == true
+		or player:GetAttribute("ArenaPrep") == true
 	if snatchers and camera and not inRun then
 		local eye = camera.CFrame.Position
 		for _, model in snatchers:GetChildren() do
@@ -116,6 +200,10 @@ local function update()
 			end
 			local phase = model:GetAttribute("State")
 			if phase ~= "guard" and phase ~= "alert" then
+				continue
+			end
+			local root = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+			if not root then
 				continue
 			end
 			local pivot = model:GetPivot()
@@ -127,11 +215,13 @@ local function update()
 				continue
 			end
 			seen[model] = true
-			local view = views[model]
-			if not view then
-				view = newView()
-				views[model] = view
+			local existing: View? = views[model]
+			if existing and not existing.eye.Parent then
+				destroy(existing)
+				existing = nil
 			end
+			local view: View = existing or newView(root)
+			views[model] = view
 			draw(
 				view,
 				pivot,

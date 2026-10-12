@@ -45,8 +45,11 @@ local FINAL_STRETCH = 25 -- no new waves this close to the finish
 -- in beyond this tolerance so it never fights ordinary wall sliding.
 local CLAMP_TOLERANCE = 2
 
+type Prep = { carry: CarryService.Carry, laneX: number, jumpPower: number, jumpHeight: number }
+
 local ArenaService = {}
 local active: { [Player]: Run } = {}
+local preps: { [Player]: Prep } = {}
 local completed: { [Player]: CarryService.Carry } = {}
 local retryUntil: { [Player]: number } = {}
 local rng = Random.new()
@@ -79,9 +82,21 @@ local function finish(player: Player, reason: string)
 		return
 	end
 	active[player] = nil
+	if reason == "backtrack" then
+		-- Ran back into the staging strip: stay staged (camera stays up) and
+		-- start a fresh run on crossing again.
+		preps[player] = {
+			carry = run.carry,
+			laneX = run.laneX,
+			jumpPower = run.jumpPower,
+			jumpHeight = run.jumpHeight,
+		}
+		player:SetAttribute("ArenaPrep", true)
+		player:SetAttribute("ArenaLives", Arena.LIVES)
+	end
 	player:SetAttribute("ArenaActive", false)
 	player:SetAttribute("ArenaIFramesUntil", nil)
-	if run.humanoid.Parent then
+	if reason ~= "backtrack" and run.humanoid.Parent then
 		run.humanoid.JumpPower, run.humanoid.JumpHeight = run.jumpPower, run.jumpHeight
 	end
 	SpeedService.apply(player)
@@ -100,12 +115,66 @@ local function finish(player: Player, reason: string)
 	end
 end
 
+-- Staging: lock the lane, stop jumping, ease to corridor pace; the client
+-- raises the camera. Attacks only start once the run begins.
+local function startPrep(
+	player: Player,
+	carry: CarryService.Carry,
+	root: BasePart,
+	humanoid: Humanoid
+): Prep
+	local prep: Prep = {
+		carry = carry,
+		laneX = laneCenter(root.Position.X),
+		jumpPower = humanoid.JumpPower,
+		jumpHeight = humanoid.JumpHeight,
+	}
+	preps[player] = prep
+	humanoid.JumpPower, humanoid.JumpHeight = 0, 0
+	player:SetAttribute("ArenaLaneX", prep.laneX)
+	player:SetAttribute("ArenaZMin", WorldService.gateZ(Arena.FIELD_ZONE + 1))
+	player:SetAttribute("ArenaZMax", WorldService.gateZ(Arena.FIELD_ZONE))
+	player:SetAttribute("ArenaLives", Arena.LIVES)
+	player:SetAttribute("ArenaPrep", true)
+	SpeedService.markTeleport(player) -- the pace drop must not look like cheating
+	SpeedService.apply(player)
+	return prep
+end
+
+local function endPrep(player: Player)
+	local prep = preps[player]
+	if not prep then
+		return
+	end
+	preps[player] = nil
+	local _, _, humanoid = body(player)
+	if humanoid then
+		humanoid.JumpPower, humanoid.JumpHeight = prep.jumpPower, prep.jumpHeight
+	end
+	player:SetAttribute("ArenaPrep", false)
+	SpeedService.apply(player)
+end
+
+-- Keep a staged / running player inside their lane (beyond a tolerance; the
+-- client's soft walls normally stop them first).
+local function clampLane(player: Player, character: Model, root: BasePart, laneX: number)
+	local position = root.Position
+	local limit = HALF + CLAMP_TOLERANCE
+	if math.abs(position.X - laneX) > limit or position.Y < 1 then
+		SpeedService.markTeleport(player)
+		root.AssemblyLinearVelocity = Vector3.zero
+		local x = math.clamp(position.X, laneX - HALF, laneX + HALF)
+		character:PivotTo(CFrame.new(x, 3.5, position.Z) * root.CFrame.Rotation)
+	end
+end
+
 local function begin(
 	player: Player,
 	carry: CarryService.Carry,
 	character: Model,
 	root: BasePart,
-	humanoid: Humanoid
+	humanoid: Humanoid,
+	prep: Prep
 )
 	local profile = DataService.get(player)
 	local now = workspace:GetServerTimeNow()
@@ -115,7 +184,8 @@ local function begin(
 		if profile then profile.rebirths else 0
 	)
 	local normal = SpeedService.walkSpeedFor(if profile then profile.speed else 0, false, false)
-	local laneX = laneCenter(root.Position.X)
+	local laneX = prep.laneX
+	preps[player] = nil
 	active[player] = {
 		carry = carry,
 		character = character,
@@ -132,8 +202,8 @@ local function begin(
 		waves = {},
 		lastKind = nil,
 		nextId = 1,
-		jumpPower = humanoid.JumpPower,
-		jumpHeight = humanoid.JumpHeight,
+		jumpPower = prep.jumpPower,
+		jumpHeight = prep.jumpHeight,
 	}
 	humanoid.JumpPower, humanoid.JumpHeight = 0, 0
 	player:SetAttribute("ArenaLaneX", laneX)
@@ -143,6 +213,7 @@ local function begin(
 	player:SetAttribute("ArenaLives", Arena.LIVES)
 	player:SetAttribute("ArenaLevel", level)
 	player:SetAttribute("ArenaActive", true)
+	player:SetAttribute("ArenaPrep", false)
 	SpeedService.apply(player)
 	Telemetry.custom(player, "ArenaStarted")
 end
@@ -153,14 +224,20 @@ local function spawnWave(player: Player, run: Run, root: BasePart, now: number)
 	local effective = Patterns.effective(run.level, progress)
 	local kind = Patterns.pickKind(effective, rng:NextNumber(), run.lastKind)
 	run.lastKind = kind
+	-- Aim where the runner will be once the telegraph ends, so running
+	-- straight never leaves an attack behind. Lane-wide patterns stay on the
+	-- lane centre line; targeted ones (ring, spears) follow the predicted spot.
+	local velocity = root.AssemblyLinearVelocity
+	local lead = Arena.LEAD_TIME + Patterns.warnTimeFor(effective) + 0.1
+	local ahead = Vector2.new(velocity.X, velocity.Z) * lead
+	if ahead.Magnitude > Arena.MAX_LEAD then
+		ahead = ahead.Unit * Arena.MAX_LEAD
+	end
+	local predicted = Vector2.new(position.X, position.Z) + ahead
 	local anchor = Patterns.anchor(kind)
-	local x, z = run.laneX, position.Z + Arena.AHEAD
-	if anchor == "player" then
-		x, z = position.X, position.Z
-	elseif anchor == "predict" then
-		local velocity = root.AssemblyLinearVelocity
-		x = math.clamp(position.X + velocity.X * 0.7, run.laneX - HALF, run.laneX + HALF)
-		z = position.Z + math.max(0, velocity.Z) * 0.7
+	local x, z = run.laneX, predicted.Y
+	if anchor == "player" or anchor == "predict" then
+		x = math.clamp(predicted.X, run.laneX - HALF, run.laneX + HALF)
 	end
 	local wave: Patterns.Wave = {
 		id = run.nextId,
@@ -198,18 +275,10 @@ local function stepRun(player: Player, run: Run, root: BasePart, dt: number, now
 		return
 	end
 	if position.Z < run.zMin - 4 then
-		finish(player, "cancel") -- ran back into the crater; re-entering restarts
+		finish(player, "backtrack") -- back into the staging strip; re-crossing restarts
 		return
 	end
-	-- Stay inside the lane (the client also has soft walls).
-	local limit = HALF + CLAMP_TOLERANCE
-	local x = math.clamp(position.X, run.laneX - limit, run.laneX + limit)
-	if math.abs(position.X - x) > 0.1 or position.Y < 1 then
-		x = math.clamp(position.X, run.laneX - HALF, run.laneX + HALF)
-		SpeedService.markTeleport(player)
-		root.AssemblyLinearVelocity = Vector3.zero
-		run.character:PivotTo(CFrame.new(x, 3.5, position.Z) * root.CFrame.Rotation)
-	end
+	clampLane(player, run.character, root, run.laneX)
 	local point = Vector2.new(root.Position.X, root.Position.Z)
 	local moving = (point - run.previous).Magnitude / math.max(dt, 1e-3) > Arena.STILL_SPEED
 
@@ -263,16 +332,33 @@ local function tick(dt: number)
 			local position = root.Position
 			local zMax = WorldService.gateZ(Arena.FIELD_ZONE)
 			local zMin = WorldService.gateZ(Arena.FIELD_ZONE + 1)
-			if
-				position.Z <= zMax
-				and position.Z > zMin
-				and position.Z < zMax - FINAL_STRETCH
-				and math.abs(position.X) <= Economy.SERVER_SIZE * Arena.LANE_WIDTH / 2
+			local onTrack = math.abs(position.X) <= Economy.SERVER_SIZE * Arena.LANE_WIDTH / 2
 				and position.Y >= 1
 				and position.Y < 12
-			then
-				begin(player, carry, character, root, humanoid)
+			local prep: Prep? = preps[player]
+			if prep and prep.carry ~= carry then
+				endPrep(player)
+				prep = nil
 			end
+			if
+				onTrack
+				and position.Z > zMin - Arena.PREP_DEPTH
+				and position.Z < zMax - FINAL_STRETCH
+			then
+				-- Staging strip (or already in the corridor, e.g. a re-grabbed egg).
+				local staged = prep or startPrep(player, carry, root, humanoid)
+				if position.Z > zMin then
+					begin(player, carry, character, root, humanoid, staged)
+				else
+					clampLane(player, character, root, staged.laneX)
+				end
+			elseif prep and (position.Z <= zMin - Arena.PREP_DEPTH - 6 or not onTrack) then
+				endPrep(player) -- turned back toward the crater
+			elseif prep and position.Z >= zMax - FINAL_STRETCH then
+				endPrep(player)
+			end
+		elseif preps[player] then
+			endPrep(player) -- egg lost / delivered / not a deep egg any more
 		end
 		if not carry then
 			completed[player] = nil
@@ -288,6 +374,7 @@ function ArenaService.init()
 	waveEvent = Remotes.event("ArenaWave")
 	Players.PlayerRemoving:Connect(function(player)
 		finish(player, "cancel")
+		preps[player] = nil
 		completed[player], retryUntil[player] = nil, nil
 	end)
 end
