@@ -23,6 +23,10 @@ Bootstrap is two-phase: every Service/Controller module may export `init()` (wir
 - World labels keep words and numbers in separate TextLabels (words auto-localize, numbers don't).
 - After adding strings: `python -I scripts/mcp_sync.py` → `python -I scripts/export_locale_csv.py` → upload `localization/upload/part*.csv` one by one (Creator Hub → Localization → Table management → Upload CSV; the full file times out).
 
+## Branding
+
+Experience branding, reusable image prompts and localized descriptions: `marketing/2026-10-13/README.md` and `marketing/2026-10-13/profile-copy.md`.
+
 ## Checks
 
 - Format: `stylua --check src tests`
