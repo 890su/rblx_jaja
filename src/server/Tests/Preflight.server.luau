@@ -61,6 +61,9 @@ local function readyPlayers(count: number): { Player }
 end
 
 local function run()
+	if args.mode == "commerce" then
+		return require(script.Parent.CommerceChecks).run()
+	end
 	if args.mode == "arena" then
 		return require(script.Parent.ArenaChecks).run()
 	end

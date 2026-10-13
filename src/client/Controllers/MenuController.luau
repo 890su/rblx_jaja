@@ -20,13 +20,12 @@ local Locale = require(Shared.Locale)
 local player = Players.LocalPlayer
 
 local UiKit = require(script.Parent.Parent.Lib.UiKit)
+local Preview = require(script.Parent.Parent.Lib.ItemPreview)
 
 local MenuController = {}
 
 local shopState: Types.ShopState? = nil
 local restockLabel: TextLabel
-local pedestalButton: TextButton
-local trainingButton: TextButton
 local cards: {
 	{
 		frame: Frame,
@@ -35,6 +34,7 @@ local cards: {
 		price: TextLabel,
 		stock: TextLabel,
 		buy: TextButton,
+		view: ViewportFrame,
 	}
 } =
 	{}
@@ -56,16 +56,29 @@ local function buildShop()
 		TextColor3 = Color3.fromRGB(150, 200, 255),
 		TextXAlignment = Enum.TextXAlignment.Right,
 	})
-	local grid = Instance.new("Frame")
+	local grid = Instance.new("ScrollingFrame")
 	grid.BackgroundTransparency = 1
+	grid.BorderSizePixel, grid.ScrollBarThickness = 0, 6
+	grid.AutomaticCanvasSize, grid.CanvasSize = Enum.AutomaticSize.Y, UDim2.new()
 	grid.Position = UDim2.fromScale(0.04, 0.15)
 	grid.Size = UDim2.fromScale(0.92, 0.66)
 	grid.Parent = frame
 	local layout = Instance.new("UIGridLayout")
-	layout.CellSize = UDim2.fromScale(0.315, 0.47)
-	layout.CellPadding = UDim2.fromScale(0.025, 0.05)
+	layout.CellSize = UDim2.new(0.315, 0, 0, 220)
+	layout.CellPadding = UDim2.new(0.025, 0, 0, 10)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = grid
+	local function resize()
+		local compact = grid.AbsoluteSize.X < 500 or grid.AbsoluteSize.Y < 220
+		layout.CellSize = UDim2.new(
+			if compact then 0.48 else 0.315,
+			0,
+			0,
+			math.clamp(grid.AbsoluteSize.Y - 8, 160, 220)
+		)
+	end
+	grid:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
+	resize()
 	for slot = 1, 6 do
 		local card = Instance.new("Frame")
 		card.LayoutOrder = slot
@@ -77,50 +90,48 @@ local function buildShop()
 		card.Parent = grid
 		local entry = {
 			frame = card,
+			view = Preview.new(card, UDim2.fromScale(0.03, 0.01), UDim2.fromScale(0.94, 0.40)),
 			name = text(
 				card,
-				{ Size = UDim2.fromScale(0.9, 0.22), Position = UDim2.fromScale(0.05, 0.04) }
+				{ Size = UDim2.fromScale(0.9, 0.13), Position = UDim2.fromScale(0.05, 0.42) }
 			),
 			rarity = text(
 				card,
-				{ Size = UDim2.fromScale(0.9, 0.16), Position = UDim2.fromScale(0.05, 0.27) }
+				{ Size = UDim2.fromScale(0.9, 0.09), Position = UDim2.fromScale(0.05, 0.56) }
 			),
 			price = text(card, {
-				Size = UDim2.fromScale(0.9, 0.16),
-				Position = UDim2.fromScale(0.05, 0.45),
+				Size = UDim2.fromScale(0.9, 0.10),
+				Position = UDim2.fromScale(0.05, 0.65),
 				TextColor3 = Color3.fromRGB(255, 220, 90),
 			}),
 			stock = text(card, {
-				Size = UDim2.fromScale(0.9, 0.12),
-				Position = UDim2.fromScale(0.05, 0.62),
+				Size = UDim2.fromScale(0.9, 0.08),
+				Position = UDim2.fromScale(0.05, 0.75),
 				TextColor3 = Color3.fromRGB(180, 180, 200),
 			}),
-			buy = button(
-				card,
-				"Buy",
-				{ Size = UDim2.fromScale(0.8, 0.18), Position = UDim2.fromScale(0.1, 0.78) }
-			),
+			buy = button(card, "Buy", {
+				Name = `Buy{slot}`,
+				Size = UDim2.fromScale(0.9, 0.15),
+				Position = UDim2.fromScale(0.05, 0.84),
+			}),
 		}
 		entry.buy.Activated:Connect(function()
+			if not entry.buy.Interactable then
+				return
+			end
 			Remotes.event("ShopBuy"):FireServer(slot)
 		end)
 		cards[slot] = entry
 	end
-	pedestalButton = button(frame, "", {
-		Size = UDim2.fromScale(0.45, 0.1),
+	local upgrades = button(frame, Locale.term("Upgrades · Treadmill · Carry speed"), {
+		Name = "UpgradesButton",
+		Size = UDim2.fromScale(0.92, 0.1),
 		Position = UDim2.fromScale(0.04, 0.86),
 		BackgroundColor3 = Color3.fromRGB(80, 110, 200),
 	})
-	pedestalButton.Activated:Connect(function()
-		Remotes.event("BuyPedestal"):FireServer()
-	end)
-	trainingButton = button(frame, "", {
-		Size = UDim2.fromScale(0.45, 0.1),
-		Position = UDim2.fromScale(0.51, 0.86),
-		BackgroundColor3 = Color3.fromRGB(40, 150, 170),
-	})
-	trainingButton.Activated:Connect(function()
-		Remotes.event("BuyTraining"):FireServer()
+	upgrades.Activated:Connect(function()
+		UiKit.show("Upgrades")
+		Remotes.event("RequestShopState"):FireServer()
 	end)
 end
 
@@ -136,6 +147,7 @@ local function refreshShop()
 		local offer = state.offers[slot]
 		local left = state.remaining[slot] or 0
 		if offer then
+			Preview.set(entry.view, offer.creatureId)
 			local color = (Theme.RARITY_COLORS :: any)[offer.rarity] or Color3.new(1, 1, 1)
 			entry.name.Text = Locale.term(Theme.CREATURE_NAMES[offer.creatureId] or offer.rarity)
 			entry.rarity.Text = Locale.term(offer.rarity)
@@ -155,24 +167,12 @@ local function refreshShop()
 			entry.buy.BackgroundColor3 = if left > 0 and coins >= offer.price
 				then BUTTON_COLOR
 				else Color3.fromRGB(90, 90, 100)
+			UiKit.setEnabled(entry.buy, left > 0 and coins >= offer.price)
+		else
+			entry.buy.Text = Locale.term("Sold out")
+			UiKit.setEnabled(entry.buy, false)
 		end
 	end
-	local nextCost = player:GetAttribute("NextPedestalCost") :: number?
-	local count = (player:GetAttribute("PedestalCount") :: number?) or Economy.PEDESTALS_START
-	pedestalButton.Text = if nextCost
-		then Locale.t(
-			"pedestal_unlock_button",
-			{ number = count + 1, amount = Format.short(nextCost) }
-		)
-		else Locale.term("All pedestals unlocked")
-	local training = (player:GetAttribute("Training") :: number?) or 0
-	local trainingCost = player:GetAttribute("NextTrainingCost") :: number?
-	trainingButton.Text = if trainingCost
-		then Locale.t(
-			"training_button",
-			{ level = training, next = training + 1, amount = Format.short(trainingCost) }
-		)
-		else Locale.term("Run Training maxed")
 end
 
 local function buildRebirth()
@@ -219,6 +219,7 @@ local function refreshRebirth()
 	table.insert(lines, Locale.term("Resets Speed and Stardust. Creatures stay."))
 	rebirthInfo.Text = table.concat(lines, "\n")
 	rebirthButton.BackgroundColor3 = if ok then BUTTON_COLOR else Color3.fromRGB(90, 90, 100)
+	UiKit.setEnabled(rebirthButton, ok)
 end
 
 local function refreshShower()

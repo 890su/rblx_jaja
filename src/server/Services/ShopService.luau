@@ -17,6 +17,8 @@ local Format = require(Shared.Util.Format)
 local ShopOffers = require(Shared.Util.ShopOffers)
 local Remotes = require(Shared.Remotes)
 local Locale = require(Shared.Locale)
+local UpgradeMath = require(Shared.Util.UpgradeMath)
+local Upgrades = require(Shared.Config.Upgrades)
 
 local Notifier = require(script.Parent.Parent.Util.Notifier)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
@@ -24,6 +26,7 @@ local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
 local WorldService = require(script.Parent.WorldService)
 local TelemetryService = require(script.Parent.TelemetryService)
+local SpeedService = require(script.Parent.SpeedService)
 
 local ShopService = {}
 
@@ -31,6 +34,7 @@ local shopState: RemoteEvent
 local currentCycle = -1
 local currentOffers: { Types.ShopOffer } = {}
 local buyLimit = RateLimit.new(6, 2)
+local stateLimit = RateLimit.new(4, 1)
 
 local function refreshCycle(): boolean
 	local cycle = Clock.cycleIndex(Events.SHOP_RESTOCK_PERIOD)
@@ -57,19 +61,13 @@ local function nextPedestalCost(profile: Types.PlayerProfile): number?
 	return Economy.PEDESTAL_COSTS[profile.pedestalCount - Economy.PEDESTALS_START + 1]
 end
 
-local function trainingCost(level: number): number?
-	if level >= Economy.TRAINING_MAX then
-		return nil
-	end
-	return math.floor(Economy.TRAINING_BASE_COST * Economy.TRAINING_COST_GROWTH ^ level)
-end
-
 local function pushState(player: Player)
 	local profile = DataService.get(player)
 	if not profile then
 		return
 	end
 	local bought = purchasesOf(profile)
+	player:SetAttribute("ShopHasPurchases", next(bought) ~= nil)
 	local remaining = {}
 	for slot, offer in currentOffers do
 		remaining[slot] = math.max(0, offer.stock - (bought[tostring(slot)] or 0))
@@ -84,7 +82,14 @@ local function pushState(player: Player)
 	player:SetAttribute("PedestalCount", profile.pedestalCount)
 	player:SetAttribute("NextPedestalCost", nextPedestalCost(profile))
 	player:SetAttribute("Training", profile.training)
-	player:SetAttribute("NextTrainingCost", trainingCost(profile.training))
+	player:SetAttribute("NextTrainingCost", UpgradeMath.cost("training", profile.training))
+	for _, spec in Upgrades do
+		player:SetAttribute(`Upgrade_{spec.key}`, UpgradeMath.level(profile, spec.key))
+		player:SetAttribute(
+			`UpgradeCost_{spec.key}`,
+			UpgradeMath.cost(spec.key, UpgradeMath.level(profile, spec.key))
+		)
+	end
 end
 
 local function onBuy(player: Player, slot: unknown)
@@ -153,26 +158,35 @@ local function onBuyPedestal(player: Player)
 	pushState(player)
 end
 
-local function onBuyTraining(player: Player)
+local function onBuyUpgrade(player: Player, key: unknown)
 	if not buyLimit:allow(player) then
+		return
+	end
+	if typeof(key) ~= "string" or not UpgradeMath.spec(key) then
 		return
 	end
 	local profile = DataService.get(player)
 	if not profile then
 		return
 	end
-	local cost = trainingCost(profile.training)
-	if not cost then
-		return
-	elseif profile.coins < cost then
+	local outcome, cost = UpgradeMath.buy(profile, key)
+	if outcome == "max" then
+		Notifier.send(player, "upgrade_max", nil, "warning")
+	elseif outcome == "funds" then
 		Notifier.send(player, "need_coins", { amount = Format.short(cost) }, "warning")
 	else
-		DataService.addCoins(player, -cost)
-		profile.training += 1
-		TelemetryService.economy(player, "sink", cost, "Upgrade", `training{profile.training}`)
-		Notifier.send(player, "training_up", {
-			level = profile.training,
-			bonus = math.floor(profile.training * Economy.TRAINING_BONUS * 100),
+		DataService.sync(player)
+		SpeedService.apply(player)
+		TelemetryService.economy(
+			player,
+			"sink",
+			cost,
+			"Upgrade",
+			`{key}{UpgradeMath.level(profile, key)}`
+		)
+		Notifier.send(player, "upgrade_bought", {
+			name = Locale.ref(assert(UpgradeMath.spec(key)).title),
+			level = UpgradeMath.level(profile, key),
 		}, "success")
 	end
 	pushState(player)
@@ -182,12 +196,19 @@ function ShopService.pushState(player: Player)
 	pushState(player)
 end
 
+function ShopService.debugOffers(): { Types.ShopOffer }
+	require(script.Parent.Parent.Util.CommerceQA)()
+	refreshCycle()
+	return currentOffers
+end
+
 function ShopService.init()
 	shopState = Remotes.event("ShopState")
 	refreshCycle()
 	Remotes.event("ShopBuy").OnServerEvent:Connect(onBuy)
 	Remotes.event("RequestShopState").OnServerEvent:Connect(function(player)
-		if buyLimit:allow(player) then
+		if stateLimit:allow(player) then
+			refreshCycle()
 			pushState(player)
 		end
 	end)
@@ -213,7 +234,10 @@ function ShopService.init()
 			end
 		end
 	end
-	Remotes.event("BuyTraining").OnServerEvent:Connect(onBuyTraining)
+	Remotes.event("BuyTraining").OnServerEvent:Connect(function(player)
+		onBuyUpgrade(player, "training")
+	end)
+	Remotes.event("BuyUpgrade").OnServerEvent:Connect(onBuyUpgrade)
 	DataService.onLoaded(function(player)
 		pushState(player)
 	end)

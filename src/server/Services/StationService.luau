@@ -17,8 +17,8 @@ local Rarity = require(Shared.Config.Rarity)
 local Creatures = require(Shared.Config.Creatures)
 local Theme = require(Shared.Theme)
 local Format = require(Shared.Util.Format)
+local UpgradeMath = require(Shared.Util.UpgradeMath)
 local Remotes = require(Shared.Remotes)
-local Locale = require(Shared.Locale)
 
 local Notifier = require(script.Parent.Parent.Util.Notifier)
 local Income = require(script.Parent.Parent.Data.Income)
@@ -225,6 +225,8 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 		local state = profile and profile.pedestals[tostring(slot)]
 		local unlocked = profile ~= nil and slot <= capacity
 		pedestal:SetAttribute("Occupied", state ~= nil)
+		pedestal:SetAttribute("PaidCreature", state ~= nil and state.paid == true)
+		pedestal:SetAttribute("Rarity", if state then state.rarity else nil)
 		pedestal:SetAttribute("Income", if state then incomeOf(state) else nil)
 		pedestal:SetAttribute("Unlocked", unlocked)
 		if not state or not isHatched(state, now) then
@@ -732,7 +734,7 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 			player:SetAttribute("OnTreadmill", onTreadmill)
 		end
 		if onTreadmill then
-			local gain = Speed.GAIN_PER_SECOND * Speed.TREADMILL_RATE_NO_PASS
+			local gain = Speed.GAIN_PER_SECOND * UpgradeMath.treadmillRate(profile.treadmill)
 			DataService.setSpeed(player, profile.speed + gain * SpeedService.gainMultiplier(player))
 		end
 	else
@@ -753,7 +755,16 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 	local incomeMultiplier = Income.multiplier(profile, StationService.passIncomeMultiplier(player))
 	local incomeThisTick = 0
 	local pulseAt = workspace:GetServerTimeNow()
+	local hatchingCount = 0
+	for _, state in profile.storage do
+		if not isHatched(state, now) then
+			hatchingCount += 1
+		end
+	end
 	for slot, state in profile.pedestals do
+		if not isHatched(state, now) then
+			hatchingCount += 1
+		end
 		if isHatched(state, now) then
 			local amount = incomeOf(state)
 				* incomeMultiplier
@@ -765,15 +776,6 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 				pedestal:SetAttribute("IncomePulseRarity", state.rarity)
 				pedestal:SetAttribute("IncomePulseAt", pulseAt)
 			end
-		end
-		if isHatched(state, now) and not profile.index[state.creatureId] then
-			profile.index[state.creatureId] = true
-			Notifier.send(
-				player,
-				"new_creature",
-				{ creature = Locale.ref(Theme.CREATURE_NAMES[state.creatureId] or state.rarity) },
-				"success"
-			)
 		end
 		-- Hatch moment (crossed this tick): burst effect for everyone nearby.
 		if
@@ -801,6 +803,7 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 		collectorValue.Text = `+{Format.short(stored)}`
 	end
 	player:SetAttribute("StorageCount", #profile.storage)
+	player:SetAttribute("HatchingCount", hatchingCount)
 	refreshPlot(plot, profile)
 end
 

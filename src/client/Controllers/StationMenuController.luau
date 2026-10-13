@@ -60,7 +60,7 @@ local function refreshActions()
 	local canSwap = selectedSlot ~= nil and stored ~= nil
 	swapButton.Text = Locale.term("Swap selected creature")
 	swapButton.BackgroundColor3 = if canSwap then UiKit.BUTTON_COLOR else UiKit.DISABLED_COLOR
-	swapButton.Active = canSwap
+	UiKit.setEnabled(swapButton, canSwap)
 	local amount = if item then math.floor(item.income * Economy.SELL_SECONDS) else 0
 	sellButton.Visible = item ~= nil
 	sellButton.Text = Locale.t(

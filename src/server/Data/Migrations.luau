@@ -4,10 +4,17 @@
 
 local Migrations = {}
 
-Migrations.LATEST = 2
+Migrations.LATEST = 3
 
 -- [from] = step producing from + 1
 local STEPS: { [number]: (data: { [string]: any }) -> { [string]: any } } = {
+	[2] = function(data)
+		data.treadmill = 0
+		data.carryTraining = 0
+		data.hatchCredits = 0
+		data.restockCredits = 0
+		return data
+	end,
 	[1] = function(data)
 		data.uncollectedCoins = data.uncollectedCoins or 0
 		data.serverLuckUntil = data.serverLuckUntil or 0

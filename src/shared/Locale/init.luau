@@ -21,6 +21,24 @@ local Theme = require(script.Parent.Theme)
 export type Args = { [string]: any }
 
 local STRINGS: { [string]: string } = {
+	upgrade_max = "This upgrade is already at its maximum level",
+	purchase_credit_saved = "Purchase saved as a credit. Use it in Store when eligible eggs or stock are available",
+	purchase_use_credit = "Use credit · {count}",
+	upgrade_bought = "{name} upgraded to level {level}",
+	upgrade_level = "Level {level}",
+	upgrade_buy = "Upgrade · {amount} Stardust",
+	upgrade_treadmill_effect = "x{rate} base Speed per second; training and passes also apply",
+	upgrade_carry_effect = "Carry at {rate}% of your running speed",
+	upgrade_training_effect = "+{bonus}% to all Speed gains",
+	upgrade_pedestal_effect = "{count} unlocked pedestals",
+	index_summary = "{count}/{total} discovered · discoveries stay after selling or theft",
+	index_locked = "{rarity} · home zone {zone} · collect and hatch to reveal",
+	index_detail = "{rarity} · home zone {zone} · base +{income}/s",
+	purchase_loading = "Loading price…",
+	purchase_unavailable = "Unavailable",
+	purchase_prompt_failed = "Purchase window could not open. Try again",
+	steal_paid_restricted = "This creature cannot be transferred between these accounts",
+	steal_reserving = "Securing the creature… stay near the pedestal",
 	emote_wave = "Wave",
 	emote_wave_keyboard = "Wave · G",
 	emote_stop = "Stop gesture",
@@ -148,6 +166,18 @@ local STRINGS: { [string]: string } = {
 
 -- Fixed words and sentences shown as-is (auto-translated when displayed).
 local STATIC_TERMS: { string } = {
+	"Creature Index",
+	"Upgrades",
+	"Upgrades · Treadmill · Carry speed",
+	"Back to Shop",
+	"Run Training",
+	"Carry speed",
+	"Pedestals",
+	"Max level",
+	"Training improves all Speed gains",
+	"Upgrade the treadmill already installed at your base",
+	"Move faster while carrying an egg or stolen creature",
+	"Unlock another slot for creature income",
 	"Canyon",
 	"Field",
 	"Normal",

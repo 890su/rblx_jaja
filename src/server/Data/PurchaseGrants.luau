@@ -4,6 +4,9 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Products = require(Shared.Config.Products)
 local Creatures = require(Shared.Config.Creatures)
+local Credits = require(script.Parent.PurchaseCredits)
+local Clock = require(Shared.Clock)
+local Events = require(Shared.Config.Events)
 local PurchaseGrants = {}
 
 function PurchaseGrants.apply(
@@ -27,22 +30,6 @@ function PurchaseGrants.apply(
 		)
 	end
 	local pedestals = table.clone(profile.pedestals)
-	if key == "InstantHatch" then
-		for slot, state in pedestals do
-			local copy = table.clone(state)
-			if copy.hatchAt and copy.hatchAt > now then
-				copy.hatchAt = now
-			end
-			pedestals[slot] = copy
-		end
-		for index, state in storage do
-			local copy = table.clone(state)
-			if copy.hatchAt and copy.hatchAt > now then
-				copy.hatchAt = now
-			end
-			storage[index] = copy
-		end
-	end
 	local flags = table.clone(profile.flags)
 	local purchases = table.clone(profile.purchases)
 	local shieldUntil = profile.shieldUntil
@@ -57,8 +44,14 @@ function PurchaseGrants.apply(
 	profile.storage, profile.pedestals = storage, pedestals
 	profile.flags, profile.purchases = flags, purchases
 	profile.shieldUntil = shieldUntil
-	if key == "Restock" then
-		profile.shop.bought = {}
+	if key == "Restock" or key == "InstantHatch" then
+		if not Credits.apply(profile, key, now, Clock.cycleIndex(Events.SHOP_RESTOCK_PERIOD)) then
+			if key == "InstantHatch" then
+				profile.hatchCredits = (profile.hatchCredits or 0) + 1
+			else
+				profile.restockCredits = (profile.restockCredits or 0) + 1
+			end
+		end
 	end
 	if key == "ServerLuck" and #ids == 0 then
 		profile.serverLuckUntil = luckUntil

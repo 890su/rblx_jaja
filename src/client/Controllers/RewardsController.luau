@@ -34,6 +34,7 @@ local function refresh()
 		then Locale.t("daily_claim", { day = nextDay })
 		else Locale.term("Come back tomorrow!")
 	claimButton.BackgroundColor3 = if available then UiKit.BUTTON_COLOR else UiKit.DISABLED_COLOR
+	UiKit.setEnabled(claimButton, available)
 	sideDaily.Text = Locale.term(if available then "Daily (!)" else "Daily")
 end
 

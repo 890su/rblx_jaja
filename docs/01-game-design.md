@@ -124,8 +124,15 @@ Each server income tick produces a floating Stardust amount above the correspond
 
 ### 4.7 Shops
 - **Meteor Shop (coins):** 6 slots, restocks every 5 min (global clock, same for all servers), limited stock per slot, rare slots probabilistic. Restock countdown always visible.
-- **Upgrades (coins):** pedestals, carry speed, treadmill rate.
+- **Upgrades (coins):** accessed from Meteor Shop; pedestals, Run Training, treadmill rate and carry speed. The starter treadmill remains free at every base. Treadmill upgrades cost `1,500 × 2^level` (10 levels), adding 20% of the original rate per level: 0.5 → 1.5 Speed/s before gain multipliers. Carry upgrades cost `3,000 × 2.2^level` (5 levels), raising the carry multiplier from 0.60 to 0.80. Run Training keeps its existing economy and improves all Speed gains.
+- Coin offers display creature models, stock and prices; sold-out and unaffordable purchases are disabled. The upgrade panel keeps prices visible even when funds are insufficient. Shop and upgrade cards scroll on small screens.
 - **Crate Shop (Robux):** featured creature rotates every 30 min. Odds table mandatory.
+- Native checkout closes the game menu and restores the Store after completion or cancellation. Entitlements and rewards come from the server. If an Instant Hatch or Restock payment completes after the effect becomes inapplicable, it becomes a saved credit with a Use Credit button; credits are consumed only when the effect can run.
+
+### 4.7a Creature Index (implemented 2026-10-13)
+- Separate side-menu button. Thirty roster entries: undiscovered creatures appear as dark silhouettes and `???`; discovered creatures show their model, name, rarity, home zone and base income.
+- Discovery is server-owned and recorded when a creature is hatched on a pedestal or in storage. Selling or losing a creature does not erase its discovery. Unhatched meteors do not reveal the creature early. The index is private to its owner.
+- Model previews are static ViewportFrames using existing game assets; no extra paid image asset or per-frame rotation is required.
 
 ### 4.8 Events
 - **Meteor Shower:** every 15 min (global clock), 60 s, 12 meteors at zones 3–5 ends with rarity boost ×3. Server-wide race, announcement 60 s before.

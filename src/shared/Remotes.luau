@@ -12,6 +12,7 @@ local FOLDER_NAME = "Remotes"
 local EVENT_NAMES: { string } = {
 	"RequestEmote", -- client -> server: whitelisted cosmetic wave / stop
 	"RequestPurchase", -- client -> server: policy-checked kind/key
+	"UsePurchaseCredit", -- client -> server: whitelisted persisted hatch/restock credit
 	"Notify", -- server -> client: (message: string, kind: string?)
 	"ShopState", -- server -> client: (state: Types.ShopState)
 	"RequestShopState", -- client ready / reopening -> server: ()
@@ -23,6 +24,9 @@ local EVENT_NAMES: { string } = {
 	"ShopBuy", -- client -> server: (slot: number)
 	"BuyPedestal", -- client -> server: ()
 	"BuyTraining", -- client -> server: ()
+	"BuyUpgrade", -- client -> server: whitelisted upgrade key
+	"IndexState", -- server -> client: own persistent collection
+	"RequestIndex", -- client -> server: request own collection
 	"Rebirth", -- client -> server: ()
 	"Fx", -- server -> client: (kind: string, position: Vector3, extra: any)
 	"ClaimDaily", -- client -> server: ()

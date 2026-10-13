@@ -28,6 +28,31 @@ local function shouldShow(prompt: ProximityPrompt): boolean
 	if not pedestal:GetAttribute("Occupied") or player:GetAttribute("Carrying") ~= nil then
 		return false
 	end
+	local victim = Players:GetPlayerByUserId(owner)
+	if not victim then
+		return false
+	end
+	if
+		pedestal:GetAttribute("PaidCreature")
+		and (
+			player:GetAttribute("PaidItemTradingAllowed") ~= true
+			or victim:GetAttribute("PaidItemTradingAllowed") ~= true
+		)
+	then
+		return false
+	end
+	if
+		((player:GetAttribute("StationOccupied") :: number?) or 0)
+		>= ((player:GetAttribute("StationCapacity") :: number?) or 0)
+	then
+		return false
+	end
+	if
+		pedestal:GetAttribute("Rarity") == "Mythic"
+		and ((victim:GetAttribute("StationOccupied") :: number?) or 0) < 4
+	then
+		return false
+	end
 	return true
 end
 

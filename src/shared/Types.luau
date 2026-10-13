@@ -61,6 +61,10 @@ export type PlayerProfile = {
 	daily: { streak: number, lastClaimDay: number },
 	codes: { [string]: boolean },
 	training: number, -- Run Training upgrade level
+	treadmill: number,
+	carryTraining: number,
+	hatchCredits: number,
+	restockCredits: number,
 	uncollectedCoins: number,
 	serverLuckUntil: number,
 	outgoingTransfers: { [string]: TransferIntent },
@@ -81,6 +85,8 @@ export type ShopState = {
 	offers: { ShopOffer },
 	remaining: { number }, -- per slot, for this player
 }
+
+export type IndexState = { discovered: { [string]: boolean } }
 
 export type PlayerStats = {
 	steals: number,

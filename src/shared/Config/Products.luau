@@ -66,14 +66,14 @@ local PRODUCTS: { Product } = {
 		id = 3717974249,
 		price = 49,
 		name = "Instant Hatch",
-		description = "Hatch every meteor on your pedestals now",
+		description = "Hatch your pedestal and stored meteors. Saved as a credit if none are hatching",
 	},
 	{
 		key = "Restock",
 		id = 3717974272,
 		price = 49,
 		name = "Restock Shop",
-		description = "Refill your Meteor Shop stock now",
+		description = "Refill purchased Meteor Shop stock. Saved as a credit if stock already reset",
 	},
 	{
 		key = "Crate1",

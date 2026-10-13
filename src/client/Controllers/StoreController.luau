@@ -20,6 +20,8 @@ local Locale = require(Shared.Locale)
 local Remotes = require(Shared.Remotes)
 
 local UiKit = require(script.Parent.Parent.Lib.UiKit)
+local Preview = require(script.Parent.Parent.Lib.ItemPreview)
+local Availability = require(Shared.Util.PurchaseAvailability)
 
 local player = Players.LocalPlayer
 
@@ -57,6 +59,54 @@ local pendingProduct: Products.Product? = nil
 local passButtons: { [string]: TextButton } = {}
 local productButtons: { [string]: TextButton } = {}
 local prices: { [string]: number } = {}
+local failedPrices: { [string]: boolean } = {}
+local items: { [string]: { item: Products.Product | Products.Pass, pass: boolean } } = {}
+local requestPendingUntil = 0
+local refreshOwned: () -> ()
+local function status(item: Products.Product | Products.Pass, isPass: boolean): string
+	local credit = ((player:GetAttribute(`PurchaseCredit_{item.key}`) :: number?) or 0) > 0
+	return Availability.status({
+		configured = credit or item.id ~= 0,
+		loaded = credit or prices[item.key] ~= nil,
+		failed = not credit and failedPrices[item.key] == true,
+		owned = if isPass
+			then player:GetAttribute(`Pass_{item.key}`) == true
+			else item.key == "StarterPack" and player:GetAttribute("StarterPackOwned") == true,
+		policyReady = player:GetAttribute("PolicyReady") == true,
+		restricted = not isPass and ODDS_PRODUCTS[item.key] == true and player:GetAttribute(
+			"PaidRandomItemsAllowed"
+		) ~= true,
+		applicable = (
+			item.key ~= "InstantHatch"
+			or ((player:GetAttribute("HatchingCount") :: number?) or 0) > 0
+		) and (item.key ~= "Restock" or player:GetAttribute("ShopHasPurchases") == true),
+		prompting = player:GetAttribute("PurchasePromptOpen") == true or player:GetAttribute(
+			"PurchaseReceiptPending"
+		) == true or os.clock() < requestPendingUntil,
+	})
+end
+local function applyButton(
+	b: TextButton,
+	item: Products.Product | Products.Pass,
+	isPass: boolean,
+	odds: boolean
+)
+	local result = status(item, isPass)
+	local credits = (player:GetAttribute(`PurchaseCredit_{item.key}`) :: number?) or 0
+	b.Text = if result == "owned"
+		then Locale.term("Owned")
+		elseif result == "loading" then Locale.t("purchase_loading")
+		elseif result == "restricted" then Locale.t("purchase_restricted")
+		elseif result == "unavailable" then Locale.t("purchase_unavailable")
+		elseif result == "pending" then "…"
+		elseif credits > 0 then Locale.t("purchase_use_credit", { count = credits })
+		else Locale.t(
+			if odds then "odds_button" else "price_robux",
+			{ price = prices[item.key] }
+		)
+	UiKit.setEnabled(b, result == "ready")
+	b.BackgroundColor3 = if result == "ready" then UiKit.BUTTON_COLOR else UiKit.DISABLED_COLOR
+end
 
 local function fmtPercent(value: number): string
 	if value >= 1 then
@@ -221,10 +271,15 @@ local function openOdds(product: Products.Product)
 		else Locale.term("Coming soon")
 	oddsBuy.BackgroundColor3 = if product.id ~= 0 then UiKit.BUTTON_COLOR else UiKit.DISABLED_COLOR
 	UiKit.show("Odds")
+	applyButton(oddsBuy, product, false, false)
 end
 
 local function buy(item: Products.Product | Products.Pass, isPass: boolean)
-	if item.id == 0 or not prices[item.key] then
+	if status(item, isPass) ~= "ready" then
+		return
+	end
+	if not isPass and ((player:GetAttribute(`PurchaseCredit_{item.key}`) :: number?) or 0) > 0 then
+		Remotes.event("UsePurchaseCredit"):FireServer(item.key)
 		return
 	end
 	if not isPass then
@@ -238,6 +293,10 @@ local function buy(item: Products.Product | Products.Pass, isPass: boolean)
 		return
 	end
 	Remotes.event("RequestPurchase"):FireServer(if isPass then "pass" else "product", item.key)
+	requestPendingUntil = os.clock() + 2
+	UiKit.close()
+	refreshOwned()
+	task.delay(2, refreshOwned)
 end
 
 local function card(
@@ -247,27 +306,33 @@ local function card(
 	order: number
 )
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, -10, 0, 64)
+	frame.Size = UDim2.new(1, -10, 0, 100)
+	frame.Name = item.key
 	frame.BackgroundColor3 = UiKit.CARD_COLOR
 	frame.LayoutOrder = order
 	UiKit.corner(frame)
 	frame.Parent = parent
+	items[item.key] = { item = item, pass = isPass }
+	local preview = Preview.new(frame, UDim2.fromScale(0.01, 0.02), UDim2.fromScale(0.20, 0.96))
+	Preview.set(preview, if item.key == "StarterPack" then "comet_cat" else item.key)
 	UiKit.text(frame, {
 		Text = Locale.term(item.name),
-		Size = UDim2.fromScale(0.62, 0.5),
-		Position = UDim2.fromScale(0.03, 0.04),
+		Size = UDim2.fromScale(0.44, 0.42),
+		Position = UDim2.fromScale(0.23, 0.04),
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 	UiKit.text(frame, {
 		Text = Locale.term(item.description),
-		Size = UDim2.fromScale(0.62, 0.4),
-		Position = UDim2.fromScale(0.03, 0.54),
+		Size = UDim2.fromScale(0.44, 0.46),
+		Position = UDim2.fromScale(0.23, 0.50),
+		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = Color3.fromRGB(180, 180, 200),
 	})
 	local hasOdds = not isPass and ODDS_PRODUCTS[item.key] == true
 	local label = if item.id == 0 then Locale.term("Coming soon") else "…"
 	local b = UiKit.button(frame, label, {
+		Name = "Buy",
 		Size = UDim2.fromScale(0.3, 0.7),
 		Position = UDim2.fromScale(0.68, 0.15),
 		BackgroundColor3 = if item.id == 0
@@ -275,6 +340,9 @@ local function card(
 			else Color3.fromRGB(40, 170, 110),
 	})
 	b.Activated:Connect(function()
+		if status(item, isPass) ~= "ready" then
+			return
+		end
 		if hasOdds then
 			if player:GetAttribute("PaidRandomItemsAllowed") ~= true then
 				return
@@ -289,6 +357,7 @@ local function card(
 	else
 		productButtons[item.key] = b
 	end
+	applyButton(b, item, isPass, hasOdds)
 	if item.id ~= 0 then
 		task.spawn(function()
 			for attempt = 1, 3 do
@@ -299,47 +368,31 @@ local function card(
 					)
 				end)
 				if ok and info.PriceInRobux then
-					prices[item.key] = info.PriceInRobux
-					if
-						not player:GetAttribute(`Pass_{item.key}`)
-						and not (
-							item.key == "StarterPack" and player:GetAttribute("StarterPackOwned")
-						)
-					then
-						b.Text = Locale.t(
-							if hasOdds then "odds_button" else "price_robux",
-							{ price = info.PriceInRobux }
-						)
+					if info.IsForSale == false then
+						failedPrices[item.key] = true
+					else
+						prices[item.key] = info.PriceInRobux
 					end
+					refreshOwned()
 					return
 				end
 				task.wait(attempt)
 			end
-			b.Text = Locale.term("Coming soon")
-			b.Active = false
+			failedPrices[item.key] = true
+			refreshOwned()
 		end)
 	end
 end
 
-local function refreshOwned()
-	for key, button in productButtons do
-		local owned = key == "StarterPack" and player:GetAttribute("StarterPackOwned") == true
-		local restricted = ODDS_PRODUCTS[key]
-			and player:GetAttribute("PaidRandomItemsAllowed") ~= true
-		button.Active = not owned and not restricted
-		button.BackgroundColor3 = if owned or restricted
-			then UiKit.DISABLED_COLOR
-			else UiKit.BUTTON_COLOR
-		if owned then
-			button.Text = Locale.term("Owned")
+refreshOwned = function()
+	for key, entry in items do
+		local b = if entry.pass then passButtons[key] else productButtons[key]
+		if b then
+			applyButton(b, entry.item, entry.pass, not entry.pass and ODDS_PRODUCTS[key] == true)
 		end
 	end
-	for key, b in passButtons do
-		if player:GetAttribute(`Pass_{key}`) then
-			b.Text = Locale.term("Owned")
-			b.BackgroundColor3 = UiKit.DISABLED_COLOR
-			b.Active = false
-		end
+	if pendingProduct and oddsBuy then
+		applyButton(oddsBuy, pendingProduct, false, false)
 	end
 end
 
@@ -387,9 +440,48 @@ function StoreController.init()
 	end)
 end
 
+-- Read-only odds navigation, also used by the isolated client UI checks.
+function StoreController.showOdds(key: string): boolean
+	for _, product in Products.PRODUCTS do
+		if product.key == key and ODDS_PRODUCTS[key] then
+			openOdds(product)
+			return true
+		end
+	end
+	return false
+end
+
 function StoreController.start()
 	player:GetAttributeChangedSignal("StarterPackOwned"):Connect(refreshOwned)
 	player:GetAttributeChangedSignal("PaidRandomItemsAllowed"):Connect(refreshOwned)
+	for _, key in { "InstantHatch", "Restock" } do
+		player:GetAttributeChangedSignal(`PurchaseCredit_{key}`):Connect(refreshOwned)
+	end
+	for _, attribute in
+		{
+			"PolicyReady",
+			"PurchasePromptOpen",
+			"PurchaseReceiptPending",
+			"HatchingCount",
+			"ShopHasPurchases",
+		}
+	do
+		player:GetAttributeChangedSignal(attribute):Connect(refreshOwned)
+	end
+	MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId)
+		if userId == player.UserId then
+			requestPendingUntil = 0
+			UiKit.show("Store")
+			refreshOwned()
+		end
+	end)
+	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(who)
+		if who == player then
+			requestPendingUntil = 0
+			UiKit.show("Store")
+			refreshOwned()
+		end
+	end)
 	for _, pass in Products.PASSES do
 		player:GetAttributeChangedSignal(`Pass_{pass.key}`):Connect(refreshOwned)
 	end

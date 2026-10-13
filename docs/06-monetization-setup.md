@@ -2,8 +2,7 @@
 
 **Status 2026-10-11:** all 5 passes and 8 products created, on sale, managed pricing (regional + optimization) ON, IDs written to `Products.luau`. Trading/gifting declared as not allowed. Private servers: set in Studio (Game Settings → Monetization).
 
-Code is ready; items show "Coming soon" until their IDs are filled in
-`src/shared/Config/Products.luau` (`id = 0` → real ID).
+All IDs are configured in `src/shared/Config/Products.luau`. On 2026-10-13, a Studio client loaded Marketplace prices for all 13 configured items. The UI disables owned, restricted, inapplicable and unavailable products; no price API failure may leave a clickable purchase button.
 
 ## 1. Create game passes
 Creator Dashboard → Creations → **Meteor Rush** experience → Monetization → **Passes** → Create a Pass.
@@ -46,6 +45,14 @@ Copy each product ID into `PRODUCTS[...].id`, then run `python -I scripts/mcp_sy
 - Server Luck: per-zone before→after % table shown before purchase.
 - No rewarded ads, no watch-to-earn, no admin-command sales, no escalating infinite packs.
 - Receipts: idempotent by PurchaseId, granted before `PurchaseGranted`, profile saved immediately.
+- Instant Hatch and Restock: reject checkout when no effect is applicable. If state changes during checkout, store a persisted credit instead of consuming the purchase without a reward. Use Credit consumes one credit only after applying its effect.
+- Paid-creature stealing: both the prompt and final server transfer enforce paid-item transfer policy. Client button visibility cannot authorize a transfer.
+- Checkout: one outstanding prompt per player; close the game menu before the native Roblox prompt, restore it after completion/cancellation. Repeat receipts refresh state without repeating success notices.
+
+## Verification 2026-10-13
+- 308 pure commerce assertions plus the existing persistence/economy suites passed. A two-client isolated Studio run passed 75 integration checks, including all eight product receipt paths, duplicate receipts, five pass effects, upgrades, index discovery, cursor release and stealing.
+- Test profiles use `PreflightData_dev` and unique run IDs. Receipt delivery is simulated through the real receipt handler; no Robux are spent by this suite.
+- Real platform checkout, cancellation, regional prices and live-server reconnect/payment recovery still require a post-publication acceptance run. See `reports/commerce-2026-10-13.md` for the exact coverage and limits.
 
 ## 5. Later (not in MVP code yet)
 - Season Pass (799 R$) — live-ops, first season.

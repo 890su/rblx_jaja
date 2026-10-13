@@ -32,6 +32,7 @@ local STRIKES_TO_KICK = 10
 local TELEPORT_GRACE = 2
 
 local SpeedService = {}
+local UpgradeMath = require(Shared.Util.UpgradeMath)
 
 type Track = { root: BasePart, position: Vector3, at: number }
 
@@ -66,11 +67,16 @@ local function rootOf(player: Player): (BasePart?, Humanoid?)
 	return root, humanoid
 end
 
-function SpeedService.walkSpeedFor(speed: number, carrying: boolean, chasing: boolean?): number
+function SpeedService.walkSpeedFor(
+	speed: number,
+	carrying: boolean,
+	chasing: boolean?,
+	carryLevel: number?
+): number
 	local walk = Speed.BASE_WALKSPEED + Speed.WALKSPEED_COEFFICIENT * math.sqrt(speed)
 	walk = math.min(walk, Speed.WALKSPEED_CAP)
 	if carrying then
-		walk *= Speed.CARRY_MULTIPLIER
+		walk *= UpgradeMath.carryMultiplier(carryLevel or 0)
 	end
 	if chasing then
 		walk *= 1 + Steal.OWNER_CHASE_SPEED_BONUS
@@ -124,7 +130,8 @@ function SpeedService.apply(player: Player)
 		local carrying = player:GetAttribute("Carrying") ~= nil
 		local chaseUntil = (player:GetAttribute("ChaseUntil") :: number?) or 0
 		local chasing = chaseUntil > workspace:GetServerTimeNow()
-		local walkSpeed = SpeedService.walkSpeedFor(profile.speed, carrying, chasing)
+		local walkSpeed =
+			SpeedService.walkSpeedFor(profile.speed, carrying, chasing, profile.carryTraining)
 		if player:GetAttribute("ArenaActive") or player:GetAttribute("ArenaPrep") then
 			-- Void Run: a fixed corridor pace derived from the normal speed.
 			walkSpeed =
@@ -139,7 +146,7 @@ function SpeedService.apply(player: Player)
 			elseif trainingMoving[player] then "Running"
 			else "Idle"
 		local rate = if treadmill
-			then Speed.TREADMILL_RATE_NO_PASS
+			then UpgradeMath.treadmillRate(profile.treadmill)
 			elseif trainingMoving[player] then 1
 			else 0
 		player:SetAttribute("SpeedGainSource", source)

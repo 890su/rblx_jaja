@@ -28,9 +28,13 @@ local StationService = require(script.Parent.StationService)
 local ShopService = require(script.Parent.ShopService)
 
 local PurchaseGrants = require(script.Parent.Parent.Data.PurchaseGrants)
+local PurchaseCredits = require(script.Parent.Parent.Data.PurchaseCredits)
+local Clock = require(Shared.Clock)
+local Events = require(Shared.Config.Events)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local purchaseLimit = RateLimit.new(2, 0.5)
 local busy: { [Player]: boolean } = {}
+local prompts: { [Player]: { kind: string, id: number, at: number } } = {}
 local productByKey: { [string]: Products.Product } = {}
 local RANDOM_PRODUCTS: { [string]: boolean } =
 	{ Crate1 = true, Crate3 = true, Crate10 = true, ServerLuck = true }
@@ -159,11 +163,22 @@ local function grant(
 	return true
 end
 
-local function afterGrant(player: Player, profile: Types.PlayerProfile, key: string)
+local function afterGrant(
+	player: Player,
+	profile: Types.PlayerProfile,
+	key: string,
+	storedCredit: boolean?,
+	silent: boolean?
+)
+	player:SetAttribute("PurchaseCredit_InstantHatch", profile.hatchCredits)
+	player:SetAttribute("PurchaseCredit_Restock", profile.restockCredits)
 	player:SetAttribute("StarterPackOwned", profile.flags.starterPack == true)
 	StationService.refresh(player)
 	if key == "Restock" then
 		ShopService.pushState(player)
+	end
+	if silent then
+		return
 	end
 	local message = ({
 		StarterPack = "starter_pack",
@@ -171,6 +186,9 @@ local function afterGrant(player: Player, profile: Types.PlayerProfile, key: str
 		InstantHatch = "all_hatched",
 		Restock = "shop_refilled",
 	} :: { [string]: string })[key]
+	if storedCredit then
+		message = "purchase_credit_saved"
+	end
 	if player:GetAttribute("PaidRandomItemsAllowed") ~= true and RANDOM_PRODUCTS[key] then
 		message = "purchase_fixed_reward"
 	end
@@ -199,13 +217,18 @@ local function receiptForPlayer(
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	busy[player] = true
+	player:SetAttribute("PurchaseReceiptPending", true)
 	local purchaseId = tostring(receipt.PurchaseId)
 	local product = productById[receipt.ProductId]
+	local newlyGranted, storedCredit = false, false
 	local ok, confirmed = pcall(function()
 		if not profile.purchases[purchaseId] then
+			local creditBefore = profile.hatchCredits + profile.restockCredits
 			if not product or not grant(player, profile, product.key, purchaseId) then
 				return false
 			end
+			newlyGranted = true
+			storedCredit = profile.hatchCredits + profile.restockCredits > creditBefore
 		end
 		-- Roblox does not retry NotProcessedYet on a timer. Keep this callback
 		-- yielding during a transient outage; release it only on save/session loss.
@@ -221,13 +244,14 @@ local function receiptForPlayer(
 		return false
 	end)
 	busy[player] = nil
+	player:SetAttribute("PurchaseReceiptPending", nil)
 	if not ok or not confirmed then
 		warn(`[Monetization] receipt {purchaseId} pending: {confirmed}`)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	if product then
 		local effectOk, effectErr = pcall(function()
-			afterGrant(player, profile, product.key)
+			afterGrant(player, profile, product.key, storedCredit, not newlyGranted)
 			return true
 		end)
 		if not effectOk then
@@ -264,9 +288,15 @@ function MonetizationService.debugGrant(player: Player, key: string): boolean
 	if not profile then
 		return false
 	end
+	local creditBefore = profile.hatchCredits + profile.restockCredits
 	local result = grant(player, profile, key, `debug_{HttpService:GenerateGUID(false)}`)
 	if result then
-		afterGrant(player, profile, key)
+		afterGrant(
+			player,
+			profile,
+			key,
+			profile.hatchCredits + profile.restockCredits > creditBefore
+		)
 	end
 	return result
 end
@@ -277,6 +307,44 @@ function MonetizationService.debugPass(player: Player, key: string)
 end
 
 function MonetizationService.init()
+	local function clearPrompt(player: Player, kind: string, id: number)
+		local current = prompts[player]
+		if current and current.kind == kind and current.id == id then
+			prompts[player] = nil
+			player:SetAttribute("PurchasePromptOpen", nil)
+		end
+	end
+	local function prompt(player: Player, kind: string, id: number)
+		local pending = { kind = kind, id = id, at = os.clock() }
+		prompts[player] = pending
+		player:SetAttribute("PurchasePromptOpen", true)
+		local ok, err = pcall(function()
+			if kind == "pass" then
+				MarketplaceService:PromptGamePassPurchase(player, id)
+			else
+				MarketplaceService:PromptProductPurchase(player, id)
+			end
+		end)
+		if not ok then
+			clearPrompt(player, kind, id)
+			warn(err)
+			notify(player, "purchase_prompt_failed", "warning")
+		end
+		task.delay(120, function()
+			if prompts[player] == pending then
+				clearPrompt(player, kind, id)
+			end
+		end)
+	end
+	Players.PlayerRemoving:Connect(function(player)
+		prompts[player] = nil
+	end)
+	MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId, productId)
+		local player = Players:GetPlayerByUserId(userId)
+		if player then
+			clearPrompt(player, "product", productId)
+		end
+	end)
 	for _, pass in Products.PASSES do
 		passByKey[pass.key] = pass
 		if pass.id ~= 0 then
@@ -293,6 +361,33 @@ function MonetizationService.init()
 		checkPasses(player)
 		player:SetAttribute("StarterPackOwned", profile.flags.starterPack == true)
 		restoreLuck(profile)
+		player:SetAttribute("PurchaseCredit_InstantHatch", profile.hatchCredits)
+		player:SetAttribute("PurchaseCredit_Restock", profile.restockCredits)
+	end)
+	Remotes.event("UsePurchaseCredit").OnServerEvent:Connect(function(player, key: unknown)
+		if
+			not purchaseLimit:allow(player)
+			or typeof(key) ~= "string"
+			or (key ~= "InstantHatch" and key ~= "Restock")
+			or busy[player]
+		then
+			return
+		end
+		local profile = DataService.get(player)
+		if not profile then
+			return
+		end
+		if
+			PurchaseCredits.use(
+				profile,
+				key,
+				os.time(),
+				Clock.cycleIndex(Events.SHOP_RESTOCK_PERIOD)
+			)
+		then
+			afterGrant(player, profile, key)
+			DataService.saveNow(player)
+		end
 	end)
 	Remotes.event("RequestPurchase").OnServerEvent:Connect(function(player, kind: any, key: any)
 		if
@@ -303,18 +398,18 @@ function MonetizationService.init()
 			return
 		end
 		local profile = DataService.get(player)
-		if not profile or player:GetAttribute("PolicyReady") ~= true then
+		if
+			not profile
+			or player:GetAttribute("PolicyReady") ~= true
+			or prompts[player]
+			or busy[player]
+		then
 			return
 		end
 		if kind == "pass" then
 			local pass = passByKey[key]
 			if pass and pass.id ~= 0 and not MonetizationService.owns(player, key) then
-				local ok, err = pcall(function()
-					MarketplaceService:PromptGamePassPurchase(player, pass.id)
-				end)
-				if not ok then
-					warn(err)
-				end
+				prompt(player, "pass", pass.id)
 			end
 		elseif kind == "product" then
 			local product = productByKey[key]
@@ -329,15 +424,29 @@ function MonetizationService.init()
 				notify(player, "purchase_restricted", "warning")
 				return
 			end
-			local ok, err = pcall(function()
-				MarketplaceService:PromptProductPurchase(player, product.id)
-			end)
-			if not ok then
-				warn(err)
+			if key == "InstantHatch" then
+				local hatching = false
+				local collections: { { [any]: Types.PedestalState } } =
+					{ profile.pedestals, profile.storage }
+				for _, collection in collections do
+					for _, state in collection do
+						if state.hatchAt and state.hatchAt > os.time() then
+							hatching = true
+							break
+						end
+					end
+				end
+				if not hatching then
+					return
+				end
+			elseif key == "Restock" and next(profile.shop.bought) == nil then
+				return
 			end
+			prompt(player, "product", product.id)
 		end
 	end)
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
+		clearPrompt(player, "pass", passId)
 		local pass = passById[passId]
 		if purchased and pass then
 			setPass(player, pass.key)

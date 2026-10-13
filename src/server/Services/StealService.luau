@@ -21,6 +21,8 @@ local SpeedService = require(script.Parent.SpeedService)
 local CarryService = require(script.Parent.CarryService)
 local TransferService = require(script.Parent.TransferService)
 local TelemetryService = require(script.Parent.TelemetryService)
+local RateLimit = require(script.Parent.Parent.Util.RateLimit)
+local attemptLimit = RateLimit.new(3, 1)
 
 type Plot = WorldService.Plot
 type Chase = { victim: Player, slot: string, endsAt: number, creatureName: string }
@@ -87,6 +89,15 @@ local function rejectReason(
 	if not state then
 		return "steal_nothing"
 	end
+	if
+		state.paid
+		and (
+			thief:GetAttribute("PaidItemTradingAllowed") ~= true
+			or victim:GetAttribute("PaidItemTradingAllowed") ~= true
+		)
+	then
+		return "steal_paid_restricted"
+	end
 	if CarryService.get(thief) or reserving[thief] then
 		return "steal_hands_full"
 	end
@@ -147,7 +158,24 @@ local function setThiefHighlight(thief: Player, on: boolean)
 	end
 end
 
-local function endChase(thief: Player, clearVictimBuff: boolean)
+local function updateVictimBuff(victim: Player)
+	if victim.Parent ~= Players then
+		return
+	end
+	local remaining = 0
+	for _, chase in chases do
+		if chase.victim == victim then
+			remaining = math.max(remaining, chase.endsAt - os.clock())
+		end
+	end
+	victim:SetAttribute(
+		"ChaseUntil",
+		if remaining > 0 then workspace:GetServerTimeNow() + remaining else nil
+	)
+	SpeedService.apply(victim)
+end
+
+local function endChase(thief: Player, _clearVictimBuff: boolean)
 	local chase = chases[thief]
 	if not chase then
 		return
@@ -155,10 +183,7 @@ local function endChase(thief: Player, clearVictimBuff: boolean)
 	chases[thief] = nil
 	setThiefHighlight(thief, false)
 	thief:SetAttribute("ChaseVictim", nil)
-	if clearVictimBuff and chase.victim.Parent == Players then
-		chase.victim:SetAttribute("ChaseUntil", nil)
-		SpeedService.apply(chase.victim)
-	end
+	updateVictimBuff(chase.victim)
 end
 
 local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: BasePart)
@@ -174,18 +199,39 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 	end
 
 	reserving[thief] = true
+	Notifier.send(thief, "steal_reserving", nil, "info")
 	local transferId, state = TransferService.reserve(victim, thief, slot)
 	reserving[thief] = nil
 	if not transferId or not state then
 		return
 	end
 	local position = SpeedService.validatePosition(thief)
+	local victimProfile = DataService.get(victim)
+	local protectedNow = not victimProfile
+		or victimProfile.playtimeTotal < Steal.NEW_PLAYER_PROTECTION_SECONDS
+		or (
+			victimProfile.rebirths == 0
+			and StationService.creatureCount(victimProfile) + 1 < Steal.PROTECTION_MIN_CREATURES
+		)
 	if
 		thief.Parent ~= Players
 		or victim.Parent ~= Players
 		or not position
 		or (position - pedestal.Position).Magnitude > Steal.MAX_STEAL_DISTANCE
 		or CarryService.get(thief)
+		or not StationService.hasFreePedestal(thief)
+		or StealService.isLocked(victim)
+		or protectedNow
+		or (state.rarity == "Mythic" and victimProfile ~= nil and StationService.creatureCount(
+			victimProfile
+		) + 1 < Steal.MYTHIC_MIN_VICTIM_CREATURES)
+		or (
+			state.paid
+			and (
+				thief:GetAttribute("PaidItemTradingAllowed") ~= true
+				or victim:GetAttribute("PaidItemTradingAllowed") ~= true
+			)
+		)
 	then
 		TransferService.cancel(victim, transferId)
 		return
@@ -217,9 +263,9 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 				thiefProfile.stats.steals += 1
 			end
 			TelemetryService.custom(by, "StealSuccess")
-			local victimProfile = DataService.get(victim)
-			if victimProfile then
-				victimProfile.stats.timesRobbed += 1
+			local robbedProfile = DataService.get(victim)
+			if robbedProfile then
+				robbedProfile.stats.timesRobbed += 1
 			end
 			Notifier.send(by, "steal_success", { creature = creatureRef }, "success")
 			if victim.Parent == Players then
@@ -249,8 +295,7 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 	}
 	setThiefHighlight(thief, true)
 	thief:SetAttribute("ChaseVictim", victim.UserId)
-	victim:SetAttribute("ChaseUntil", workspace:GetServerTimeNow() + Steal.CHASE_SECONDS)
-	SpeedService.apply(victim)
+	updateVictimBuff(victim)
 	task.delay(Steal.CHASE_SECONDS + 0.1, function()
 		if victim.Parent == Players then
 			SpeedService.apply(victim)
@@ -367,7 +412,15 @@ local function setupPlot(plot: Plot)
 		prompt.Parent = pedestal
 		CollectionService:AddTag(prompt, "StealPrompt")
 		prompt.PromptButtonHoldBegan:Connect(function(player)
-			holdBegan[player] = { prompt = prompt, at = os.clock() }
+			local root = rootOf(player)
+			if
+				root
+				and (root.Position - pedestal.Position).Magnitude <= Steal.MAX_STEAL_DISTANCE
+				and not reserving[player]
+				and not CarryService.get(player)
+			then
+				holdBegan[player] = { prompt = prompt, at = os.clock() }
+			end
 		end)
 		prompt.PromptButtonHoldEnded:Connect(function(player)
 			local held = holdBegan[player]
@@ -378,7 +431,9 @@ local function setupPlot(plot: Plot)
 			end)
 		end)
 		prompt.Triggered:Connect(function(player)
-			tryStealFrom(player, plot, tostring(slot), pedestal)
+			if attemptLimit:allow(player) then
+				tryStealFrom(player, plot, tostring(slot), pedestal)
+			end
 		end)
 	end
 end
@@ -388,6 +443,21 @@ function StealService.debugReset(player: Player)
 	lastStealAt[player] = nil
 	lastVictimAt[player] = nil
 	lockedUntil[player] = nil
+end
+
+function StealService.debugAttempt(
+	thief: Player,
+	victim: Player,
+	slot: number,
+	held: number
+): boolean
+	require(script.Parent.Parent.Util.CommerceQA)()
+	local plot = assert(StationService.getPlot(victim))
+	local pedestal = assert(plot.pedestals[slot], "missing QA pedestal")
+	local prompt = assert(pedestal:FindFirstChild("StealPrompt")) :: ProximityPrompt
+	holdBegan[thief] = { prompt = prompt, at = os.clock() - held }
+	tryStealFrom(thief, plot, tostring(slot), pedestal)
+	return CarryService.get(thief) ~= nil
 end
 
 function StealService.init()
