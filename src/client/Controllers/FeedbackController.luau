@@ -27,6 +27,9 @@ local pending = 0
 local lastPopup = 0
 
 local function popup(amount: number)
+	if player:GetAttribute("MenuOpen") == true then
+		return
+	end
 	local character = player.Character
 	local head = character and character:FindFirstChild("Head") :: BasePart?
 	if not head then

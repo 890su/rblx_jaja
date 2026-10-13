@@ -45,6 +45,15 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 				)
 				local close = panel:FindFirstChild("Close") :: TextButton
 				assert(close.Modal and close.Interactable, "close lost mouse release")
+				assert(
+					close.AbsoluteSize.X >= 48 and close.AbsoluteSize.Y >= 48,
+					"close touch target too small"
+				)
+				local notices = player.PlayerGui:FindFirstChild("Notifications") :: ScreenGui?
+				assert(
+					notices and notices.Enabled and notices.DisplayOrder > gui.DisplayOrder,
+					"notifications hidden by menu"
+				)
 				local visible = 0
 				for _, other in gui:GetChildren() do
 					if other:IsA("Frame") and other:FindFirstChild("Close") and other.Visible then

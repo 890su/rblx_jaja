@@ -148,47 +148,37 @@ end
 
 function StationMenuController.init()
 	local panel = UiKit.panel("Station", Locale.term("Station management"))
-	UiKit.text(panel, {
-		Text = Locale.term(
-			"Select a slot, then a creature from storage. The old creature is kept."
-		),
-		Position = UDim2.fromScale(0.04, 0.13),
-		Size = UDim2.fromScale(0.92, 0.08),
-		TextWrapped = true,
-		TextColor3 = Color3.fromRGB(175, 210, 230),
-	})
-	summary = UiKit.text(
-		panel,
-		{ Position = UDim2.fromScale(0.04, 0.22), Size = UDim2.fromScale(0.92, 0.06), Text = "…" }
-	)
-	UiKit.text(panel, {
-		Position = UDim2.fromScale(0.04, 0.29),
-		Size = UDim2.fromScale(0.44, 0.05),
+	local body = UiKit.body(panel, 88)
+	summary =
+		UiKit.text(body, { Position = UDim2.new(), Size = UDim2.new(1, 0, 0, 24), Text = "…" })
+	UiKit.text(body, {
+		Position = UDim2.fromOffset(0, 32),
+		Size = UDim2.new(0.48, 0, 0, 22),
 		Text = Locale.term("Station slots"),
 	})
-	UiKit.text(panel, {
-		Position = UDim2.fromScale(0.52, 0.29),
-		Size = UDim2.fromScale(0.44, 0.05),
+	UiKit.text(body, {
+		Position = UDim2.new(0.52, 0, 0, 32),
+		Size = UDim2.new(0.48, 0, 0, 22),
 		Text = Locale.term("Storage"),
 	})
-	slotsList = UiKit.list(panel, UDim2.fromScale(0.04, 0.35), UDim2.fromScale(0.44, 0.43))
-	storageList = UiKit.list(panel, UDim2.fromScale(0.52, 0.35), UDim2.fromScale(0.44, 0.43))
+	slotsList = UiKit.list(body, UDim2.fromOffset(0, 60), UDim2.new(0.48, 0, 1, -60))
+	storageList = UiKit.list(body, UDim2.new(0.52, 0, 0, 60), UDim2.new(0.48, 0, 1, -60))
 	slotsList.Name, storageList.Name = "SlotsList", "StorageList"
 	selection = UiKit.text(panel, {
-		Position = UDim2.fromScale(0.04, 0.79),
-		Size = UDim2.fromScale(0.92, 0.05),
+		Position = UDim2.new(0, 16, 1, -96),
+		Size = UDim2.new(1, -32, 0, 24),
 		Text = Locale.term("Select a slot first"),
 	})
 	swapButton = UiKit.button(panel, Locale.term("Swap selected creature"), {
 		Name = "SwapButton",
-		Position = UDim2.fromScale(0.04, 0.87),
-		Size = UDim2.fromScale(0.52, 0.09),
+		Position = UDim2.new(0, 16, 1, -64),
+		Size = UDim2.new(0.56, -24, 0, 48),
 		BackgroundColor3 = UiKit.DISABLED_COLOR,
 	})
 	sellButton = UiKit.button(panel, "", {
 		Name = "SellButton",
-		Position = UDim2.fromScale(0.60, 0.87),
-		Size = UDim2.fromScale(0.36, 0.09),
+		Position = UDim2.new(0.56, 0, 1, -64),
+		Size = UDim2.new(0.44, -16, 0, 48),
 		BackgroundColor3 = Color3.fromRGB(170, 80, 65),
 		Visible = false,
 	})

@@ -2,6 +2,18 @@
 -- Static portraits of the real roster. No render loops, scripts or physics.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ItemPreview = {}
+local function frameCamera(view: ViewportFrame)
+	local camera = view.CurrentCamera
+	local radius = view:GetAttribute("SubjectRadius")
+	if not camera or typeof(radius) ~= "number" then
+		return
+	end
+	local aspect = view.AbsoluteSize.X / math.max(1, view.AbsoluteSize.Y)
+	local vertical = math.rad(camera.FieldOfView / 2)
+	local halfFov = math.min(vertical, math.atan(math.tan(vertical) * math.max(0.1, aspect)))
+	local distance = math.max(2, radius / math.sin(halfFov))
+	camera.CFrame = CFrame.lookAt(Vector3.new(0.8, 0.45, 1).Unit * distance, Vector3.zero)
+end
 function ItemPreview.new(parent: Instance, position: UDim2, size: UDim2): ViewportFrame
 	local view = Instance.new("ViewportFrame")
 	view.Name, view.BackgroundTransparency = "Preview", 1
@@ -9,6 +21,9 @@ function ItemPreview.new(parent: Instance, position: UDim2, size: UDim2): Viewpo
 	view.Ambient, view.LightColor = Color3.new(0.8, 0.8, 0.8), Color3.new(1, 1, 1)
 	view.LightDirection = Vector3.new(-1, -1, -1)
 	view.Parent = parent
+	view:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+		frameCamera(view)
+	end)
 	return view
 end
 local function icon(key: string): Model
@@ -104,9 +119,9 @@ function ItemPreview.set(view: ViewportFrame, key: string, silhouette: boolean?)
 	local radius = size.Magnitude / 2
 	local camera = Instance.new("Camera")
 	camera.FieldOfView = 35
-	local distance = math.max(2, radius / math.sin(math.rad(camera.FieldOfView / 2)))
-	camera.CFrame = CFrame.lookAt(Vector3.new(0.8, 0.45, 1).Unit * distance, Vector3.zero)
+	view:SetAttribute("SubjectRadius", radius)
 	camera.Parent, view.CurrentCamera = view, camera
 	model.Parent = view
+	frameCamera(view)
 end
 return ItemPreview

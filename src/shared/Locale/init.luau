@@ -166,6 +166,11 @@ local STRINGS: { [string]: string } = {
 
 -- Fixed words and sentences shown as-is (auto-translated when displayed).
 local STATIC_TERMS: { string } = {
+	"Menu",
+	"More",
+	"Undiscovered",
+	"Chat",
+	"Hide chat",
 	"Creature Index",
 	"Upgrades",
 	"Upgrades · Treadmill · Carry speed",

@@ -12,6 +12,7 @@ local Theme = require(Shared.Theme)
 local Format = require(Shared.Util.Format)
 local Remotes = require(Shared.Remotes)
 local Locale = require(Shared.Locale)
+local UiKit = require(script.Parent.Parent.Lib.UiKit)
 
 local player = Players.LocalPlayer
 
@@ -35,7 +36,9 @@ local function label(name: string, parent: Instance, props: { [string]: any }): 
 	local l = Instance.new("TextLabel")
 	l.Name = name
 	l.BackgroundTransparency = 1
-	l.Font = Enum.Font.FredokaOne
+	l.Font = UiKit.FONT
+	l.AutoLocalize = false
+	l.Text = ""
 	l.TextScaled = true
 	l.TextColor3 = Color3.new(1, 1, 1)
 	l.TextStrokeTransparency = 0.2
@@ -43,6 +46,9 @@ local function label(name: string, parent: Instance, props: { [string]: any }): 
 		(l :: any)[key] = value
 	end
 	l.Parent = parent
+	local limit = Instance.new("UITextSizeConstraint")
+	limit.MinTextSize, limit.MaxTextSize = 12, 26
+	limit.Parent = l
 	return l
 end
 
@@ -62,7 +68,8 @@ local function zoneIndexAt(z: number): number
 end
 
 local function refreshStats()
-	speedLabel.Text = `⚡ {Format.short((player:GetAttribute("Speed") :: number?) or 0)}`
+	speedLabel.Text =
+		`{Locale.term("Speed")} {Format.short((player:GetAttribute("Speed") :: number?) or 0)}`
 	coinsLabel.Text = Locale.t(
 		"amount_coins",
 		{ amount = Format.short((player:GetAttribute("Coins") :: number?) or 0) }
@@ -93,11 +100,18 @@ end
 local function toast(key: string, args: Locale.Args?, kind: string?)
 	local message = Locale.t(key, args)
 	local item = label("Toast", toastFrame, {
-		Size = UDim2.new(1, 0, 0, 34),
+		Size = UDim2.new(1, 0, 0, 48),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		TextScaled = false,
+		TextSize = 18,
+		TextWrapped = true,
+		BackgroundTransparency = 0.12,
+		BackgroundColor3 = UiKit.PANEL_COLOR,
 		Text = message,
 		TextColor3 = TOAST_COLORS[kind or ""] or Color3.new(1, 1, 1),
 		TextTransparency = 0,
 	})
+	UiKit.corner(item)
 	task.delay(2.5, function()
 		local tween = TweenService:Create(
 			item,
@@ -115,30 +129,31 @@ function HudController.init()
 	gui.Name = "Hud"
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = false
+	gui.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets
 
 	speedLabel = label("Speed", gui, {
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 8),
-		Size = UDim2.new(0.35, 0, 0.09, 0),
+		Size = UDim2.new(0.35, 0, 0, 34),
 		TextColor3 = Color3.fromRGB(120, 220, 255),
 	})
 	speedHint = label("SpeedHint", gui, {
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.fromScale(0.5, 0.095),
-		Size = UDim2.fromScale(0.65, 0.025),
+		Position = UDim2.new(0.5, 0, 0, 44),
+		Size = UDim2.new(0.65, 0, 0, 18),
 		TextColor3 = Color3.fromRGB(190, 220, 235),
 	})
 	coinsLabel = label("Coins", gui, {
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 12, 0.5, 0),
-		Size = UDim2.new(0.25, 0, 0.06, 0),
-		TextXAlignment = Enum.TextXAlignment.Left,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -16, 0, 42),
+		Size = UDim2.new(0.3, 0, 0, 28),
+		TextXAlignment = Enum.TextXAlignment.Right,
 		TextColor3 = Color3.fromRGB(255, 220, 90),
 	})
 	zoneLabel = label("Zone", gui, {
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0.125, 4),
-		Size = UDim2.new(0.3, 0, 0.04, 0),
+		Position = UDim2.new(0.5, 0, 0, 64),
+		Size = UDim2.new(0.5, 0, 0, 22),
 	})
 	carryLabel = label("Carry", gui, {
 		AnchorPoint = Vector2.new(0.5, 1),
@@ -150,16 +165,36 @@ function HudController.init()
 	toastFrame = Instance.new("Frame")
 	toastFrame.Name = "Toasts"
 	toastFrame.BackgroundTransparency = 1
-	toastFrame.AnchorPoint = Vector2.new(0.5, 0)
-	toastFrame.Position = UDim2.new(0.5, 0, 0.18, 0)
-	toastFrame.Size = UDim2.new(0.5, 0, 0.3, 0)
+	toastFrame.AnchorPoint = Vector2.new(0.5, 1)
+	toastFrame.Position = UDim2.new(0.5, 0, 0.82, 0)
+	toastFrame.Size = UDim2.new(0.8, 0, 0.3, 0)
 	local layout = Instance.new("UIListLayout")
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
 	layout.Padding = UDim.new(0, 4)
 	layout.Parent = toastFrame
-	toastFrame.Parent = gui
+	local notices = Instance.new("ScreenGui")
+	notices.Name, notices.ResetOnSpawn, notices.DisplayOrder = "Notifications", false, 30
+	notices.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets
+	toastFrame.Parent = notices
+	notices.Parent = player:WaitForChild("PlayerGui")
 
 	gui.Parent = player:WaitForChild("PlayerGui")
+	local function resize()
+		local compact = UiKit.compact()
+		speedLabel.Position = if compact then UDim2.new(0.25, 0, 0, 8) else UDim2.new(0.5, 0, 0, 8)
+		speedLabel.Size = UDim2.new(if compact then 0.44 else 0.35, 0, 0, 34)
+		coinsLabel.Position = if compact then UDim2.new(1, -16, 0, 8) else UDim2.new(1, -16, 0, 42)
+		coinsLabel.Size = UDim2.new(if compact then 0.44 else 0.3, 0, 0, 28)
+		zoneLabel.Position = UDim2.new(0.5, 0, 0, if compact then 46 else 64)
+		speedHint.Visible = not compact
+		gui.Enabled = player:GetAttribute("MenuOpen") ~= true
+	end
+	player:GetAttributeChangedSignal("MenuOpen"):Connect(resize)
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize)
+	end
+	resize()
 end
 
 function HudController.start()

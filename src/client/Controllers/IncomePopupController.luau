@@ -17,7 +17,7 @@ local MAX_DISTANCE = 85
 
 local function popup(pedestal: BasePart, amount: number, rarity: string)
 	local camera = workspace.CurrentCamera
-	if not camera or player:GetAttribute("ArenaActive") then
+	if not camera or player:GetAttribute("ArenaActive") or player:GetAttribute("MenuOpen") then
 		return
 	end
 	if (camera.CFrame.Position - pedestal.Position).Magnitude > MAX_DISTANCE then

@@ -41,6 +41,9 @@ local cards: {
 local rebirthInfo: TextLabel
 local rebirthButton: TextButton
 local showerLabel: TextLabel
+local showerMenuLabel: TextLabel
+local shopGrid: ScrollingFrame
+local shopLoading: TextLabel
 
 local corner = UiKit.corner
 local text = UiKit.text
@@ -50,32 +53,79 @@ local BUTTON_COLOR = UiKit.BUTTON_COLOR
 
 local function buildShop()
 	local frame = UiKit.panel("Shop", Locale.term("Meteor Shop"))
+	assert(frame:FindFirstChildOfClass("UISizeConstraint"), "missing shop bounds").MaxSize =
+		Vector2.new(920, 468)
+	local title = frame:FindFirstChild("Title") :: TextLabel
+	local body = UiKit.body(frame, 56)
 	restockLabel = text(frame, {
-		Size = UDim2.fromScale(0.4, 0.07),
-		Position = UDim2.fromScale(0.48, 0.04),
+		Size = UDim2.new(1, -32, 0, 24),
+		Position = UDim2.fromOffset(16, 64),
 		TextColor3 = Color3.fromRGB(150, 200, 255),
 		TextXAlignment = Enum.TextXAlignment.Right,
+		TextWrapped = true,
 	})
+	title.Size = UDim2.new(1, -96, 0, 48)
+	body.Position = UDim2.fromOffset(16, 96)
+	body.Size = UDim2.new(1, -32, 1, -168)
+	local function headerResize()
+		if frame.AbsoluteSize.X < 480 then
+			title.Size = UDim2.new(1, -96, 0, 48)
+			restockLabel.Position, restockLabel.Size =
+				UDim2.fromOffset(16, 64), UDim2.new(1, -32, 0, 24)
+			body.Position, body.Size = UDim2.fromOffset(16, 96), UDim2.new(1, -32, 1, -168)
+		else
+			local width = (frame.AbsoluteSize.X - 104) / 2
+			title.Size = UDim2.fromOffset(width, 48)
+			restockLabel.Position, restockLabel.Size =
+				UDim2.fromOffset(24 + width, 8), UDim2.fromOffset(width, 48)
+			body.Position, body.Size = UDim2.fromOffset(16, 64), UDim2.new(1, -32, 1, -136)
+		end
+	end
+	frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(headerResize)
+	headerResize()
 	local grid = Instance.new("ScrollingFrame")
+	shopGrid = grid
+	grid.Visible = false
+	shopLoading = text(
+		body,
+		{ Name = "Loading", Text = Locale.t("purchase_loading"), Size = UDim2.fromScale(1, 1) }
+	)
 	grid.BackgroundTransparency = 1
 	grid.BorderSizePixel, grid.ScrollBarThickness = 0, 6
 	grid.AutomaticCanvasSize, grid.CanvasSize = Enum.AutomaticSize.Y, UDim2.new()
-	grid.Position = UDim2.fromScale(0.04, 0.15)
-	grid.Size = UDim2.fromScale(0.92, 0.66)
-	grid.Parent = frame
+	grid.Name = "Offers"
+	grid.Position = UDim2.new()
+	grid.Size = UDim2.fromScale(1, 1)
+	grid.Parent = body
 	local layout = Instance.new("UIGridLayout")
 	layout.CellSize = UDim2.new(0.315, 0, 0, 220)
 	layout.CellPadding = UDim2.new(0.025, 0, 0, 10)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = grid
 	local function resize()
-		local compact = grid.AbsoluteSize.X < 500 or grid.AbsoluteSize.Y < 220
+		local short = grid.AbsoluteSize.Y < 150
+		local columns = if grid.AbsoluteSize.X < 420 or short
+			then 1
+			elseif grid.AbsoluteSize.X < 700 then 2
+			else 3
 		layout.CellSize = UDim2.new(
-			if compact then 0.48 else 0.315,
+			if columns == 1 then 0.98 elseif columns == 2 then 0.48 else 0.315,
 			0,
 			0,
-			math.clamp(grid.AbsoluteSize.Y - 8, 160, 220)
+			if short then math.max(104, grid.AbsoluteSize.Y - 4) else 160
 		)
+		for _, entry in cards do
+			entry.view.Size = UDim2.new(0.32, 0, 0, if short then 44 else 92)
+			entry.view.Position = UDim2.new(0.02, 0, 0, if short then 4 else 8)
+			entry.name.Position = UDim2.new(0.36, 0, 0, if short then 4 else 10)
+			entry.name.Size = UDim2.new(0.60, 0, 0, if short then 20 else 24)
+			entry.rarity.Visible = not short
+			entry.price.Position = UDim2.new(0.36, 0, 0, if short then 28 else 60)
+			entry.price.Size = UDim2.new(if short then 0.36 else 0.60, 0, 0, 18)
+			entry.stock.Position =
+				UDim2.new(if short then 0.74 else 0.36, 0, 0, if short then 28 else 84)
+			entry.stock.Size = UDim2.new(if short then 0.22 else 0.60, 0, 0, 18)
+		end
 	end
 	grid:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
 	resize()
@@ -85,34 +135,39 @@ local function buildShop()
 		card.BackgroundColor3 = CARD_COLOR
 		corner(card)
 		local stroke = Instance.new("UIStroke")
-		stroke.Thickness = 2
+		stroke.Thickness = 1
+		stroke.Transparency = 0.3
 		stroke.Parent = card
 		card.Parent = grid
 		local entry = {
 			frame = card,
-			view = Preview.new(card, UDim2.fromScale(0.03, 0.01), UDim2.fromScale(0.94, 0.40)),
-			name = text(
-				card,
-				{ Size = UDim2.fromScale(0.9, 0.13), Position = UDim2.fromScale(0.05, 0.42) }
-			),
-			rarity = text(
-				card,
-				{ Size = UDim2.fromScale(0.9, 0.09), Position = UDim2.fromScale(0.05, 0.56) }
-			),
+			view = Preview.new(card, UDim2.new(0.02, 0, 0, 8), UDim2.new(0.32, 0, 0, 92)),
+			name = text(card, {
+				Size = UDim2.new(0.60, 0, 0, 24),
+				Position = UDim2.new(0.36, 0, 0, 10),
+				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
+			rarity = text(card, {
+				Size = UDim2.new(0.60, 0, 0, 18),
+				Position = UDim2.new(0.36, 0, 0, 38),
+				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
 			price = text(card, {
-				Size = UDim2.fromScale(0.9, 0.10),
-				Position = UDim2.fromScale(0.05, 0.65),
+				Size = UDim2.new(0.60, 0, 0, 20),
+				Position = UDim2.new(0.36, 0, 0, 60),
+				TextXAlignment = Enum.TextXAlignment.Left,
 				TextColor3 = Color3.fromRGB(255, 220, 90),
 			}),
 			stock = text(card, {
-				Size = UDim2.fromScale(0.9, 0.08),
-				Position = UDim2.fromScale(0.05, 0.75),
+				Size = UDim2.new(0.60, 0, 0, 18),
+				Position = UDim2.new(0.36, 0, 0, 84),
+				TextXAlignment = Enum.TextXAlignment.Left,
 				TextColor3 = Color3.fromRGB(180, 180, 200),
 			}),
 			buy = button(card, "Buy", {
 				Name = `Buy{slot}`,
-				Size = UDim2.fromScale(0.9, 0.15),
-				Position = UDim2.fromScale(0.05, 0.84),
+				Size = UDim2.new(1, -16, 0, 48),
+				Position = UDim2.new(0, 8, 1, -56),
 			}),
 		}
 		entry.buy.Activated:Connect(function()
@@ -121,14 +176,13 @@ local function buildShop()
 			end
 			Remotes.event("ShopBuy"):FireServer(slot)
 		end)
+		UiKit.setEnabled(entry.buy, false)
 		cards[slot] = entry
 	end
-	local upgrades = button(frame, Locale.term("Upgrades · Treadmill · Carry speed"), {
-		Name = "UpgradesButton",
-		Size = UDim2.fromScale(0.92, 0.1),
-		Position = UDim2.fromScale(0.04, 0.86),
-		BackgroundColor3 = Color3.fromRGB(80, 110, 200),
-	})
+	resize()
+	local upgrades =
+		UiKit.footer(frame, Locale.term("Upgrades · Treadmill · Carry speed"), "UpgradesButton")
+	upgrades.BackgroundColor3 = Color3.fromRGB(80, 110, 200)
 	upgrades.Activated:Connect(function()
 		UiKit.show("Upgrades")
 		Remotes.event("RequestShopState"):FireServer()
@@ -137,10 +191,13 @@ end
 
 local function refreshShop()
 	local state = shopState
+	showerMenuLabel.Text = showerLabel.Text
+	showerMenuLabel.TextColor3 = showerLabel.TextColor3
 	if not state then
 		return
 	end
 	local coins = (player:GetAttribute("Coins") :: number?) or 0
+	shopGrid.Visible, shopLoading.Visible = true, false
 	local full = ((player:GetAttribute("StationOccupied") :: number?) or 0)
 		>= ((player:GetAttribute("StationCapacity") :: number?) or math.huge)
 	for slot, entry in cards do
@@ -177,20 +234,17 @@ end
 
 local function buildRebirth()
 	local frame = UiKit.panel("Rebirth", Locale.term("Rebirth"))
-	rebirthInfo = text(frame, {
-		Size = UDim2.fromScale(0.9, 0.6),
-		Position = UDim2.fromScale(0.05, 0.15),
+	local info = UiKit.list(UiKit.body(frame, 56), UDim2.new(), UDim2.fromScale(1, 1))
+	rebirthInfo = text(info, {
+		Size = UDim2.new(1, -10, 0, 220),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		TextScaled = false,
-		TextSize = 22,
+		TextSize = 18,
 		TextWrapped = true,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
-	rebirthButton = button(
-		frame,
-		Locale.term("Rebirth!"),
-		{ Size = UDim2.fromScale(0.5, 0.12), Position = UDim2.fromScale(0.25, 0.82) }
-	)
+	rebirthButton = UiKit.footer(frame, Locale.term("Rebirth!"), "RebirthButton")
 	rebirthButton.Activated:Connect(function()
 		Remotes.event("Rebirth"):FireServer()
 	end)
@@ -227,11 +281,10 @@ local function refreshShower()
 	local endsAt = (workspace:GetAttribute("ShowerEndsAt") :: number?) or 0
 	local nextAt = (workspace:GetAttribute("NextShowerAt") :: number?) or 0
 	if now < endsAt then
-		showerLabel.Text = "☄ "
-			.. Locale.t("shower_now", { time = Format.duration(endsAt - now) })
+		showerLabel.Text = Locale.t("shower_now", { time = Format.duration(endsAt - now) })
 		showerLabel.TextColor3 = Color3.fromRGB(255, 170, 80)
 	elseif nextAt > 0 then
-		showerLabel.Text = "☄ " .. Locale.t("shower_in", { time = Format.duration(nextAt - now) })
+		showerLabel.Text = Locale.t("shower_in", { time = Format.duration(nextAt - now) })
 		showerLabel.TextColor3 = Color3.fromRGB(200, 210, 255)
 	end
 	local state = shopState
@@ -264,14 +317,24 @@ function MenuController.init()
 		refreshRebirth()
 	end)
 	UiKit.sideButton(Locale.term("Invite +10%"), Color3.fromRGB(60, 150, 230), 5, invite)
+	showerMenuLabel = UiKit.menuInfo("ShowerStatus")
 
 	showerLabel = text(gui, {
+		Name = "ShowerTimer",
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -12, 0, 8),
-		Size = UDim2.fromScale(0.3, 0.045),
+		Size = UDim2.new(0.3, 0, 0, 24),
 		TextXAlignment = Enum.TextXAlignment.Right,
 		TextStrokeTransparency = 0.3,
 	})
+	local function timerVisibility()
+		showerLabel.Visible = player:GetAttribute("MenuOpen") ~= true and not UiKit.compact()
+	end
+	player:GetAttributeChangedSignal("MenuOpen"):Connect(timerVisibility)
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(timerVisibility)
+	end
+	timerVisibility()
 
 	buildShop()
 	buildRebirth()

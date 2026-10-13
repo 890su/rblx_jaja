@@ -254,11 +254,11 @@ local function openOdds(product: Products.Product)
 	oddsTitle.Text = Locale.t("odds_title", { name = Locale.ref(product.name) })
 	oddsContext.Visible = product.key == "ServerLuck"
 	oddsList.Position = if product.key == "ServerLuck"
-		then UDim2.fromScale(0.04, 0.23)
-		else UDim2.fromScale(0.04, 0.14)
+		then UDim2.fromOffset(16, 120)
+		else UDim2.fromOffset(16, 64)
 	oddsList.Size = if product.key == "ServerLuck"
-		then UDim2.fromScale(0.92, 0.57)
-		else UDim2.fromScale(0.92, 0.66)
+		then UDim2.new(1, -32, 1, -192)
+		else UDim2.new(1, -32, 1, -136)
 	if product.key == "ServerLuck" then
 		fillLuckOdds()
 	else
@@ -306,12 +306,17 @@ local function card(
 	order: number
 )
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, -10, 0, 100)
+	frame.Size = UDim2.new(1, -10, 0, 132)
 	frame.Name = item.key
 	frame.BackgroundColor3 = UiKit.CARD_COLOR
 	frame.LayoutOrder = order
 	UiKit.corner(frame)
 	frame.Parent = parent
+	local function resize()
+		frame.Size = UDim2.new(1, -10, 0, if frame.AbsoluteSize.X < 420 then 184 else 132)
+	end
+	frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
+	resize()
 	items[item.key] = { item = item, pass = isPass }
 	local preview = Preview.new(frame, UDim2.fromScale(0.01, 0.02), UDim2.fromScale(0.20, 0.96))
 	Preview.set(preview, if item.key == "StarterPack" then "comet_cat" else item.key)
@@ -333,8 +338,8 @@ local function card(
 	local label = if item.id == 0 then Locale.term("Coming soon") else "…"
 	local b = UiKit.button(frame, label, {
 		Name = "Buy",
-		Size = UDim2.fromScale(0.3, 0.7),
-		Position = UDim2.fromScale(0.68, 0.15),
+		Size = UDim2.new(0.3, 0, 0, 48),
+		Position = UDim2.new(0.68, 0, 0.5, -24),
 		BackgroundColor3 = if item.id == 0
 			then UiKit.DISABLED_COLOR
 			else Color3.fromRGB(40, 170, 110),
@@ -398,7 +403,7 @@ end
 
 function StoreController.init()
 	local store = UiKit.panel("Store", Locale.term("Store"))
-	local list = UiKit.list(store, UDim2.fromScale(0.04, 0.14), UDim2.fromScale(0.92, 0.82))
+	local list = UiKit.list(UiKit.body(store), UDim2.new(), UDim2.fromScale(1, 1))
 	local order = 0
 	for _, pass in Products.PASSES do
 		order += 1
@@ -414,19 +419,15 @@ function StoreController.init()
 	oddsContext = UiKit.button(
 		odds,
 		"",
-		{ Size = UDim2.fromScale(0.92, 0.065), Position = UDim2.fromScale(0.04, 0.14) }
+		{ Size = UDim2.new(1, -32, 0, 48), Position = UDim2.fromOffset(16, 64) }
 	)
 	oddsContext.Visible = false
 	oddsContext.Activated:Connect(function()
 		contextIndex = contextIndex % #contexts + 1
 		fillLuckOdds()
 	end)
-	oddsList = UiKit.list(odds, UDim2.fromScale(0.04, 0.14), UDim2.fromScale(0.92, 0.66))
-	oddsBuy = UiKit.button(
-		odds,
-		"",
-		{ Size = UDim2.fromScale(0.4, 0.1), Position = UDim2.fromScale(0.3, 0.85) }
-	)
+	oddsList = UiKit.list(odds, UDim2.fromOffset(16, 64), UDim2.new(1, -32, 1, -136))
+	oddsBuy = UiKit.footer(odds, "", "Buy")
 	oddsBuy.Activated:Connect(function()
 		local product = pendingProduct
 		if product then

@@ -112,3 +112,7 @@ Buffer: Season/winter content (Dec) is built in parallel during weeks 6–8 by t
 ## 10. Zone identity and creator emotes
 
 Owner's weekly work, five distinct zone prototypes, emote groups, achievement unlocks, cosmetic packs and recording mode: [roadmap](09-zone-and-emote-roadmap.md). The first free wave prototype supports R6/R15; advanced emotes and recording tools follow playtesting and the outstanding release checks.
+
+## 11. UI cleanup and speed balance
+
+Unified menu layout, mobile navigation, optional chat, readable creature discovery labels and viewport portrait fitting implemented 2026-10-13. Current hound status and proposed AFK/difficulty tuning: [UI and speed balance](10-ui-and-speed-balance.md). Speed losses and economy tuning remain proposals; no saved progress is reduced by this UI work.

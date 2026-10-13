@@ -48,7 +48,7 @@ local function refresh()
 end
 function Controller.init()
 	local panel = UiKit.panel("Upgrades", Locale.term("Upgrades"))
-	local list = UiKit.list(panel, UDim2.fromScale(0.04, 0.15), UDim2.fromScale(0.92, 0.67))
+	local list = UiKit.list(UiKit.body(panel, 56), UDim2.new(), UDim2.fromScale(1, 1))
 	local entries = {
 		{
 			key = "pedestal",
@@ -65,7 +65,7 @@ function Controller.init()
 	for order, entry in entries do
 		local frame = Instance.new("Frame")
 		frame.Name, frame.Size, frame.LayoutOrder, frame.BackgroundColor3, frame.Parent =
-			entry.key, UDim2.new(1, -10, 0, 126), order, UiKit.CARD_COLOR, list
+			entry.key, UDim2.new(1, -10, 0, 156), order, UiKit.CARD_COLOR, list
 		UiKit.corner(frame)
 		local view = Preview.new(frame, UDim2.fromScale(0.01, 0.05), UDim2.fromScale(0.20, 0.90))
 		Preview.set(view, entry.key)
@@ -75,22 +75,23 @@ function Controller.init()
 			Size = UDim2.fromScale(0.73, 0.22),
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
-		UiKit.text(frame, {
+		local description = UiKit.text(frame, {
 			Text = Locale.term(entry.description),
-			Position = UDim2.fromScale(0.23, 0.29),
-			Size = UDim2.fromScale(0.73, 0.20),
+			Position = UDim2.new(0.23, 0, 0, 40),
+			Size = UDim2.new(0.73, 0, 0, 28),
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
 		local detail = UiKit.text(frame, {
-			Position = UDim2.fromScale(0.23, 0.52),
-			Size = UDim2.fromScale(0.73, 0.18),
+			TextWrapped = true,
+			Position = UDim2.new(0.23, 0, 0, 74),
+			Size = UDim2.new(0.73, 0, 0, 20),
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
 		local buy = UiKit.button(frame, "…", {
 			Name = "Buy",
-			Position = UDim2.fromScale(0.23, 0.73),
-			Size = UDim2.fromScale(0.73, 0.23),
+			Position = UDim2.new(0.23, 0, 1, -56),
+			Size = UDim2.new(0.73, 0, 0, 48),
 		})
 		buy.Activated:Connect(function()
 			if not buy.Interactable then
@@ -103,12 +104,17 @@ function Controller.init()
 			end
 		end)
 		cards[entry.key] = { detail = detail, buy = buy }
+		local function resize()
+			local narrow = frame.AbsoluteSize.X < 420
+			frame.Size = UDim2.new(1, -10, 0, if narrow then 192 else 156)
+			description.Size = UDim2.new(0.73, 0, 0, if narrow then 48 else 28)
+			detail.Position = UDim2.new(0.23, 0, 0, if narrow then 100 else 74)
+			detail.Size = UDim2.new(0.73, 0, 0, if narrow then 32 else 20)
+		end
+		frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
+		resize()
 	end
-	local back = UiKit.button(
-		panel,
-		Locale.term("Back to Shop"),
-		{ Position = UDim2.fromScale(0.04, 0.86), Size = UDim2.fromScale(0.92, 0.10) }
-	)
+	local back = UiKit.footer(panel, Locale.term("Back to Shop"), "Back")
 	back.Activated:Connect(function()
 		UiKit.show("Shop")
 		Remotes.event("RequestShopState"):FireServer()

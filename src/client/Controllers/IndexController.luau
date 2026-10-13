@@ -26,7 +26,9 @@ local function render()
 		end
 		local entry = cards[creature.id]
 		Preview.set(entry.view, creature.id, not known)
-		entry.name.Text = if known then Locale.term(Theme.CREATURE_NAMES[creature.id]) else "???"
+		entry.name.Text = if known
+			then Locale.term(Theme.CREATURE_NAMES[creature.id])
+			else Locale.term("Undiscovered")
 		entry.detail.Text = if known
 			then Locale.t("index_detail", {
 				rarity = Locale.ref(creature.rarity),
@@ -42,11 +44,9 @@ local function render()
 end
 function IndexController.init()
 	panel = UiKit.panel("Index", Locale.term("Creature Index"))
-	summary = UiKit.text(
-		panel,
-		{ Position = UDim2.fromScale(0.04, 0.13), Size = UDim2.fromScale(0.92, 0.06) }
-	)
-	local list = UiKit.list(panel, UDim2.fromScale(0.04, 0.21), UDim2.fromScale(0.92, 0.75))
+	local body = UiKit.body(panel)
+	summary = UiKit.text(body, { Position = UDim2.new(), Size = UDim2.new(1, 0, 0, 28) })
+	local list = UiKit.list(body, UDim2.fromOffset(0, 36), UDim2.new(1, 0, 1, -36))
 	assert(list:FindFirstChildOfClass("UIListLayout"), "missing index layout"):Destroy()
 	local layout = Instance.new("UIGridLayout")
 	layout.SortOrder = Enum.SortOrder.LayoutOrder

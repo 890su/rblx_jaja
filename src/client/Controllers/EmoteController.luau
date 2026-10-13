@@ -15,20 +15,8 @@ local function request()
 end
 
 function EmoteController.init()
-	local button = UiKit.button(UiKit.gui(), Locale.t("emote_wave"), {
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -12),
-		Size = UDim2.new(0.18, 0, 0, 44),
-		BackgroundColor3 = Color3.fromRGB(60, 150, 170),
-	})
-	local size = Instance.new("UISizeConstraint")
-	size.MinSize, size.MaxSize = Vector2.new(112, 44), Vector2.new(180, 44)
-	size.Parent = button
-	local textSize = Instance.new("UITextSizeConstraint")
-	textSize.MinTextSize, textSize.MaxTextSize = 12, 20
-	textSize.Parent = button
-	button.Activated:Connect(request)
-	button.Name = "EmoteWave"
+	local button =
+		UiKit.sideButton(Locale.t("emote_wave"), Color3.fromRGB(60, 150, 170), 8, request)
 	local function refresh()
 		button.Text = Locale.t(
 			if player:GetAttribute("EmoteKey")
@@ -42,8 +30,7 @@ function EmoteController.init()
 			or player:GetAttribute("OnTreadmill") == true
 			or player:GetAttribute("ArenaActive") == true
 			or player:GetAttribute("ArenaPrep") == true
-		button.Active = not unavailable
-		button.AutoButtonColor = not unavailable
+		UiKit.setEnabled(button, not unavailable)
 		button.BackgroundColor3 = if unavailable
 			then UiKit.DISABLED_COLOR
 			else Color3.fromRGB(60, 150, 170)

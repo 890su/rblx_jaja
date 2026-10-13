@@ -29,15 +29,16 @@ function IntroController.start()
 		return
 	end
 	local panel = UiKit.panel("Intro", Locale.term("How to play"))
+	local list = UiKit.list(UiKit.body(panel, 56), UDim2.new(), UDim2.fromScale(1, 1))
 	for i, step in STEPS do
 		local row = Instance.new("Frame")
 		row.BackgroundColor3 = UiKit.CARD_COLOR
-		row.Position = UDim2.fromScale(0.05, 0.15 + (i - 1) * 0.17)
-		row.Size = UDim2.fromScale(0.9, 0.14)
+		row.LayoutOrder = i
+		row.Size = UDim2.new(1, -8, 0, 72)
 		UiKit.corner(row)
-		row.Parent = panel
+		row.Parent = list
 		UiKit.text(row, {
-			Text = step.icon,
+			Text = tostring(i),
 			Size = UDim2.fromScale(0.12, 0.9),
 			Position = UDim2.fromScale(0.01, 0.05),
 			AutoLocalize = false,
@@ -49,17 +50,16 @@ function IntroController.start()
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
 	end
-	local ok = UiKit.button(panel, Locale.term("Got it!"), {
-		Size = UDim2.fromScale(0.4, 0.11),
-		Position = UDim2.fromScale(0.3, 0.84),
-	})
+	local ok = UiKit.footer(panel, Locale.term("Got it!"))
 	ok.Activated:Connect(function()
-		panel.Visible = false
+		UiKit.close()
 	end)
 	UiKit.show("Intro")
 	player:GetAttributeChangedSignal("TutorialDone"):Connect(function()
 		if player:GetAttribute("TutorialDone") then
-			panel.Visible = false
+			if UiKit.isOpen("Intro") then
+				UiKit.close()
+			end
 		end
 	end)
 end

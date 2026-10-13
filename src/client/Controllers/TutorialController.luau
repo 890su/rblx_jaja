@@ -54,6 +54,11 @@ local function setMarker(position: Vector3?)
 end
 
 local function update()
+	if player:GetAttribute("MenuOpen") == true then
+		banner.Visible = false
+		setMarker(nil)
+		return
+	end
 	if player:GetAttribute("TutorialDone") then
 		step = "done"
 	end
@@ -108,8 +113,8 @@ function TutorialController.init()
 	banner = UiKit.text(UiKit.gui(), {
 		Name = "TutorialBanner",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.fromScale(0.5, 0.15),
-		Size = UDim2.fromScale(0.6, 0.05),
+		Position = UDim2.new(0.5, 0, 0, 134),
+		Size = UDim2.new(0.75, 0, 0, 28),
 		TextColor3 = Color3.fromRGB(255, 240, 150),
 		TextStrokeTransparency = 0.2,
 		Visible = false,

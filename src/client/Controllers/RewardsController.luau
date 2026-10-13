@@ -40,16 +40,20 @@ end
 
 function RewardsController.init()
 	local panel = UiKit.panel("Daily", Locale.term("Daily Rewards"))
-	local row = Instance.new("Frame")
-	row.BackgroundTransparency = 1
-	row.Position = UDim2.fromScale(0.04, 0.16)
-	row.Size = UDim2.fromScale(0.92, 0.42)
+	local row = UiKit.list(UiKit.body(panel, 112), UDim2.new(), UDim2.fromScale(1, 1))
+	assert(row:FindFirstChildOfClass("UIListLayout")):Destroy()
 	local layout = Instance.new("UIGridLayout")
-	layout.CellSize = UDim2.fromScale(0.13, 1)
-	layout.CellPadding = UDim2.fromScale(0.012, 0)
+	layout.CellSize = UDim2.new(0.13, 0, 0, 120)
+	layout.CellPadding = UDim2.fromOffset(8, 8)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = row
-	row.Parent = panel
+	local function resize()
+		local columns = if row.AbsoluteSize.X < 620 then 3 else 7
+		layout.CellSize =
+			UDim2.fromOffset(math.max(72, (row.AbsoluteSize.X - 8 * columns) / columns), 120)
+	end
+	row:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
+	resize()
 	for day, reward in Daily.REWARDS do
 		local frame = Instance.new("Frame")
 		frame.LayoutOrder = day
@@ -73,7 +77,7 @@ function RewardsController.init()
 	claimButton = UiKit.button(
 		panel,
 		"",
-		{ Size = UDim2.fromScale(0.4, 0.1), Position = UDim2.fromScale(0.3, 0.62) }
+		{ Name = "Claim", Size = UDim2.new(1, -32, 0, 48), Position = UDim2.new(0, 16, 1, -120) }
 	)
 	claimButton.Activated:Connect(function()
 		Remotes.event("ClaimDaily"):FireServer()
@@ -85,16 +89,22 @@ function RewardsController.init()
 	box.Text = ""
 	box.ClearTextOnFocus = false
 	box.Font = UiKit.FONT
+	box.AutoLocalize = false
 	box.TextScaled = true
 	box.TextColor3 = Color3.new(1, 1, 1)
 	box.BackgroundColor3 = UiKit.CARD_COLOR
-	box.Size = UDim2.fromScale(0.45, 0.1)
-	box.Position = UDim2.fromScale(0.1, 0.82)
+	box.Name = "Code"
+	box.Size = UDim2.new(0.67, -24, 0, 48)
+	box.Position = UDim2.new(0, 16, 1, -64)
 	UiKit.corner(box, 8)
 	box.Parent = panel
+	local textLimit = Instance.new("UITextSizeConstraint")
+	textLimit.MinTextSize, textLimit.MaxTextSize = 12, 22
+	textLimit.Parent = box
 	local redeem = UiKit.button(panel, Locale.term("Redeem"), {
-		Size = UDim2.fromScale(0.25, 0.1),
-		Position = UDim2.fromScale(0.6, 0.82),
+		Name = "Redeem",
+		Size = UDim2.new(0.33, -16, 0, 48),
+		Position = UDim2.new(0.67, 0, 1, -64),
 		BackgroundColor3 = Color3.fromRGB(80, 110, 200),
 	})
 	redeem.Activated:Connect(function()
