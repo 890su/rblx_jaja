@@ -26,9 +26,13 @@ local function refresh()
 	for day, frame in dayCards do
 		local claimed = if available then day < nextDay else day <= streak
 		frame.BackgroundColor3 = if day == nextDay and available
-			then Color3.fromRGB(70, 140, 90)
-			elseif claimed then Color3.fromRGB(60, 60, 75)
+			then UiKit.BUTTON_COLOR
+			elseif claimed then UiKit.DISABLED_COLOR
 			else UiKit.CARD_COLOR
+		local dayLabel = frame:FindFirstChild("Day") :: TextLabel
+		dayLabel.Text = if claimed
+			then Locale.term("Claimed")
+			else Locale.t("daily_day", { day = day })
 	end
 	claimButton.Text = if available
 		then Locale.t("daily_claim", { day = nextDay })
@@ -40,26 +44,34 @@ end
 
 function RewardsController.init()
 	local panel = UiKit.panel("Daily", Locale.term("Daily Rewards"))
-	local row = UiKit.list(UiKit.body(panel, 112), UDim2.new(), UDim2.fromScale(1, 1))
-	assert(row:FindFirstChildOfClass("UIListLayout")):Destroy()
+	local row = UiKit.list(UiKit.body(panel, 56), UDim2.new(), UDim2.fromScale(1, 1))
+	row.Name = "Rewards"
+	local grid = Instance.new("Frame")
+	grid.Name, grid.BackgroundTransparency, grid.LayoutOrder = "Days", 1, 1
+	grid.Size, grid.Parent = UDim2.new(1, -8, 0, 0), row
 	local layout = Instance.new("UIGridLayout")
 	layout.CellSize = UDim2.new(0.13, 0, 0, 120)
 	layout.CellPadding = UDim2.fromOffset(8, 8)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = row
+	layout.Parent = grid
 	local function resize()
 		local columns = if row.AbsoluteSize.X < 620 then 3 else 7
-		layout.CellSize =
-			UDim2.fromOffset(math.max(72, (row.AbsoluteSize.X - 8 * columns) / columns), 120)
+		layout.CellSize = UDim2.fromOffset(
+			math.max(72, (row.AbsoluteSize.X - 8 * columns) / columns),
+			if UiKit.compact() then 96 else 120
+		)
+		grid.Size = UDim2.new(1, -8, 0, layout.AbsoluteContentSize.Y)
 	end
 	row:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(resize)
 	resize()
 	for day, reward in Daily.REWARDS do
 		local frame = Instance.new("Frame")
 		frame.LayoutOrder = day
 		frame.BackgroundColor3 = UiKit.CARD_COLOR
-		UiKit.corner(frame)
+		UiKit.surface(frame)
 		UiKit.text(frame, {
+			Name = "Day",
 			Text = Locale.t("daily_day", { day = day }),
 			Size = UDim2.fromScale(0.9, 0.22),
 			Position = UDim2.fromScale(0.05, 0.04),
@@ -71,19 +83,18 @@ function RewardsController.init()
 			TextColor3 = Color3.fromRGB(255, 220, 120),
 			TextWrapped = true,
 		})
-		frame.Parent = row
+		frame.Parent = grid
 		dayCards[day] = frame
 	end
-	claimButton = UiKit.button(
-		panel,
-		"",
-		{ Name = "Claim", Size = UDim2.new(1, -32, 0, 48), Position = UDim2.new(0, 16, 1, -120) }
-	)
+	claimButton = UiKit.footer(panel, "", "Claim")
 	claimButton.Activated:Connect(function()
 		Remotes.event("ClaimDaily"):FireServer()
 	end)
 
 	-- Promo codes
+	local codes = Instance.new("Frame")
+	codes.Name, codes.BackgroundTransparency, codes.LayoutOrder = "Codes", 1, 2
+	codes.Size, codes.Parent = UDim2.new(1, -8, 0, 48), row
 	local box = Instance.new("TextBox")
 	box.PlaceholderText = Locale.term("Enter code")
 	box.Text = ""
@@ -94,18 +105,18 @@ function RewardsController.init()
 	box.TextColor3 = Color3.new(1, 1, 1)
 	box.BackgroundColor3 = UiKit.CARD_COLOR
 	box.Name = "Code"
-	box.Size = UDim2.new(0.67, -24, 0, 48)
-	box.Position = UDim2.new(0, 16, 1, -64)
+	box.Size = UDim2.new(0.67, -8, 0, 48)
+	box.Position = UDim2.new()
 	UiKit.corner(box, 8)
-	box.Parent = panel
+	box.Parent = codes
 	local textLimit = Instance.new("UITextSizeConstraint")
 	textLimit.MinTextSize, textLimit.MaxTextSize = 12, 22
 	textLimit.Parent = box
-	local redeem = UiKit.button(panel, Locale.term("Redeem"), {
+	local redeem = UiKit.button(codes, Locale.term("Redeem"), {
 		Name = "Redeem",
-		Size = UDim2.new(0.33, -16, 0, 48),
-		Position = UDim2.new(0.67, 0, 1, -64),
-		BackgroundColor3 = Color3.fromRGB(80, 110, 200),
+		Size = UDim2.new(0.33, 0, 0, 48),
+		Position = UDim2.new(0.67, 0, 0, 0),
+		BackgroundColor3 = UiKit.BUTTON_COLOR,
 	})
 	redeem.Activated:Connect(function()
 		if #box.Text > 0 then

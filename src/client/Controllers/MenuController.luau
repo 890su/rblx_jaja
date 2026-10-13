@@ -45,7 +45,6 @@ local showerMenuLabel: TextLabel
 local shopGrid: ScrollingFrame
 local shopLoading: TextLabel
 
-local corner = UiKit.corner
 local text = UiKit.text
 local button = UiKit.button
 local CARD_COLOR = UiKit.CARD_COLOR
@@ -54,7 +53,7 @@ local BUTTON_COLOR = UiKit.BUTTON_COLOR
 local function buildShop()
 	local frame = UiKit.panel("Shop", Locale.term("Meteor Shop"))
 	assert(frame:FindFirstChildOfClass("UISizeConstraint"), "missing shop bounds").MaxSize =
-		Vector2.new(920, 468)
+		Vector2.new(920, 536)
 	local title = frame:FindFirstChild("Title") :: TextLabel
 	local body = UiKit.body(frame, 56)
 	restockLabel = text(frame, {
@@ -64,21 +63,24 @@ local function buildShop()
 		TextXAlignment = Enum.TextXAlignment.Right,
 		TextWrapped = true,
 	})
-	title.Size = UDim2.new(1, -96, 0, 48)
+	title.Size = UDim2.new(1, -156, 0, 48)
 	body.Position = UDim2.fromOffset(16, 96)
 	body.Size = UDim2.new(1, -32, 1, -168)
 	local function headerResize()
-		if frame.AbsoluteSize.X < 480 then
-			title.Size = UDim2.new(1, -96, 0, 48)
+		local header = UiKit.headerHeight()
+		if frame.AbsoluteSize.X < 520 then
+			title.Size = UDim2.new(1, -156, 0, 48)
 			restockLabel.Position, restockLabel.Size =
-				UDim2.fromOffset(16, 64), UDim2.new(1, -32, 0, 24)
-			body.Position, body.Size = UDim2.fromOffset(16, 96), UDim2.new(1, -32, 1, -168)
+				UDim2.fromOffset(16, header), UDim2.new(1, -32, 0, 24)
+			body.Position, body.Size =
+				UDim2.fromOffset(16, header + 32), UDim2.new(1, -32, 1, -header - 104)
 		else
-			local width = (frame.AbsoluteSize.X - 104) / 2
+			local width = (frame.AbsoluteSize.X - 164) / 2
 			title.Size = UDim2.fromOffset(width, 48)
 			restockLabel.Position, restockLabel.Size =
 				UDim2.fromOffset(24 + width, 8), UDim2.fromOffset(width, 48)
-			body.Position, body.Size = UDim2.fromOffset(16, 64), UDim2.new(1, -32, 1, -136)
+			body.Position, body.Size =
+				UDim2.fromOffset(16, header), UDim2.new(1, -32, 1, -header - 72)
 		end
 	end
 	frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(headerResize)
@@ -133,11 +135,7 @@ local function buildShop()
 		local card = Instance.new("Frame")
 		card.LayoutOrder = slot
 		card.BackgroundColor3 = CARD_COLOR
-		corner(card)
-		local stroke = Instance.new("UIStroke")
-		stroke.Thickness = 1
-		stroke.Transparency = 0.3
-		stroke.Parent = card
+		UiKit.surface(card)
 		card.Parent = grid
 		local entry = {
 			frame = card,
@@ -182,7 +180,7 @@ local function buildShop()
 	resize()
 	local upgrades =
 		UiKit.footer(frame, Locale.term("Upgrades · Treadmill · Carry speed"), "UpgradesButton")
-	upgrades.BackgroundColor3 = Color3.fromRGB(80, 110, 200)
+	upgrades.BackgroundColor3 = UiKit.CARD_COLOR
 	upgrades.Activated:Connect(function()
 		UiKit.show("Upgrades")
 		Remotes.event("RequestShopState"):FireServer()
@@ -223,7 +221,7 @@ local function refreshShop()
 			)
 			entry.buy.BackgroundColor3 = if left > 0 and coins >= offer.price
 				then BUTTON_COLOR
-				else Color3.fromRGB(90, 90, 100)
+				else UiKit.DISABLED_COLOR
 			UiKit.setEnabled(entry.buy, left > 0 and coins >= offer.price)
 		else
 			entry.buy.Text = Locale.term("Sold out")
@@ -272,7 +270,7 @@ local function refreshRebirth()
 	end
 	table.insert(lines, Locale.term("Resets Speed and Stardust. Creatures stay."))
 	rebirthInfo.Text = table.concat(lines, "\n")
-	rebirthButton.BackgroundColor3 = if ok then BUTTON_COLOR else Color3.fromRGB(90, 90, 100)
+	rebirthButton.BackgroundColor3 = if ok then BUTTON_COLOR else UiKit.DISABLED_COLOR
 	UiKit.setEnabled(rebirthButton, ok)
 end
 

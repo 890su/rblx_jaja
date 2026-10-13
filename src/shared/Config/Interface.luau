@@ -10,4 +10,16 @@ return require(script.Parent.Parent.Util.deepFreeze)({
 	fontMin = 12,
 	fontMax = 22,
 	titleMax = 28,
+	navHeight = 56,
+	fastMotion = 0.12,
+	openMotion = 0.18,
+	colors = {
+		panel = Color3.fromRGB(16, 25, 40),
+		card = Color3.fromRGB(28, 42, 61),
+		primary = Color3.fromRGB(27, 131, 115),
+		disabled = Color3.fromRGB(45, 58, 75),
+		accent = Color3.fromRGB(92, 231, 202),
+		muted = Color3.fromRGB(177, 195, 215),
+		border = Color3.fromRGB(69, 92, 119),
+	},
 })

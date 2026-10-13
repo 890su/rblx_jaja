@@ -21,6 +21,12 @@ local Theme = require(script.Parent.Theme)
 export type Args = { [string]: any }
 
 local STRINGS: { [string]: string } = {
+	ui_station_compact_title = "Station · {used}/{capacity}",
+	ui_station_hint = "1. Select a slot   2. Select a stored creature   3. Swap — the old creature stays in storage",
+	ui_station_pick_storage = "Slot {slot} · {name} — select a stored creature to swap",
+	ui_station_swap_preview = "Slot {slot} → {name} · the old creature stays in storage",
+	ui_collection_progress = "{count} of {total} creatures discovered",
+	ui_collection_empty = "No discoveries yet. Bring a meteor home and hatch it to reveal a creature",
 	upgrade_max = "This upgrade is already at its maximum level",
 	purchase_credit_saved = "Purchase saved as a credit. Use it in Store when eligible eggs or stock are available",
 	purchase_use_credit = "Use credit · {count}",
@@ -166,6 +172,17 @@ local STRINGS: { [string]: string } = {
 
 -- Fixed words and sentences shown as-is (auto-translated when displayed).
 local STATIC_TERMS: { string } = {
+	"Explore",
+	"Progress",
+	"Social",
+	"Collection",
+	"Robux",
+	"Robux Store",
+	"Permanent perks",
+	"One-time purchases",
+	"All",
+	"Discovered",
+	"Claimed",
 	"Menu",
 	"More",
 	"Undiscovered",

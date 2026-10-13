@@ -102,7 +102,12 @@ function Checks.run(): any
 				return replies[player] ~= nil
 			end, 40)
 			check(op .. " client replied; last stage: " .. (stages[player] or "none"), replied)
-			check(op .. " client executed", replies[player].ok == true)
+			check(
+				op
+					.. " client executed"
+					.. (if replies[player].ok then "" else ": " .. tostring(replies[player].result)),
+				replies[player].ok == true
+			)
 			return replies[player].result
 		end
 		at(owner, ownerPlot.center + Vector3.new(0, 4, 55))
@@ -301,7 +306,7 @@ function Checks.run(): any
 				return Carry.get(buyer) == nil and ownerData.pedestals["1"] ~= nil
 			end, 30)
 		)
-		return { ok = true, checks = checks, players = 2 }
+		return { ok = true, checks = checks, players = 2, ui = menus.layout }
 	end)
 	for _, player in joined do
 		local carry = Carry.get(player)

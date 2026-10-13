@@ -127,7 +127,7 @@ end
 
 local function refreshStorage()
 	local count = (player:GetAttribute("StorageCount") :: number?) or 0
-	storageLabel.Visible = count > 0
+	storageLabel.Visible = count > 0 and player:GetAttribute("MenuOpen") ~= true
 	if count > 0 then
 		storageLabel.Text = "📦 " .. Locale.t("storage_manage", { count = count })
 	end
@@ -178,6 +178,7 @@ function StationController.start()
 		end
 	end)
 	player:GetAttributeChangedSignal("StorageCount"):Connect(refreshStorage)
+	player:GetAttributeChangedSignal("MenuOpen"):Connect(refreshStorage)
 	refreshStorage()
 	while true do
 		local plot = myPlot()

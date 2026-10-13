@@ -66,13 +66,13 @@ function Controller.init()
 		local frame = Instance.new("Frame")
 		frame.Name, frame.Size, frame.LayoutOrder, frame.BackgroundColor3, frame.Parent =
 			entry.key, UDim2.new(1, -10, 0, 156), order, UiKit.CARD_COLOR, list
-		UiKit.corner(frame)
+		UiKit.surface(frame)
 		local view = Preview.new(frame, UDim2.fromScale(0.01, 0.05), UDim2.fromScale(0.20, 0.90))
 		Preview.set(view, entry.key)
 		UiKit.text(frame, {
 			Text = Locale.term(entry.title),
-			Position = UDim2.fromScale(0.23, 0.04),
-			Size = UDim2.fromScale(0.73, 0.22),
+			Position = UDim2.new(0.23, 0, 0, 8),
+			Size = UDim2.new(0.73, 0, 0, 26),
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
 		local description = UiKit.text(frame, {
@@ -81,6 +81,7 @@ function Controller.init()
 			Size = UDim2.new(0.73, 0, 0, 28),
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			TextColor3 = UiKit.MUTED_COLOR,
 		})
 		local detail = UiKit.text(frame, {
 			TextWrapped = true,
@@ -106,15 +107,19 @@ function Controller.init()
 		cards[entry.key] = { detail = detail, buy = buy }
 		local function resize()
 			local narrow = frame.AbsoluteSize.X < 420
-			frame.Size = UDim2.new(1, -10, 0, if narrow then 192 else 156)
+			local short = list.AbsoluteSize.Y < 160
+			frame.Size = UDim2.new(1, -10, 0, if short then 112 elseif narrow then 192 else 156)
+			description.Visible = not short
 			description.Size = UDim2.new(0.73, 0, 0, if narrow then 48 else 28)
-			detail.Position = UDim2.new(0.23, 0, 0, if narrow then 100 else 74)
-			detail.Size = UDim2.new(0.73, 0, 0, if narrow then 32 else 20)
+			detail.Position = UDim2.new(0.23, 0, 0, if short then 36 elseif narrow then 100 else 74)
+			detail.Size = UDim2.new(0.73, 0, 0, if short then 20 elseif narrow then 32 else 20)
 		end
 		frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
+		list:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
 		resize()
 	end
 	local back = UiKit.footer(panel, Locale.term("Back to Shop"), "Back")
+	back.BackgroundColor3 = UiKit.CARD_COLOR
 	back.Activated:Connect(function()
 		UiKit.show("Shop")
 		Remotes.event("RequestShopState"):FireServer()

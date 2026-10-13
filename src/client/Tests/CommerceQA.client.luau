@@ -34,6 +34,7 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 		if op == "menus" then
 			local gui = UiKit.gui()
 			local checked = 0
+			local layouts: { any } = {}
 			for _, name in { "Shop", "Rebirth", "Store", "Upgrades", "Station", "Daily", "Index" } do
 				remote:FireServer("stage", "menu:" .. name)
 				UiKit.show(name)
@@ -41,9 +42,34 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 				local panel = gui:FindFirstChild(name) :: Frame
 				assert(
 					panel and panel.Visible and panel.AbsoluteSize.X > 0,
-					"menu invisible: " .. name
+					"menu invisible: "
+						.. name
+						.. "; panel="
+						.. tostring(panel)
+						.. "; visible="
+						.. tostring(if panel then panel.Visible else nil)
+						.. "; size="
+						.. tostring(if panel then panel.AbsoluteSize else nil)
+						.. "; viewport="
+						.. tostring(workspace.CurrentCamera.ViewportSize)
+						.. "; arena="
+						.. tostring(player:GetAttribute("ArenaActive"))
+						.. "/"
+						.. tostring(player:GetAttribute("ArenaPrep"))
 				)
 				local close = panel:FindFirstChild("Close") :: TextButton
+				local badge = gui:FindFirstChild("StorageBadge") :: TextLabel?
+				assert(not badge or not badge.Visible, "storage HUD overlaps menu")
+				local body = panel:FindFirstChild("Body") :: Frame
+				assert(body.AbsoluteSize.Y > 0, "menu has no content space: " .. name)
+				table.insert(layouts, {
+					name = name,
+					width = panel.AbsoluteSize.X,
+					height = panel.AbsoluteSize.Y,
+					bodyHeight = body.AbsoluteSize.Y,
+					compact = UiKit.compact(),
+					viewport = tostring(workspace.CurrentCamera.ViewportSize),
+				})
 				assert(close.Modal and close.Interactable, "close lost mouse release")
 				assert(
 					close.AbsoluteSize.X >= 48 and close.AbsoluteSize.Y >= 48,
@@ -70,7 +96,65 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 			UiKit.show("Store")
 			assert(not UiKit.isOpen("Odds"), "odds did not close")
 			UiKit.close()
-			return { menus = checked, odds = true }
+			UiKit.show("More")
+			UiKit.show("Upgrades")
+			UiKit.back()
+			assert(UiKit.isOpen("More"), "back lost menu destination")
+			UiKit.back()
+			assert(player:GetAttribute("MenuOpen") == false, "back lost gameplay input")
+			UiKit.show("Shop")
+			UiKit.show("Upgrades")
+			UiKit.show("Shop")
+			UiKit.back()
+			assert(player:GetAttribute("MenuOpen") == false, "navigation cycle left stale history")
+			for _, section in { "Shop", "Store", "Station", "Index" } do
+				UiKit.navigate(section)
+				assert(UiKit.isOpen(section), "navigation failed: " .. section)
+				if section == "Station" and workspace.CurrentCamera.ViewportSize.X > 100 then
+					task.wait(0.3)
+					local station = gui:FindFirstChild("Station") :: Frame
+					local slot = station:FindFirstChild("Slot1", true) :: GuiButton
+					assert(slot, "missing initial station slot")
+					local service = game:GetService("GuiService")
+					service.SelectedObject = slot
+					assert(service.SelectedObject == slot, "station initial focus unavailable")
+					remote:FireServer(
+						"stage",
+						"station focus viewport: " .. tostring(workspace.CurrentCamera.ViewportSize)
+					)
+					Remotes.event("StationAction"):FireServer("request")
+					task.wait(0.3)
+					local focus = service.SelectedObject
+					assert(
+						focus and focus.Name == "Slot1" and focus == slot,
+						"station refresh lost focus"
+					)
+				end
+				UiKit.close()
+			end
+			UiKit.show("More")
+			local more = gui:FindFirstChild("More") :: Frame
+			task.wait(0.2)
+			for _, order in { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } do
+				local action = more:FindFirstChild(`Action{order}`, true) :: TextButton
+				assert(
+					action and action:FindFirstChild("Icon") and action:FindFirstChild("Label"),
+					"hub destination missing"
+				)
+				assert(action.AbsoluteSize.Y >= 48, "hub touch target too small")
+			end
+			local dock = gui:FindFirstChild("Side") :: Frame
+			for _, name in { "Menu1", "Menu6", "More" } do
+				local b = dock:FindFirstChild(name) :: TextButton
+				local icon = b:FindFirstChild("Icon") :: Frame
+				local label = b:FindFirstChild("Label") :: TextLabel
+				assert(
+					icon.AbsolutePosition.X + icon.AbsoluteSize.X <= label.AbsolutePosition.X,
+					"navigation icon overlaps its label"
+				)
+			end
+			UiKit.close()
+			return { menus = checked, odds = true, layout = layouts }
 		end
 		if op == "shop" then
 			UiKit.show("Shop")

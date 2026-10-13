@@ -310,7 +310,7 @@ local function card(
 	frame.Name = item.key
 	frame.BackgroundColor3 = UiKit.CARD_COLOR
 	frame.LayoutOrder = order
-	UiKit.corner(frame)
+	UiKit.surface(frame)
 	frame.Parent = parent
 	local function resize()
 		frame.Size = UDim2.new(1, -10, 0, if frame.AbsoluteSize.X < 420 then 184 else 132)
@@ -402,13 +402,28 @@ refreshOwned = function()
 end
 
 function StoreController.init()
-	local store = UiKit.panel("Store", Locale.term("Store"))
+	local store = UiKit.panel("Store", Locale.term("Robux Store"))
 	local list = UiKit.list(UiKit.body(store), UDim2.new(), UDim2.fromScale(1, 1))
 	local order = 0
+	UiKit.text(list, {
+		Text = Locale.term("Permanent perks"),
+		Size = UDim2.new(1, -10, 0, 32),
+		LayoutOrder = 0,
+		TextColor3 = UiKit.ACCENT_COLOR,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	})
 	for _, pass in Products.PASSES do
 		order += 1
 		card(list, pass, true, order)
 	end
+	order += 1
+	UiKit.text(list, {
+		Text = Locale.term("One-time purchases"),
+		Size = UDim2.new(1, -10, 0, 32),
+		LayoutOrder = order,
+		TextColor3 = UiKit.ACCENT_COLOR,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	})
 	for _, product in Products.PRODUCTS do
 		order += 1
 		card(list, product, false, order)
@@ -435,7 +450,7 @@ function StoreController.init()
 		end
 	end)
 
-	UiKit.sideButton(Locale.term("Store"), Color3.fromRGB(40, 170, 110), 3, function()
+	UiKit.sideButton(Locale.term("Robux Store"), Color3.fromRGB(40, 170, 110), 3, function()
 		UiKit.toggle("Store")
 		refreshOwned()
 	end)
