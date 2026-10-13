@@ -6,6 +6,7 @@
 -- (Pass_<key>, written by MonetizationService).
 
 local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -36,7 +37,7 @@ local StationService = {}
 
 local plotOwner: { [number]: Player } = {}
 local playerPlot: { [Player]: Plot } = {}
-local storedCoins: { [Player]: number } = {}
+local lastIncomeAt: { [Player]: number } = {}
 local collectDebounce: { [Player]: number } = {}
 -- Auto-collect banks every tick; analytics gets one batched event per minute.
 local autoBanked: { [Player]: number } = {}
@@ -308,7 +309,7 @@ end
 local function spawnAtPlot(player: Player, character: Model)
 	local plot = playerPlot[player]
 	if plot then
-		SpeedService.markTeleport(player)
+		SpeedService.markTeleport(player, plot.spawn.Position)
 		character:PivotTo(plot.spawn)
 	end
 end
@@ -324,7 +325,8 @@ local function assignPlot(player: Player, profile: Types.PlayerProfile)
 				hasPass(player, "OfflinePlus"),
 				StationService.passIncomeMultiplier(player)
 			)
-			storedCoins[player] = offline
+			profile.uncollectedCoins += offline
+			lastIncomeAt[player] = os.time()
 			profile.lastOnline = os.time()
 			setOwnerSign(plot, player)
 			refreshPlot(plot, profile)
@@ -349,7 +351,7 @@ local function assignPlot(player: Player, profile: Types.PlayerProfile)
 			return
 		end
 	end
-	warn(`[StationService] no free plot for {player.Name}`)
+	player:Kick("This server has no free station. Please join another server.")
 end
 
 local function releasePlot(player: Player)
@@ -359,7 +361,7 @@ local function releasePlot(player: Player)
 	end
 	plotOwner[plot.index] = nil
 	playerPlot[player] = nil
-	storedCoins[player] = nil
+	lastIncomeAt[player] = nil
 	collectDebounce[player] = nil
 	autoBanked[player] = nil
 	autoBankedFlushAt[player] = nil
@@ -371,11 +373,15 @@ local COLLECT_RADIUS = Vector3.new(7, 8, 5) -- half-extents around the collector
 local COLLECT_CHECK_PERIOD = 0.2
 
 local function bank(player: Player, plot: Plot, silent: boolean)
-	local amount = math.floor(storedCoins[player] or 0)
+	local profile = DataService.get(player)
+	if not profile then
+		return
+	end
+	local amount = math.floor(profile.uncollectedCoins)
 	if amount <= 0 then
 		return
 	end
-	storedCoins[player] -= amount
+	profile.uncollectedCoins -= amount
 	DataService.addCoins(player, amount)
 	if silent then
 		autoBanked[player] = (autoBanked[player] or 0) + amount
@@ -399,10 +405,11 @@ end
 local function tryCollect(player: Player, plot: Plot)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not root then
+	local position = SpeedService.validatePosition(player)
+	if not root or not position then
 		return
 	end
-	local offset = root.Position - plot.collector.Position
+	local offset = position - plot.collector.Position
 	if
 		math.abs(offset.X) > COLLECT_RADIUS.X
 		or math.abs(offset.Y) > COLLECT_RADIUS.Y
@@ -491,6 +498,7 @@ function StationService.placeState(
 		return false
 	end
 	profile.pedestals[key] = table.clone(state)
+	profile.pedestals[key].id = state.id or HttpService:GenerateGUID(false)
 	refreshPlot(plot, profile)
 	return true
 end
@@ -503,6 +511,7 @@ function StationService.placeNew(player: Player, creatureId: string, mutation: s
 	end
 	return StationService.placeState(player, {
 		creatureId = creatureId,
+		paid = false,
 		rarity = creature.rarity,
 		mutation = mutation,
 		hatchAt = os.time() + Rarity.INFO[creature.rarity].hatchSeconds,
@@ -522,7 +531,9 @@ function StationService.give(
 	if StationService.placeState(player, state) then
 		return "placed"
 	end
-	table.insert(profile.storage, table.clone(state))
+	local copy = table.clone(state)
+	copy.id = copy.id or HttpService:GenerateGUID(false)
+	table.insert(profile.storage, copy)
 	StationService.refresh(player)
 	return "stored"
 end
@@ -598,6 +609,7 @@ function StationService.replaceSlot(
 		return false
 	end
 	profile.pedestals[key] = table.clone(state)
+	profile.pedestals[key].id = state.id or HttpService:GenerateGUID(false)
 	table.insert(profile.storage, old)
 	refreshPlot(plot, profile)
 	StationService.pushInventory(player)
@@ -657,7 +669,8 @@ local function inventoryAction(
 	if not profile or not plot or not root or not humanoid or humanoid.Health <= 0 then
 		return
 	end
-	if not WorldService.isInPlot(plot, root.Position) then
+	local position = SpeedService.validatePosition(player)
+	if not position or not WorldService.isInPlot(plot, position) then
 		Notifier.send(player, "station_manage_home", nil, "warning")
 		StationService.pushInventory(player)
 		return
@@ -732,14 +745,19 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 	end
 
 	local now = os.time()
+	local previous = lastIncomeAt[player] or now
+	local elapsed = math.max(0, now - previous)
+	lastIncomeAt[player] = now
 	profile.lastOnline = now
-	profile.playtimeTotal += Economy.INCOME_TICK_SECONDS
+	profile.playtimeTotal += elapsed
 	local incomeMultiplier = Income.multiplier(profile, StationService.passIncomeMultiplier(player))
 	local incomeThisTick = 0
 	local pulseAt = workspace:GetServerTimeNow()
 	for slot, state in profile.pedestals do
 		if isHatched(state, now) then
-			local amount = incomeOf(state) * incomeMultiplier * Economy.INCOME_TICK_SECONDS
+			local amount = incomeOf(state)
+				* incomeMultiplier
+				* math.max(0, now - math.max(previous, state.hatchAt or previous))
 			incomeThisTick += amount
 			local pedestal = plot.pedestals[tonumber(slot) :: number]
 			if pedestal then
@@ -771,11 +789,11 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 		end
 	end
 	-- The displayed per-capsule payouts and banked income are the same amounts.
-	storedCoins[player] = (storedCoins[player] or 0) + incomeThisTick
+	profile.uncollectedCoins += incomeThisTick
 	if hasPass(player, "OfflinePlus") then
 		bank(player, plot, true) -- Auto-collect
 	end
-	local stored = math.floor(storedCoins[player])
+	local stored = math.floor(profile.uncollectedCoins)
 	local collectorGui = plot.collector:FindFirstChild("Info") :: BillboardGui?
 	local collectorValue = collectorGui and collectorGui:FindFirstChild("Value") :: TextLabel?
 	if collectorGui and collectorValue then
@@ -793,9 +811,10 @@ function StationService.init()
 	DataService.onLoaded(assignPlot)
 	DataService.onRemoving(function(player, profile)
 		-- Bank uncollected coins so leaving never loses income.
-		local stored = math.floor(storedCoins[player] or 0)
+		local stored = math.floor(profile.uncollectedCoins)
 		if stored > 0 then
 			profile.coins += stored
+			profile.uncollectedCoins -= stored
 		end
 		releasePlot(player)
 	end)

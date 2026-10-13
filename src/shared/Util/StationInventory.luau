@@ -9,7 +9,7 @@ function StationInventory.key(state: Types.PedestalState?): string
 	if not state then
 		return ""
 	end
-	return `{state.creatureId}|{state.rarity}|{state.mutation or ""}|{state.hatchAt or 0}`
+	return `{state.id or ""}|{state.creatureId}|{state.rarity}|{state.mutation or ""}|{state.hatchAt or 0}`
 end
 
 function StationInventory.exchange(

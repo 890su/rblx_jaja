@@ -30,6 +30,14 @@ local function onPlayerAdded(player: Player)
 	friends[player] = friends[player] or {}
 	for _, other in Players:GetPlayers() do
 		if other ~= player and friends[other] and isFriends(player, other) then
+			if
+				player.Parent ~= Players
+				or other.Parent ~= Players
+				or not friends[player]
+				or not friends[other]
+			then
+				continue
+			end
 			friends[player][other] = true
 			friends[other][player] = true
 			publish(other)

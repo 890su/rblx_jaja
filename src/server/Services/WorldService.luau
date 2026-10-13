@@ -15,6 +15,7 @@ local Maze = require(Shared.Util.Maze)
 local Notifier = require(script.Parent.Parent.Util.Notifier)
 local Theme = require(Shared.Theme)
 local EnvironmentBuild = require(script.Parent.Parent.Util.EnvironmentBuild)
+local Biomes = require(Shared.Theme.Biomes)
 local ArenaWorldBuild = require(script.Parent.Parent.Util.ArenaWorldBuild)
 local CryoCapsuleBuild = require(script.Parent.Parent.Util.CryoCapsuleBuild)
 
@@ -340,14 +341,15 @@ local function buildTrack(parent: Instance)
 	local z = 0
 	for i, zone in Zones.ZONES do
 		zoneStartZ[i] = z
-		local shade = 1 - (i - 1) * 0.12
+		local biome = Biomes.ZONES[i]
 		part({
 			Name = `Zone{i}`,
 			Size = Vector3.new(trackHalfWidth * 2, 1, zone.lengthStuds),
 			Position = Vector3.new(0, FLOOR_TOP - 0.5, z - zone.lengthStuds / 2),
-			Color = Color3.fromRGB(175 * shade, 150 * shade, 150 * shade),
-			Material = Theme.MATERIALS.trackGround.base,
-			MaterialVariant = Theme.MATERIALS.trackGround.variant,
+			Color = biome.ground,
+			Material = biome.groundMaterial,
+			MaterialVariant = biome.groundVariant,
+			CustomPhysicalProperties = PhysicalProperties.new(Theme.MATERIALS.trackGround.base),
 		}, folder)
 
 		if zone.speedGate > 0 or zone.rebirthGate > 0 then
@@ -507,14 +509,16 @@ local function buildTrack(parent: Instance)
 	folder.Parent = parent
 end
 
-local function canyonWall(cframe: CFrame, size: Vector3, parent: Instance)
+local function canyonWall(cframe: CFrame, size: Vector3, parent: Instance, zoneIndex: number)
+	local biome = Biomes.ZONES[zoneIndex]
 	part({
 		Name = "CanyonWall",
 		Size = size,
 		CFrame = cframe,
-		Color = Color3.fromRGB(230, 225, 240),
-		Material = Theme.MATERIALS.canyonWall.base,
-		MaterialVariant = Theme.MATERIALS.canyonWall.variant,
+		Color = biome.rock,
+		Material = biome.wallMaterial,
+		MaterialVariant = biome.wallVariant,
+		CustomPhysicalProperties = PhysicalProperties.new(Theme.MATERIALS.canyonWall.base),
 	}, parent)
 end
 
@@ -558,7 +562,8 @@ local function buildCanyonSide(zoneIndex: number, side: number, rng: Random, par
 				canyonWall(
 					CFrame.new(xAt(edge), y, (z1 + z2) / 2),
 					Vector3.new(t, h, math.abs(z1 - z2) + t),
-					parent
+					parent,
+					zoneIndex
 				)
 				runStart = nil
 			end
@@ -579,7 +584,8 @@ local function buildCanyonSide(zoneIndex: number, side: number, rng: Random, par
 				canyonWall(
 					CFrame.new((x1 + x2) / 2, y, zAt(edge)),
 					Vector3.new(math.abs(x1 - x2) + t, h, t),
-					parent
+					parent,
+					zoneIndex
 				)
 				runStart = nil
 			end
@@ -640,6 +646,7 @@ local function setupLighting()
 	Lighting.EnvironmentDiffuseScale = 0.6
 	Lighting.EnvironmentSpecularScale = 0.6
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
+	atmosphere.Name = "MeteorAtmosphere"
 	atmosphere.Density = 0.28
 	atmosphere.Haze = 1.2
 	atmosphere.Color = Color3.fromRGB(255, 190, 160)
@@ -656,6 +663,20 @@ local function setupLighting()
 	g.Saturation = 0.18
 	g.Contrast = 0.08
 	g.TintColor = Color3.fromRGB(255, 245, 250)
+	-- Neutral station look; biome variations are applied independently per client.
+	local look = Biomes.STATION
+	for target, properties in
+		{ [Lighting] = look.lighting, [atmosphere] = look.atmosphere, [g] = look.grade }
+	do
+		for property, value in properties do
+			(target :: any)[property] = value
+		end
+	end
+	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
+	for property, value in Biomes.BLOOM do
+		(bloom :: any)[property] = value
+	end
+	bloom.Parent = Lighting
 end
 
 -- Replaces the template Baseplate with a wide crater plain under everything.
@@ -696,13 +717,23 @@ local function scatterDecor(parent: Instance)
 	local folder = Instance.new("Folder")
 	folder.Name = "Decor"
 	local rng = Random.new(20261011)
-	for _ = 1, 36 do
+	for _ = 1, 18 do
 		local side = if rng:NextNumber() < 0.5 then -1 else 1
 		local x = side * rng:NextNumber(trackHalfWidth + 25, trackHalfWidth + 420)
-		local z = rng:NextNumber(-980, 140)
+		local z = rng:NextNumber(zoneStartZ[4] + 50, zoneStartZ[3] - 50)
 		local clone = crystal:Clone()
+		for _, descendant in clone:GetDescendants() do
+			if descendant:IsA("BasePart") then
+				descendant.Anchored = true
+				descendant.CanCollide, descendant.CanQuery, descendant.CanTouch =
+					false, false, false
+			end
+		end
 		clone:ScaleTo(clone:GetScale() * rng:NextNumber(0.8, 2.2))
 		local _, size = clone:GetBoundingBox()
+		-- Keep the entire rotated crystal outside the playable boundary.
+		x = side
+			* math.max(math.abs(x), trackHalfWidth + 25 + Vector2.new(size.X, size.Z).Magnitude / 2)
 		clone:PivotTo(
 			CFrame.new(x, FLOOR_TOP + size.Y / 2 - 0.3, z)
 				* CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)

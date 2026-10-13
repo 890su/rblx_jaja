@@ -161,7 +161,10 @@ local function clampLane(player: Player, character: Model, root: BasePart, laneX
 	local position = root.Position
 	local limit = HALF + CLAMP_TOLERANCE
 	if math.abs(position.X - laneX) > limit or position.Y < 1 then
-		SpeedService.markTeleport(player)
+		SpeedService.markTeleport(
+			player,
+			Vector3.new(math.clamp(position.X, laneX - HALF, laneX + HALF), 3.5, position.Z)
+		)
 		root.AssemblyLinearVelocity = Vector3.zero
 		local x = math.clamp(position.X, laneX - HALF, laneX + HALF)
 		character:PivotTo(CFrame.new(x, 3.5, position.Z) * root.CFrame.Rotation)
@@ -311,6 +314,9 @@ end
 local function tick(dt: number)
 	local now = workspace:GetServerTimeNow()
 	for _, player in Players:GetPlayers() do
+		if not SpeedService.validatePosition(player) then
+			continue
+		end
 		local character, root, humanoid = body(player)
 		local carry = CarryService.get(player)
 		local run = active[player]
@@ -376,6 +382,9 @@ function ArenaService.isActive(player: Player): boolean
 end
 
 function ArenaService.init()
+	CarryService.setDeliveryGuard(function(player, carry)
+		return not qualifies(carry) or completed[player] == carry
+	end)
 	waveEvent = Remotes.event("ArenaWave")
 	Players.PlayerRemoving:Connect(function(player)
 		finish(player, "cancel")

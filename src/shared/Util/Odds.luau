@@ -64,7 +64,8 @@ function Odds.oneIn(weights: Types.RarityWeights, rarity: Types.Rarity, boost: n
 end
 
 -- Percent with sensible precision for odds windows (sum shown must be 100%).
-function Odds.percent(weights: Types.RarityWeights, rarity: Types.Rarity): number
+function Odds.percent(weights: Types.RarityWeights, rarity: Types.Rarity, boost: number?): number
+	weights = boosted(weights, boost)
 	local weight = weights[rarity] or 0
 	return weight / total(weights) * 100
 end

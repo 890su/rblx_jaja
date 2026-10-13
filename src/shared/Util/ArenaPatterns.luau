@@ -1,7 +1,9 @@
 --!strict
 -- Void Run attacks, inspired by Undertale's bullet boards (bone walls, blue /
 -- orange attacks, Gaster Blasters, Undyne's spears, Flowey's pellet ring,
--- Muffet's crossfire, Asgore's sweeping bar, Toriel's fire streams).
+-- Muffet's crossfire, Asgore's sweeping bar, Toriel's fire streams), plus the
+-- drone attacks of an open-field chase (bombs, spiral bursts, laser sweeps),
+-- fired from the casting drone itself.
 -- Pure functions of (wave, server time): the server checks hits and clients
 -- render the same hazards, so no client can claim a dodge. All coordinates
 -- are world X/Z packed into Vector2 (Y = world Z).
@@ -21,6 +23,12 @@ export type Wave = {
 	-- runs) is turned to this axis-aligned world direction around (x, z).
 	-- nil in the Void Run, where forward is always +Z.
 	heading: Vector2?,
+	-- Drone attacks: the casting drone's position, and the runner's direction
+	-- of travel (unit). nil elsewhere.
+	ox: number?,
+	oz: number?,
+	dx: number?,
+	dz: number?,
 }
 
 export type Hazard = {
@@ -31,7 +39,9 @@ export type Hazard = {
 	radius: number, -- circle / capsule radius
 	size: Vector2?, -- rect size (X, Z)
 	warning: boolean, -- telegraph: never damages
-	color: string, -- "white" | "blue" | "orange"
+	color: string, -- "white" | "blue" | "orange" | "red" | "amber"
+	style: string?, -- render hint: "disc" | "bomb" | "blast" | "beam"
+	y: number?, -- render height (a bomb in flight)
 }
 
 local Patterns = {}
@@ -100,7 +110,9 @@ local function circle(
 	position: Vector2,
 	radius: number,
 	warning: boolean,
-	color: string?
+	color: string?,
+	style: string?,
+	y: number?
 )
 	table.insert(out, {
 		id = id,
@@ -109,6 +121,29 @@ local function circle(
 		radius = radius,
 		warning = warning,
 		color = color or "white",
+		style = style,
+		y = y,
+	})
+end
+
+local function beam(
+	out: { Hazard },
+	id: string,
+	from: Vector2,
+	to: Vector2,
+	radius: number,
+	warning: boolean,
+	color: string
+)
+	table.insert(out, {
+		id = id,
+		shape = "capsule",
+		position = from,
+		finish = to,
+		radius = radius,
+		warning = warning,
+		color = color,
+		style = "beam",
 	})
 end
 
@@ -230,6 +265,74 @@ local function crossfireCount(wave: Wave): number
 	return 6 + math.floor(4 * wave.level)
 end
 
+-- Drone attacks -------------------------------------------------------------
+
+local BOMB_BLAST = 5.5 -- burst radius
+local BOMB_SPACING = 9 -- along the runner's path
+local BOMB_FLY = 0.45 -- throw to landing
+local BOMB_STAGGER = 0.12 -- between consecutive throws
+local SHRAPNEL_TIME = 0.7
+local SPIRAL_EMIT = 1.6 -- seconds of firing
+local SPIRAL_EVERY = 0.08
+local SPIRAL_RANGE = 70
+local SPIRAL_SPREAD = math.rad(45) -- either side of the aim
+local LASER_LENGTH = 48
+local LASER_SWEEP = math.rad(110)
+local LASER_TIME = 1.1
+
+local function droneOrigin(wave: Wave): Vector2
+	return Vector2.new(wave.ox or wave.x, wave.oz or wave.z)
+end
+
+local function pathDirection(wave: Wave): Vector2
+	local d = Vector2.new(wave.dx or 0, wave.dz or 1)
+	return if d.Magnitude > 1e-3 then d.Unit else Vector2.new(0, 1)
+end
+
+-- From the drone toward the target (the runner's predicted spot).
+local function aimOf(wave: Wave): Vector2
+	local d = Vector2.new(wave.x, wave.z) - droneOrigin(wave)
+	return if d.Magnitude > 1e-3 then d.Unit else pathDirection(wave)
+end
+
+local function bombCount(wave: Wave): number
+	return 3 + math.floor(2 * wave.level)
+end
+
+local function bombBurst(i: number, warn: number): number
+	return (i - 1) * BOMB_STAGGER + BOMB_FLY + warn
+end
+
+local function spiralArms(wave: Wave): number
+	return 2 + math.floor(2.5 * wave.level)
+end
+
+-- Seconds from t0 the casting drone holds still while its attack pours out.
+function Patterns.castTime(wave: Wave): number
+	local warn = warnTime(wave)
+	if wave.kind == "bombs" then
+		return (bombCount(wave) - 1) * BOMB_STAGGER + 0.25
+	elseif wave.kind == "spiral" then
+		return warn + SPIRAL_EMIT
+	elseif wave.kind == "laser" then
+		return warn + LASER_TIME / wave.speed
+	end
+	return 0
+end
+
+-- Seconds from t0 until a drone attack bites (servers aim it where the runner
+-- will be by then).
+function Patterns.leadFor(kind: string, level: number): number
+	local warn = Patterns.warnTimeFor(level)
+	if kind == "bombs" then
+		local middle = (2 + math.floor(2 * level)) / 2
+		return middle * BOMB_STAGGER + BOMB_FLY + warn
+	elseif kind == "spiral" or kind == "laser" then
+		return warn + 0.3
+	end
+	return warn + 0.1
+end
+
 -- Seconds from t0 until the wave has fully played out.
 function Patterns.duration(wave: Wave): number
 	local warn, s = warnTime(wave), wave.speed
@@ -248,6 +351,12 @@ function Patterns.duration(wave: Wave): number
 		return warn + 3.2
 	elseif kind == "stream" then
 		return warn + 2.6 + 110 / (16 * s)
+	elseif kind == "bombs" then
+		return bombBurst(bombCount(wave), warn) + SHRAPNEL_TIME
+	elseif kind == "spiral" then
+		return warn + SPIRAL_EMIT + SPIRAL_RANGE / (30 * s)
+	elseif kind == "laser" then
+		return warn + LASER_TIME / s
 	end
 	return 0
 end
@@ -440,7 +549,106 @@ local function stream(out: { Hazard }, wave: Wave, age: number, warn: number)
 	end
 end
 
+-- Bombs: the drone lobs a row of bombs along the runner's path; each lands on
+-- a marked spot, bursts, and throws a ring of shrapnel outward.
+local function bombs(out: { Hazard }, wave: Wave, age: number, warn: number)
+	local from = droneOrigin(wave)
+	local along = pathDirection(wave)
+	local side = Vector2.new(along.Y, -along.X)
+	local count = bombCount(wave)
+	local shards = 8 + math.floor(4 * wave.level)
+	for i = 1, count do
+		local launch = (i - 1) * BOMB_STAGGER
+		local burst = bombBurst(i, warn)
+		if age < launch then
+			continue
+		end
+		local spot = Vector2.new(wave.x, wave.z)
+			+ along * ((i - (count + 1) / 2) * BOMB_SPACING)
+			+ side * ((rand(wave.seed, i) * 2 - 1) * 6)
+		if age < burst then
+			circle(out, `{wave.id}:m{i}`, spot, BOMB_BLAST, true, "amber", "disc")
+			local f = math.clamp((age - launch) / BOMB_FLY, 0, 1)
+			local height = 4 * (1 - f) + 7 * math.sin(math.pi * f) + 0.8
+			circle(out, `{wave.id}:o{i}`, from:Lerp(spot, f), 1.2, true, "amber", "bomb", height)
+		elseif age < burst + 0.18 then
+			circle(out, `{wave.id}:x{i}`, spot, BOMB_BLAST, false, "amber", "blast")
+		end
+		local flight = age - burst
+		if flight >= 0 and flight <= SHRAPNEL_TIME then
+			local spin = rand(wave.seed, i + 50) * math.pi * 2
+			for k = 0, shards - 1 do
+				local a = spin + k * 2 * math.pi / shards
+				local reach = BOMB_BLAST * 0.5 + flight * 26 * wave.speed
+				circle(
+					out,
+					`{wave.id}:p{i}_{k}`,
+					spot + Vector2.new(math.cos(a), math.sin(a)) * reach,
+					0.9,
+					false,
+					"amber"
+				)
+			end
+		end
+	end
+end
+
+-- Spiral: the drone charges, then sprays weaving arms of pellets in a cone
+-- toward where the runner is heading.
+local function spiral(out: { Hazard }, wave: Wave, age: number, warn: number)
+	local from = droneOrigin(wave)
+	local aim = aimOf(wave)
+	if age < warn then
+		circle(out, `{wave.id}:c`, from, 2.5, true, "red", "disc")
+		beam(out, `{wave.id}:aim`, from, from + aim * 30, 0.4, true, "red")
+	end
+	local base = math.atan2(aim.Y, aim.X)
+	local turn = if rand(wave.seed, 1) < 0.5 then -1 else 1
+	local arms = spiralArms(wave)
+	local speed = 30 * wave.speed
+	for k = 0, math.floor(SPIRAL_EMIT / SPIRAL_EVERY) do
+		local distance = (age - warn - k * SPIRAL_EVERY) * speed
+		if distance >= 0 and distance <= SPIRAL_RANGE then
+			for arm = 1, arms do
+				local a = base
+					+ turn * SPIRAL_SPREAD * math.sin(k * 0.45 + arm * 2 * math.pi / arms)
+				circle(
+					out,
+					`{wave.id}:{k}_{arm}`,
+					from + Vector2.new(math.cos(a), math.sin(a)) * (1.5 + distance),
+					0.9,
+					false,
+					"red"
+				)
+			end
+		end
+	end
+end
+
+-- Laser: the drone sweeps a beam across the runner's path; both ends of the
+-- sweep are marked first.
+local function laser(out: { Hazard }, wave: Wave, age: number, warn: number)
+	local from = droneOrigin(wave)
+	local aim = aimOf(wave)
+	local base = math.atan2(aim.Y, aim.X)
+	local turn = if rand(wave.seed, 1) < 0.5 then -1 else 1
+	local start = base - turn * LASER_SWEEP / 2
+	local function tip(a: number): Vector2
+		return from + Vector2.new(math.cos(a), math.sin(a)) * LASER_LENGTH
+	end
+	if age < warn then
+		beam(out, `{wave.id}:a`, from, tip(start), 0.35, true, "red")
+		beam(out, `{wave.id}:b`, from, tip(start + turn * LASER_SWEEP), 0.35, true, "red")
+		return
+	end
+	local f = math.clamp((age - warn) * wave.speed / LASER_TIME, 0, 1)
+	beam(out, `{wave.id}:l`, from, tip(start + turn * LASER_SWEEP * f), 1.1, false, "red")
+end
+
 local BUILDERS: { [string]: (out: { Hazard }, wave: Wave, age: number, warn: number) -> () } = {
+	bombs = bombs,
+	spiral = spiral,
+	laser = laser,
 	wall = walls,
 	blaster = blasters,
 	spears = spears,

@@ -107,6 +107,7 @@ export type Config = {
 	BY_ID: { [string]: Creature },
 	candidates: (rarity: Types.Rarity, zone: number) -> { Creature },
 	pick: (rarity: Types.Rarity, zone: number, rng: Random) -> Creature,
+	weightOf: (creature: Creature, zone: number) -> number,
 }
 
 local config: Config = {
@@ -114,6 +115,7 @@ local config: Config = {
 	BY_ID = BY_ID,
 	candidates = candidates,
 	pick = pick,
+	weightOf = weightOf,
 }
 
 return deepFreeze(config)

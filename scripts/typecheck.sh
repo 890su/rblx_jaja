@@ -10,4 +10,4 @@ mkdir -p .luau
 [ -f "$DEFS" ] || curl -fsSL -o "$DEFS" \
 	"https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/${LSP_VERSION}/scripts/globalTypes.d.luau"
 rojo sourcemap default.project.json -o sourcemap.json
-luau-lsp analyze --sourcemap=sourcemap.json --definitions="$DEFS" src
+luau-lsp analyze --sourcemap=sourcemap.json --definitions="$DEFS" src tests

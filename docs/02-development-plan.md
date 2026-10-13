@@ -108,3 +108,7 @@ Buffer: Season/winter content (Dec) is built in parallel during weeks 6–8 by t
 ## 9. Environments
 - `Meteor Rush [DEV]` place (team only), `Meteor Rush` live place. Publish to live only from a tagged commit.
 - Separate DataStore names per environment (`_dev` suffix).
+
+## 10. Zone identity and creator emotes
+
+Owner's weekly work, five distinct zone prototypes, emote groups, achievement unlocks, cosmetic packs and recording mode: [roadmap](09-zone-and-emote-roadmap.md). The first free wave prototype supports R6/R15; advanced emotes and recording tools follow playtesting and the outstanding release checks.

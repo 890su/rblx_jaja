@@ -26,10 +26,20 @@ export type ZoneInfo = {
 }
 
 export type PedestalState = {
+	id: string?,
+	paid: boolean?,
 	creatureId: string,
 	rarity: Rarity,
 	mutation: string?,
 	hatchAt: number?,
+}
+
+export type TransferIntent = {
+	state: PedestalState,
+	ownerUserId: number,
+	recipientUserId: number,
+	slot: string,
+	applied: boolean?,
 }
 
 export type PlayerProfile = {
@@ -51,6 +61,10 @@ export type PlayerProfile = {
 	daily: { streak: number, lastClaimDay: number },
 	codes: { [string]: boolean },
 	training: number, -- Run Training upgrade level
+	uncollectedCoins: number,
+	serverLuckUntil: number,
+	outgoingTransfers: { [string]: TransferIntent },
+	incomingTransfers: { [string]: TransferIntent },
 }
 
 export type ShopOffer = {
@@ -73,5 +87,7 @@ export type PlayerStats = {
 	defends: number, -- thieves caught during a chase
 	timesRobbed: number,
 }
+
+export type EmoteKey = "wave"
 
 return nil

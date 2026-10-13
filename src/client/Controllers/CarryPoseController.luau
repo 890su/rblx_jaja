@@ -3,13 +3,29 @@
 -- Supports modern R15 AnimationConstraints as well as R15/R6 Motor6Ds.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local WavePose = require(Shared.Util.WavePose)
+local Emotes = require(Shared.Config.Emotes)
 
 type Joint = Motor6D | AnimationConstraint | Bone
-type Rig = { character: Model, joints: { [string]: Joint }, controlled: { [Joint]: boolean } }
+type Rig = {
+	character: Model,
+	joints: { [string]: Joint },
+	controlled: { [Joint]: boolean },
+	added: RBXScriptConnection?,
+}
 
 local CarryPoseController = {}
 local rigs: { [Player]: Rig } = {}
 local phase = 0
+
+local function unregister(player: Player)
+	local rig = rigs[player]
+	if rig and rig.added then
+		rig.added:Disconnect()
+	end
+	rigs[player] = nil
+end
 
 local function setTransform(joint: Joint, transform: CFrame)
 	if joint:IsA("Motor6D") then
@@ -31,12 +47,13 @@ local function addJoint(rig: Rig, instance: Instance)
 end
 
 local function register(player: Player, character: Model)
+	unregister(player)
 	local rig: Rig = { character = character, joints = {}, controlled = {} }
 	rigs[player] = rig
 	for _, instance in character:GetDescendants() do
 		addJoint(rig, instance)
 	end
-	character.DescendantAdded:Connect(function(instance)
+	rig.added = character.DescendantAdded:Connect(function(instance)
 		addJoint(rig, instance)
 	end)
 end
@@ -113,6 +130,30 @@ local function step(dt: number)
 					pose(rig, side.name .. "Wrist", CFrame.Angles(math.rad(-15), 0, 0), used)
 				end
 			end
+			local startedAt = player:GetAttribute("EmoteStartedAt")
+			local root = rig.character:FindFirstChild("HumanoidRootPart")
+			if
+				not carrying
+				and not treadmill
+				and player:GetAttribute("EmoteKey") == "wave"
+				and typeof(startedAt) == "number"
+				and root
+				and root:IsA("BasePart")
+				and humanoid.MoveDirection.Magnitude < 0.05
+				and humanoid.FloorMaterial ~= Enum.Material.Air
+				and Vector3.new(root.AssemblyLinearVelocity.X, 0, root.AssemblyLinearVelocity.Z).Magnitude
+					<= Emotes.MAX_HORIZONTAL_SPEED
+			then
+				local shoulder, elbow, wrist, neck, waist =
+					WavePose.sample(workspace:GetServerTimeNow() - startedAt, r6)
+				pose(rig, "RightShoulder", shoulder, used)
+				pose(rig, "Neck", neck, used)
+				if not r6 then
+					pose(rig, "RightElbow", elbow, used)
+					pose(rig, "RightWrist", wrist, used)
+					pose(rig, "Waist", waist, used)
+				end
+			end
 		end
 		for joint in rig.controlled do
 			if not used[joint] and joint.Parent then
@@ -125,6 +166,11 @@ end
 
 function CarryPoseController.start()
 	local function watch(player: Player)
+		player.CharacterRemoving:Connect(function(character)
+			if rigs[player] and rigs[player].character == character then
+				unregister(player)
+			end
+		end)
 		player.CharacterAdded:Connect(function(character)
 			register(player, character)
 		end)
@@ -133,9 +179,7 @@ function CarryPoseController.start()
 		end
 	end
 	Players.PlayerAdded:Connect(watch)
-	Players.PlayerRemoving:Connect(function(player)
-		rigs[player] = nil
-	end)
+	Players.PlayerRemoving:Connect(unregister)
 	for _, player in Players:GetPlayers() do
 		watch(player)
 	end

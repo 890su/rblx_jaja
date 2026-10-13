@@ -1,0 +1,251 @@
+<?xml version='1.0' encoding='utf-8'?>
+<roblox version="4">
+  <Item class="Folder" referent="RBX152">
+    <Properties>
+      <string name="Name">AssistantMaterials</string>
+    </Properties>
+    <Item class="Folder" referent="RBX153">
+      <Properties>
+        <string name="Name">Material: MH_CanyonRock</string>
+      </Properties>
+      <Item class="MaterialVariant" referent="RBX154">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://114171422723513</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://133202442084528</url>
+          </Content>
+          <string name="Name">MH_CanyonRock</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://80999547834718</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://119557520653959</url>
+          </Content>
+          <token name="BaseMaterial">788</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX155">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://72877599572537</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://105955703368708</url>
+          </Content>
+          <string name="Name">MH_CanyonRock1</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://101580338247962</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://140333962948391</url>
+          </Content>
+          <token name="BaseMaterial">788</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX156">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://112401780661457</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://113020162283752</url>
+          </Content>
+          <string name="Name">MH_CanyonRock2</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://131754782429789</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://103595160107006</url>
+          </Content>
+          <token name="BaseMaterial">788</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX157">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://105754028125994</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://129636903305311</url>
+          </Content>
+          <string name="Name">MH_CanyonRock3</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://111945523753339</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://76892300542266</url>
+          </Content>
+          <token name="BaseMaterial">788</token>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="RBX158">
+      <Properties>
+        <string name="Name">Material: MH_CraterGround</string>
+      </Properties>
+      <Item class="MaterialVariant" referent="RBX159">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://126894184351411</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://103200655306202</url>
+          </Content>
+          <string name="Name">MH_CraterGround</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://78954088442612</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://123256289154505</url>
+          </Content>
+          <token name="BaseMaterial">1360</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX160">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://102073976528666</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://74177771825555</url>
+          </Content>
+          <string name="Name">MH_CraterGround1</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://110097567354514</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://115455635145783</url>
+          </Content>
+          <token name="BaseMaterial">1360</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX161">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://100321407209313</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://127127453130249</url>
+          </Content>
+          <string name="Name">MH_CraterGround2</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://116832308487579</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://82136956812667</url>
+          </Content>
+          <token name="BaseMaterial">1360</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX162">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://115519804519797</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://129464018605564</url>
+          </Content>
+          <string name="Name">MH_CraterGround3</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://101955180351886</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://111636999780235</url>
+          </Content>
+          <token name="BaseMaterial">1360</token>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="RBX163">
+      <Properties>
+        <string name="Name">Material: MH_StationFloor</string>
+      </Properties>
+      <Item class="MaterialVariant" referent="RBX164">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://89405618708873</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://137686751568247</url>
+          </Content>
+          <string name="Name">MH_StationFloor</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://73320442562638</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://102738279665457</url>
+          </Content>
+          <token name="BaseMaterial">1088</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX165">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://111803051498232</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://110400570419989</url>
+          </Content>
+          <string name="Name">MH_StationFloor1</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://88090907072550</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://136589660087417</url>
+          </Content>
+          <token name="BaseMaterial">1088</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX166">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://131284419994852</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://130212577597986</url>
+          </Content>
+          <string name="Name">MH_StationFloor2</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://78187253771561</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://95450777084249</url>
+          </Content>
+          <token name="BaseMaterial">1088</token>
+        </Properties>
+      </Item>
+      <Item class="MaterialVariant" referent="RBX167">
+        <Properties>
+          <Content name="ColorMap">
+            <url>rbxassetid://115376534796697</url>
+          </Content>
+          <Content name="NormalMap">
+            <url>rbxassetid://74586831748883</url>
+          </Content>
+          <string name="Name">MH_StationFloor3</string>
+          <Content name="MetalnessMap">
+            <url>rbxassetid://85573535974340</url>
+          </Content>
+          <double name="StudsPerTile">10</double>
+          <Content name="RoughnessMap">
+            <url>rbxassetid://136109698490663</url>
+          </Content>
+          <token name="BaseMaterial">1088</token>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+</roblox>

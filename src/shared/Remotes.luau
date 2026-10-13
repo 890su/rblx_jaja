@@ -10,12 +10,15 @@ local FOLDER_NAME = "Remotes"
 
 -- Add names here as systems land (see docs/02-development-plan.md milestones).
 local EVENT_NAMES: { string } = {
+	"RequestEmote", -- client -> server: whitelisted cosmetic wave / stop
+	"RequestPurchase", -- client -> server: policy-checked kind/key
 	"Notify", -- server -> client: (message: string, kind: string?)
 	"ShopState", -- server -> client: (state: Types.ShopState)
 	"RequestShopState", -- client ready / reopening -> server: ()
 	"StationState", -- server -> client: station inventory snapshot
 	"StationAction", -- client -> server: request / swap / sell (validated server-side)
 	"ArenaWave", -- server -> client: (wave: ArenaPatterns.Wave) for the Void Run runner
+	"SnatcherMotion", -- server -> client: timed presentation snapshots; no client requests
 	"Knockback", -- server -> client: (direction: Vector3, power: number) after a hit
 	"ShopBuy", -- client -> server: (slot: number)
 	"BuyPedestal", -- client -> server: ()

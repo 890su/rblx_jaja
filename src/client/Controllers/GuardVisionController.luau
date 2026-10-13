@@ -17,6 +17,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared.Config.Snatchers)
+local Motion = require(script.Parent.SnatcherMotionController)
 
 local player = Players.LocalPlayer
 
@@ -282,7 +283,7 @@ local function update(dt: number)
 			if not root then
 				continue
 			end
-			local pivot = model:GetPivot()
+			local pivot = Motion.getPivot(model)
 			if (pivot.Position - eye).Magnitude > DRAW_DISTANCE then
 				continue
 			end

@@ -5,15 +5,10 @@ local Zones = require(Shared.Config.Zones)
 local Theme = require(Shared.Theme)
 local Economy = require(Shared.Config.Economy)
 local Arena = require(Shared.Config.Arena)
+local Biomes = require(Shared.Theme.Biomes)
+local BiomeScenery = require(script.Parent.BiomeScenery)
 
 local EnvironmentBuild = {}
-local COLORS = {
-	Color3.fromRGB(145, 106, 86),
-	Color3.fromRGB(190, 98, 65),
-	Color3.fromRGB(98, 153, 182),
-	Color3.fromRGB(137, 100, 172),
-	Color3.fromRGB(67, 160, 164),
-}
 
 local function part(
 	parent: Instance,
@@ -29,6 +24,7 @@ local function part(
 	p.Color, p.Material = color, material
 	p.Anchored = true
 	p.CanCollide = collision == true
+	p.CanQuery = collision == true
 	p.CanTouch = false
 	p.TopSurface, p.BottomSurface = Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
 	p.Parent = parent
@@ -61,11 +57,10 @@ function EnvironmentBuild.build(world: Instance, halfWidth: number, boundaries: 
 	local root = Instance.new("Folder")
 	root.Name = "Environment"
 	root.Parent = world
-	local rng = Random.new(81011)
 	for index, zone in Zones.ZONES do
 		local region = Instance.new("Folder")
 		region.Name = `Biome{index}`
-		local color = COLORS[index]
+		local color = Biomes.ZONES[index].accent
 		local startZ = boundaries[index]
 		-- Ground continues under all five zones, rather than ending at -1024.
 		part(
@@ -73,7 +68,7 @@ function EnvironmentBuild.build(world: Instance, halfWidth: number, boundaries: 
 			"CraterBed",
 			Vector3.new(1800, 5, zone.lengthStuds),
 			Vector3.new(0, -2.5, startZ - zone.lengthStuds / 2),
-			color:Lerp(Color3.fromRGB(45, 42, 58), 0.55),
+			Biomes.ZONES[index].ground:Lerp(Color3.fromRGB(45, 42, 58), 0.3),
 			Enum.Material.Slate,
 			true
 		)
@@ -127,25 +122,9 @@ function EnvironmentBuild.build(world: Instance, halfWidth: number, boundaries: 
 							.. (if zone.rebirthGate > 0 then `  ♻ {zone.rebirthGate}` else "")
 					)
 				end
-				-- Layered rocks frame the playable boundary, entirely outside it.
-				for layer = 1, 2 do
-					local height = rng:NextNumber(22, 54) + layer * 12
-					local rock = part(
-						region,
-						"CraterRidge",
-						Vector3.new(rng:NextNumber(40, 75), height, rng:NextNumber(95, 150)),
-						Vector3.new(side * (halfWidth + 40 + layer * 65), height / 2 - 4, z),
-						color:Lerp(Color3.fromRGB(50, 46, 67), layer * 0.22),
-						Enum.Material.Rock
-					)
-					rock.CFrame *= CFrame.Angles(
-						0,
-						rng:NextNumber(-0.35, 0.35),
-						side * math.rad(12)
-					)
-				end
 			end
 		end
+		BiomeScenery.build(region, index, halfWidth, startZ, zone.lengthStuds)
 		region.Parent = root
 		task.wait()
 	end

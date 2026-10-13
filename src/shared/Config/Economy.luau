@@ -5,6 +5,7 @@ local deepFreeze = require(script.Parent.Parent.Util.deepFreeze)
 
 return deepFreeze({
 	SERVER_SIZE = 8,
+	PROFILE_LOAD_TIMEOUT_SECONDS = 120,
 	INCOME_TICK_SECONDS = 1,
 
 	PEDESTALS_START = 3,

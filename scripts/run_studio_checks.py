@@ -15,12 +15,15 @@ def main():
         state = mcp.tool("get_studio_state", {"studio_id": sid})
         if "Available DataModels: Edit" not in state:
             raise RuntimeError("Stop the playtest before running Edit checks")
+        failures = []
         for path in sorted((ROOT / "tests").glob("*.spec.luau")):
             code = "local function run()\n" + path.read_text(encoding="utf-8") + "\nend\nreturn run()"
             result = mcp.tool("execute_luau", {"studio_id": sid, "datamodel_type": "Edit", "code": code})
             print(f"{path.name}: {result}")
             if not result.startswith("PASS "):
-                raise RuntimeError(result)
+                failures.append(f"{path.name}: {result}")
+        if failures:
+            raise RuntimeError("\n".join(failures))
     finally:
         mcp.close()
 

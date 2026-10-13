@@ -9,12 +9,45 @@ local deepFreeze = require(script.Parent.Parent.Util.deepFreeze)
 
 local config = {
 	FROM_ZONE = 1,
-	COUNT_BY_ZONE = { 1, 2, 2, 3, 4 }, -- chasers once spotted (before rarity extras)
+	COUNT_BY_ZONE = { 1, 2, 3, 4, 4 },
+	ZONE_CHASER_CAP = { 1, 2, 3, 4, 4 }, -- rarity never bypasses the zone budget
 	GUARDS_BY_ZONE = { 1, 2, 2, 2, 2 }, -- patrolling guards per egg
 	EXTRA_BY_RARITY = { Epic = 1, Legendary = 1, Mythic = 2 } :: { [string]: number },
 	SPEED_FACTOR = 0.7,
 	MIN_SPEED = 12,
 	MAX_CHASE_SPEED = 40,
+	-- Roles scale only part of the carrier's upgrade speed; relay guards ahead
+	-- supply interception instead of every pursuer outrunning the player.
+	ROLE_SPEED = { pressure = 0.82, flank = 0.94, intercept = 1.06 },
+	ROLE_BASE_SPEED = 12,
+	ROLE_SPEED_SCALE = 0.72,
+	ROLE_MAX_SPEED = 210,
+	FORMATION = {
+		trailDistance = 20,
+		flankDistance = 25,
+		flankAhead = 8,
+		interceptSeconds = 0.45,
+		minLead = 24,
+		maxLead = 95,
+	},
+	STEERING = { acceleration = 180, turnRate = math.rad(170), arrivalSeconds = 0.3 },
+	HEADING_TURN_RATE = math.rad(100),
+	HEADING_MIN_SPEED = 3,
+	SEPARATION_DISTANCE = 14,
+	SEPARATION_WEIGHT = 1.6,
+	RECOVERY_SPEED_FACTOR = 0.65,
+	GROUP_RECOVERY_SECONDS = 0.7,
+	RELAY_TICK = 0.2,
+	MOTION_TICK = 0.1,
+	MOTION_REACH = 650,
+	MOTION_DRAW_DISTANCE = 450,
+	MOTION_STALE_SECONDS = 3,
+	MOTION_INTERPOLATION_SECONDS = 0.1,
+	MOTION_EXTRAPOLATION_SECONDS = 0.12,
+	MOTION_PHASE_BLEND_SECONDS = 0.12,
+	MAX_FRAME_DT = 0.15,
+	TRACK_HALF_WIDTH = 278,
+	TRACK_MIN_Z = -4498,
 	FIRST_TIME_FACTOR = 0.55,
 	PICKUP_GRACE = 1.5, -- chase start -> first possible attack
 	-- Dash: a yellow laser sight tracks where the carrier will be, turns red
@@ -55,10 +88,8 @@ local config = {
 	VISION_HALF_ANGLE = math.rad(50),
 	HEARING_RADIUS = 8,
 	VISION_SWEEP = 0.7, -- radians either side of the travel direction
-	-- Alert meter (0..1): fills while a carrier is seen.
-	ALERT_FILL_MOVING = 1 / 0.5, -- per second
-	ALERT_FILL_STILL = 1 / 1.2,
-	ALERT_FIRST_ZONE_SCALE = 0.7,
+	-- A guard that sees a carrier gives chase at once. The alert meter (0..1)
+	-- is only for a pickup it heard: it turns to look and calms down over time.
 	ALERT_DECAY = 0.8,
 	ALERT_TURN_RATE = math.rad(100), -- tracking turn speed while alert
 	ALARM_RADIUS = 55, -- guards this close join when one starts a chase
@@ -70,7 +101,7 @@ local config = {
 	RELAY_MIN_AHEAD = 60,
 	RELAY_MAX_AHEAD = 260,
 	RELAY_HALF_WIDTH = 90, -- the line's reach either side of the path
-	RELAY_MAX_CHASERS = 6,
+	RELAY_MAX_CHASERS = 4,
 	RELAY_DROP_DISTANCE = 110,
 	RELAY_GRACE = 0.3, -- seconds before a relayed guard may aim
 	-- Pickup noise: guards this close always hear it; from the noisy zone the
@@ -80,14 +111,19 @@ local config = {
 	NOISE_RADIUS = 45,
 	NOISE_ALERT = 0.5,
 
-	-- Ground attacks (Undertale-style, shared ArenaPatterns math) cast by
-	-- chasing guards from this zone, in addition to the dash.
-	ATTACKS_FROM_ZONE = 3,
-	ATTACK_KINDS = { "spears", "ring", "wall", "blaster" },
-	ATTACK_EVERY_BY_ZONE = { 0, 0, 3.2, 2.7, 2.2 }, -- seconds between casts
-	ATTACK_MAX_LEVEL = 0.6, -- keeps telegraphs >= ~0.7 s in the open field
-	ATTACK_CAST_RANGE = 150, -- fast carriers outrun drones; attacks still reach
-	ATTACK_MAX_LEAD = 120, -- studs of path prediction (carry pace ~90 studs/s in zone 3)
+	-- Drone attacks besides the dash (Undertale-style, shared ArenaPatterns
+	-- math): a chasing drone in reach of the runner's predicted spot fires one.
+	-- Kinds unlock by zone; the level (density, speed, shorter telegraphs)
+	-- rises with the egg's rarity and as the chase drags on.
+	ATTACKS_FROM_ZONE = 2,
+	ATTACK_UNLOCKS = { bombs = 2, spears = 2, spiral = 3, ring = 3, laser = 4 } :: { [string]: number },
+	-- How far the casting drone may be from the target spot.
+	ATTACK_REACH = { bombs = 90, spiral = 55, laser = 42, spears = 150, ring = 150 } :: { [string]: number },
+	ATTACK_EVERY_BY_ZONE = { 0, 3.0, 2.6, 2.2, 1.8 }, -- seconds between casts
+	ATTACK_RAMP = 0.03, -- level gained per second of chase
+	ATTACK_MAX_LEVEL = 0.8,
+	ATTACK_CAST_RANGE = 150,
+	ATTACK_MAX_LEAD = 300, -- studs of path prediction (carriers run up to ~180 studs/s)
 
 	-- After knocking an egg out, chasers circle it (escorting a hauler too).
 	-- Whoever grabs it back is chased at once; otherwise they give up.
@@ -111,7 +147,8 @@ local config = {
 
 	-- Void Hound: from this zone, the guard that starts a chase tears open a
 	-- portal and a hound leaps out to chase on foot.
-	HOUND_FROM_ZONE = 3,
+	HOUND_ENABLED = false, -- reserve deep-zone creature design for a later feature
+	HOUND_FROM_ZONE = 4,
 	HOUND_FACTOR = 0.8,
 	PORTAL_SECONDS = 0.7,
 	-- Idle guards with no player this close skip their patrol updates.

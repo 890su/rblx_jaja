@@ -48,10 +48,4 @@ function Combat.inVision(origin: Vector3, facing: Vector3, point: Vector3): bool
 	return cos >= math.cos(Config.VISION_HALF_ANGLE + slack)
 end
 
--- Alert meter fill per second for a carrier inside a beam.
-function Combat.alertRate(moving: boolean, zone: number): number
-	local rate = if moving then Config.ALERT_FILL_MOVING else Config.ALERT_FILL_STILL
-	return if zone <= 1 then rate * Config.ALERT_FIRST_ZONE_SCALE else rate
-end
-
 return table.freeze(Combat)

@@ -10,7 +10,6 @@ local CollectionService = game:GetService("CollectionService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Theme = require(Shared.Theme)
-local Creatures = require(Shared.Config.Creatures)
 local Rarity = require(Shared.Config.Rarity)
 local Income = require(script.Parent.Parent.Data.Income)
 
@@ -29,6 +28,9 @@ export type Carry = {
 	originZone: number?, -- zone the egg was first picked up in (Void Run trigger)
 	owner: Player?, -- stolen creatures: the player it was taken from
 	ownerSlot: string?,
+	transferId: string?,
+	delivering: boolean?,
+	deliver: ((player: Player, preferredSlot: number?) -> boolean)?,
 	onLost: (player: Player, carry: Carry, position: Vector3?) -> (),
 	onDelivered: ((player: Player, carry: Carry) -> ())?,
 	visual: BasePart?,
@@ -37,6 +39,18 @@ export type Carry = {
 local CarryService = {}
 
 local carrying: { [Player]: Carry } = {}
+local deliveryGuard: (player: Player, carry: Carry) -> boolean = function(_player, _carry)
+	return true
+end
+
+function CarryService.setDeliveryGuard(guard: (player: Player, carry: Carry) -> boolean)
+	deliveryGuard = guard
+end
+
+function CarryService.passedDeliveryRoute(player: Player): boolean
+	local carry = carrying[player]
+	return carry ~= nil and deliveryGuard(player, carry)
+end
 local fullWarnedAt: { [Player]: number } = {}
 local replacementHolds: { [Player]: { prompt: ProximityPrompt, at: number } } = {}
 
@@ -131,6 +145,63 @@ function CarryService.drop(player: Player, position: Vector3)
 	lose(player, position)
 end
 
+local function deliveredState(carry: Carry): Types.PedestalState
+	local state = table.clone(carry.state)
+	if carry.fresh then
+		state.hatchAt = os.time() + Rarity.INFO[state.rarity].hatchSeconds
+	end
+	return state
+end
+
+local function deliver(player: Player, carry: Carry, preferredSlot: number?): boolean
+	if carry.delivering or carrying[player] ~= carry or not deliveryGuard(player, carry) then
+		return false
+	end
+	local position = SpeedService.validatePosition(player)
+	local plot = StationService.getPlot(player)
+	if
+		not position
+		or not plot
+		or not WorldService.isInPlot(plot, position)
+		or math.abs(position.Y - plot.center.Y) > 10
+	then
+		return false
+	end
+	local custom = carry.deliver
+	if custom then
+		carry.delivering = true
+		task.spawn(function()
+			local ok, result = pcall(custom, player, preferredSlot)
+			carry.delivering = false
+			if not ok then
+				warn(`[Carry] transfer failed: {result}`)
+			end
+			if ok and result and carrying[player] == carry then
+				CarryService.clear(player)
+				if carry.onDelivered then
+					carry.onDelivered(player, carry)
+				end
+			elseif carrying[player] == carry then
+				Notifier.send(player, "transfer_pending", nil, "warning")
+				-- Keep the durable intent; loss cancels only a pending journal.
+				lose(player, nil)
+			end
+		end)
+		return true
+	end
+	local state = deliveredState(carry)
+	local placed = if preferredSlot
+		then StationService.replaceSlot(player, preferredSlot, state)
+		else StationService.placeState(player, state)
+	if placed then
+		CarryService.clear(player)
+		if carry.onDelivered then
+			carry.onDelivered(player, carry)
+		end
+	end
+	return placed
+end
+
 local function checkDeliveries()
 	for player, carry in carrying do
 		local plot = StationService.getPlot(player)
@@ -144,15 +215,11 @@ local function checkDeliveries()
 			and humanoid.Health > 0
 			and WorldService.isInPlot(plot, root.Position)
 		then
-			local placed = if carry.fresh
-				then StationService.placeNew(player, carry.state.creatureId, carry.state.mutation)
-				else StationService.placeState(player, carry.state)
-			if placed then
-				CarryService.clear(player)
-				if carry.onDelivered then
-					carry.onDelivered(player, carry)
-				end
-			else
+			if
+				not carry.delivering
+				and deliveryGuard(player, carry)
+				and not deliver(player, carry)
+			then
 				if os.clock() - (fullWarnedAt[player] or -math.huge) > FULL_WARN_COOLDOWN then
 					fullWarnedAt[player] = os.clock()
 					Notifier.send(player, "station_full_manual_hint", nil, "warning")
@@ -163,6 +230,12 @@ local function checkDeliveries()
 end
 
 function CarryService.init()
+	SpeedService.onInvalidMovement(function(player, position)
+		local carry = CarryService.clear(player)
+		if carry then
+			task.spawn(carry.onLost, player, carry, position)
+		end
+	end)
 	for _, plot in WorldService.getPlots() do
 		for slot, pedestal in plot.pedestals do
 			local prompt = Instance.new("ProximityPrompt")
@@ -206,17 +279,8 @@ function CarryService.init()
 				then
 					return
 				end
-				local state = table.clone(carry.state)
-				if carry.fresh then
-					state.hatchAt = os.time()
-						+ Rarity.INFO[Creatures.BY_ID[state.creatureId].rarity].hatchSeconds
-				end
-				if StationService.replaceSlot(player, slot, state) then
-					CarryService.clear(player)
+				if deliver(player, carry, slot) then
 					Notifier.send(player, "station_carry_replaced", nil, "success")
-					if carry.onDelivered then
-						carry.onDelivered(player, carry)
-					end
 				end
 			end)
 		end

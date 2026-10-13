@@ -63,23 +63,26 @@ for angle = 0, 350, 10 do
 	check("perpendicular dodge safe", not Combat.hits(origin, e, dodge, dodge))
 end
 -- Vision sector + hearing circle.
-local origin = Vector3.new(0, 3.5, 0)
+local visionOrigin = Vector3.new(0, 3.5, 0)
 local forward = Vector3.new(0, 0, -1)
 local function at(angleDeg: number, distance: number): Vector3
 	local a = math.rad(angleDeg)
 	return Vector3.new(math.sin(a) * distance, 3, -math.cos(a) * distance)
 end
-check("sees straight ahead", Combat.inVision(origin, forward, at(0, 20)))
-check("sees inside the sector edge", Combat.inVision(origin, forward, at(45, 20)))
-check("misses outside the sector", not Combat.inVision(origin, forward, at(70, 20)))
-check("misses behind beyond hearing", not Combat.inVision(origin, forward, at(180, 12)))
-check("hears right behind", Combat.inVision(origin, forward, at(180, Config.HEARING_RADIUS - 1)))
-check("misses beyond range", not Combat.inVision(origin, forward, at(0, Config.VISION_RANGE + 3)))
+check("sees straight ahead", Combat.inVision(visionOrigin, forward, at(0, 20)))
+check("sees inside the sector edge", Combat.inVision(visionOrigin, forward, at(45, 20)))
+check("misses outside the sector", not Combat.inVision(visionOrigin, forward, at(70, 20)))
+check("misses behind beyond hearing", not Combat.inVision(visionOrigin, forward, at(180, 12)))
+check(
+	"hears right behind",
+	Combat.inVision(visionOrigin, forward, at(180, Config.HEARING_RADIUS - 1))
+)
+check(
+	"misses beyond range",
+	not Combat.inVision(visionOrigin, forward, at(0, Config.VISION_RANGE + 3))
+)
 check("sector is wide", math.deg(Config.VISION_HALF_ANGLE) >= 45 and Config.VISION_RANGE >= 24)
-check("moving fills faster", Combat.alertRate(true, 3) > Combat.alertRate(false, 3))
-check("zone 1 is gentler", Combat.alertRate(true, 1) < Combat.alertRate(true, 2))
-check("moving spotted within a second", 1 / Combat.alertRate(true, 2) <= 1)
-check("noisy pickup only deep", Config.NOISY_FROM_ZONE == 3 and Config.ATTACKS_FROM_ZONE == 3)
+check("noisy pickup only deep", Config.NOISY_FROM_ZONE == 3 and Config.ATTACKS_FROM_ZONE == 2)
 check(
 	"patrol roams wide",
 	Config.PATROL_MAX_RADIUS >= 30 and Config.PATROL_MIN_RADIUS < Config.PATROL_MAX_RADIUS

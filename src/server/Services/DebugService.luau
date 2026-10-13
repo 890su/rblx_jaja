@@ -18,6 +18,8 @@ local StealService = require(script.Parent.StealService)
 local EventService = require(script.Parent.EventService)
 local SpeedService = require(script.Parent.SpeedService)
 local MonetizationService = require(script.Parent.MonetizationService)
+local CarryService = require(script.Parent.CarryService)
+local EmoteService = require(script.Parent.EmoteService)
 
 local DebugService = {}
 
@@ -31,12 +33,78 @@ local function find(who: any): Player?
 end
 
 local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
+	emoteRig = function(player, which)
+		assert(player and (which == "R6" or which == "R15"), "use R6 or R15")
+		EmoteService.stop(player)
+		local old = player.Character
+		local description = Instance.new("HumanoidDescription")
+		local rig = Players:CreateHumanoidModelFromDescriptionAsync(
+			description,
+			if which == "R6" then Enum.HumanoidRigType.R6 else Enum.HumanoidRigType.R15
+		)
+		description:Destroy()
+		rig.Name = player.Name
+		if old then
+			local animate = old:FindFirstChild("Animate")
+			if animate then
+				animate:Clone().Parent = rig
+			end
+		end
+		rig.Parent = workspace
+		player.Character = rig
+		if old then
+			old:Destroy()
+		end
+		return which
+	end,
+	emote = function(player)
+		assert(player, "no player")
+		return EmoteService.play(player, "wave")
+	end,
+	securityCheck = function(player)
+		assert(player and player.Character, "no character")
+		assert(not CarryService.get(player), "finish carrying before QA")
+		local root = player.Character:FindFirstChild("HumanoidRootPart") :: BasePart
+		local before = root.Position
+		local began = CarryService.begin(player, {
+			state = { creatureId = "comet_cat", rarity = "Rare", paid = false },
+			fresh = true,
+			originZone = 3,
+			onLost = function(_by, _carry, _position) end,
+		})
+		assert(began, "QA carry failed")
+		local deepDeliveryBlocked = not CarryService.passedDeliveryRoute(player)
+		-- Same entry point as real proximity actions; no client-supplied grant.
+		player.Character:PivotTo(CFrame.new(before.X, 400, before.Z))
+		local accepted = SpeedService.validatePosition(player)
+		return {
+			deepDeliveryBlocked = deepDeliveryBlocked,
+			rejected = accepted == nil,
+			carryCleared = CarryService.get(player) == nil,
+			returnedHome = root.Position.Y < 350,
+		}
+	end,
+	persistence = function(player)
+		assert(player, "no player")
+		local profile = assert(DataService.get(player), "no profile")
+		local confirmed = DataService.saveConfirmed(player, function(saved)
+			return saved.schema == profile.schema and saved.uncollectedCoins ~= nil
+		end)
+		return {
+			confirmed = confirmed,
+			schema = profile.schema,
+			uncollectedCoins = profile.uncollectedCoins,
+			outgoing = HttpService:JSONEncode(profile.outgoingTransfers),
+			incoming = HttpService:JSONEncode(profile.incomingTransfers),
+		}
+	end,
 	-- teleport <player> <x> <y> <z>: a server teleport with anti-cheat grace.
 	teleport = function(player, x, y, z)
 		assert(player and player.Character, "no character")
 		local before = player.Character:GetPivot().Position
-		SpeedService.markTeleport(player)
-		player.Character:PivotTo(CFrame.new(tonumber(x) or 0, tonumber(y) or 3, tonumber(z) or 0))
+		local destination = Vector3.new(tonumber(x) or 0, tonumber(y) or 3, tonumber(z) or 0)
+		SpeedService.markTeleport(player, destination)
+		player.Character:PivotTo(CFrame.new(destination))
 		return { before.X, before.Y, before.Z }
 	end,
 	-- give <player> <creatureId> : hatched creature on a free pedestal

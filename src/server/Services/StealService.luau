@@ -19,6 +19,7 @@ local WorldService = require(script.Parent.WorldService)
 local StationService = require(script.Parent.StationService)
 local SpeedService = require(script.Parent.SpeedService)
 local CarryService = require(script.Parent.CarryService)
+local TransferService = require(script.Parent.TransferService)
 local TelemetryService = require(script.Parent.TelemetryService)
 
 type Plot = WorldService.Plot
@@ -34,6 +35,7 @@ local inStation: { [Player]: boolean } = {}
 local lastStealAt: { [Player]: number } = {}
 local lastVictimAt: { [Player]: { [Player]: number } } = {}
 local holdBegan: { [Player]: { prompt: ProximityPrompt, at: number } } = {}
+local reserving: { [Player]: boolean } = {}
 local chases: { [Player]: Chase } = {} -- keyed by thief
 
 local function rootOf(player: Player): BasePart?
@@ -85,11 +87,11 @@ local function rejectReason(
 	if not state then
 		return "steal_nothing"
 	end
-	if CarryService.get(thief) then
+	if CarryService.get(thief) or reserving[thief] then
 		return "steal_hands_full"
 	end
-	local root = rootOf(thief)
-	if not root or (root.Position - pedestal.Position).Magnitude > Steal.MAX_STEAL_DISTANCE then
+	local position = SpeedService.validatePosition(thief)
+	if not position or (position - pedestal.Position).Magnitude > Steal.MAX_STEAL_DISTANCE then
 		return "steal_too_far"
 	end
 	local began = holdBegan[thief]
@@ -159,16 +161,6 @@ local function endChase(thief: Player, clearVictimBuff: boolean)
 	end
 end
 
-local function returnToVictim(victim: Player, state: Types.PedestalState, slot: string): boolean
-	if victim.Parent ~= Players then
-		return false
-	end
-	if StationService.placeState(victim, state, slot) then
-		return true
-	end
-	return StationService.give(victim, state) ~= "failed"
-end
-
 local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: BasePart)
 	local victim = StationService.ownerOf(plot)
 	if not victim then
@@ -181,8 +173,21 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 		return
 	end
 
-	local state = StationService.takeState(victim, slot)
-	if not state then
+	reserving[thief] = true
+	local transferId, state = TransferService.reserve(victim, thief, slot)
+	reserving[thief] = nil
+	if not transferId or not state then
+		return
+	end
+	local position = SpeedService.validatePosition(thief)
+	if
+		thief.Parent ~= Players
+		or victim.Parent ~= Players
+		or not position
+		or (position - pedestal.Position).Magnitude > Steal.MAX_STEAL_DISTANCE
+		or CarryService.get(thief)
+	then
+		TransferService.cancel(victim, transferId)
 		return
 	end
 	local creatureName = nameOf(state)
@@ -192,12 +197,16 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 		fresh = false,
 		owner = victim,
 		ownerSlot = slot,
-		onLost = function(lostBy, carry)
+		transferId = transferId,
+		deliver = function(by, preferredSlot)
+			return TransferService.complete(victim, by, transferId, preferredSlot)
+		end,
+		onLost = function(lostBy, _carry)
 			-- Thief died or left: the creature goes back to its owner.
 			local chase = chases[lostBy]
 			endChase(lostBy, true)
 			local owner = if chase then chase.victim else victim
-			if returnToVictim(owner, carry.state, slot) then
+			if TransferService.cancel(owner, transferId) then
 				Notifier.send(owner, "creature_returned", { creature = creatureRef }, "success")
 			end
 		end,
@@ -224,7 +233,7 @@ local function tryStealFrom(thief: Player, plot: Plot, slot: string, pedestal: B
 		end,
 	})
 	if not began then
-		StationService.placeState(victim, state, slot)
+		TransferService.cancel(victim, transferId)
 		return
 	end
 
@@ -270,15 +279,16 @@ local function tickChases()
 			endChase(thief, false)
 			continue
 		end
-		local thiefRoot, victimRoot = rootOf(thief), rootOf(victim)
+		local thiefPosition, victimPosition =
+			SpeedService.validatePosition(thief), SpeedService.validatePosition(victim)
 		if
-			thiefRoot
-			and victimRoot
-			and (thiefRoot.Position - victimRoot.Position).Magnitude <= Steal.CATCH_DISTANCE
+			thiefPosition
+			and victimPosition
+			and (thiefPosition - victimPosition).Magnitude <= Steal.CATCH_DISTANCE
 		then
 			local carry = CarryService.clear(thief)
 			endChase(thief, true)
-			if carry and returnToVictim(victim, carry.state, chase.slot) then
+			if carry and carry.transferId and TransferService.cancel(victim, carry.transferId) then
 				local victimProfile = DataService.get(victim)
 				if victimProfile then
 					victimProfile.stats.defends += 1
@@ -384,7 +394,7 @@ function StealService.init()
 	for _, plot in WorldService.getPlots() do
 		setupPlot(plot)
 	end
-	DataService.onRemoving(function(player, profile)
+	DataService.onRemoving(function(player, _profile)
 		-- Thief leaving mid-chase is handled by CarryService.onLost. An owner
 		-- leaving takes the creature home: it is written back into their
 		-- profile before it saves, so nothing is lost if the thief then dies.
@@ -392,11 +402,8 @@ function StealService.init()
 			local carry = CarryService.clear(thief)
 			endChase(thief, false)
 			if carry then
-				local slot = carry.ownerSlot
-				if slot and not profile.pedestals[slot] then
-					profile.pedestals[slot] = carry.state
-				else
-					table.insert(profile.storage, carry.state)
+				if carry.transferId then
+					TransferService.cancel(player, carry.transferId)
 				end
 				Notifier.send(thief, "steal_owner_left", { player = player.DisplayName }, "warning")
 			end
@@ -411,6 +418,10 @@ function StealService.init()
 		lastStealAt[player] = nil
 		lastVictimAt[player] = nil
 		holdBegan[player] = nil
+		reserving[player] = nil
+		for _, victims in lastVictimAt do
+			victims[player] = nil
+		end
 	end)
 end
 

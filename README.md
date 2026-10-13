@@ -25,10 +25,20 @@ Bootstrap is two-phase: every Service/Controller module may export `init()` (wir
 
 ## Checks
 
-- Format: `stylua src`
-- Lint: `selene src`
+- Format: `stylua --check src tests`
+- Lint: `selene src tests`
 - Types: `bash scripts/typecheck.sh` (luau-lsp, strict)
 - Unit tests: `tests/*.spec.luau` — run in Studio Edit mode via MCP `execute_luau` (returns `PASS n`)
 - Run all Studio checks: `python -I scripts/run_studio_checks.py` (Edit mode)
 - Packages: `wally install` (ServerPackages is git-ignored; synced by `mcp_sync.py`)
 - Build: `rojo build -o build.rbxl`
+
+## Release checks
+
+Zone identity, emotes and the owner's weekly work: [design roadmap](docs/09-zone-and-emote-roadmap.md). First emote: `Wave` button or **G**, with separate R6/R15 poses.
+
+Current fixes, test results and remaining launch requirements: [pre-production report](reports/preprod-2026-10-12.md). Multi-client integration checks run only in Studio with `StudioTestService` arguments `suite = "preprod"`, `mode = "transactions"` and a unique `runId`; they use an isolated `PreflightData_dev` store and synthetic receipts. For station capacity, use eight clients and `mode = "capacity"`.
+
+`assets/Assets.rbxmx` and `assets/AssistantMaterials.rbxmx` are part of the Rojo build. Refresh the snapshots with `python -I scripts/export_studio_assets.py` after intentional Studio asset changes.
+
+`src/shared/Config/Environment.luau` identifies the release universe/place. Only that pair uses `PlayerData` and `Transfers`; Studio uses `_dev`, and other published places use `_dev_<PlaceId>`. Update the release IDs deliberately when moving LIVE to another place.

@@ -22,10 +22,10 @@ jobs:
         run: wally install
 
       - name: Check formatting
-        run: stylua --check src
+        run: stylua --check src tests
 
       - name: Lint
-        run: selene src
+        run: selene src tests
 
       - name: Type check
         run: bash scripts/typecheck.sh

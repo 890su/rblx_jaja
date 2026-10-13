@@ -12,9 +12,12 @@ local Products = require(Shared.Config.Products)
 local Creatures = require(Shared.Config.Creatures)
 local Rarity = require(Shared.Config.Rarity)
 local Zones = require(Shared.Config.Zones)
+local Canyons = require(Shared.Config.Canyons)
+local Events = require(Shared.Config.Events)
 local Theme = require(Shared.Theme)
 local Odds = require(Shared.Util.Odds)
 local Locale = require(Shared.Locale)
+local Remotes = require(Shared.Remotes)
 
 local UiKit = require(script.Parent.Parent.Lib.UiKit)
 
@@ -28,14 +31,39 @@ local ODDS_PRODUCTS: { [string]: boolean } =
 local oddsList: ScrollingFrame
 local oddsBuy: TextButton
 local oddsTitle: TextLabel
+local oddsContext: TextButton
+local contextIndex = 1
+local contexts: { { zone: number, canyon: boolean, shower: boolean, boost: number } } = {}
+for index in Zones.ZONES do
+	for _, canyon in { false, true } do
+		for _, shower in { false, true } do
+			if canyon and index < Canyons.FROM_ZONE then
+				continue
+			end
+			if shower and not table.find(Events.SHOWER_ZONES, index) then
+				continue
+			end
+			table.insert(contexts, {
+				zone = index,
+				canyon = canyon :: boolean,
+				shower = shower :: boolean,
+				boost = (if canyon then Canyons.RARITY_BOOST else 1)
+					* (if shower then Events.SHOWER_RARITY_BOOST else 1),
+			})
+		end
+	end
+end
 local pendingProduct: Products.Product? = nil
 local passButtons: { [string]: TextButton } = {}
+local productButtons: { [string]: TextButton } = {}
+local prices: { [string]: number } = {}
 
 local function fmtPercent(value: number): string
 	if value >= 1 then
 		return string.format("%.1f%%", value)
 	end
-	return string.format("%.2f%%", value)
+	local digits = if value > 0 then math.max(2, 2 - math.floor(math.log10(value))) else 2
+	return string.format(`%.{digits}f%%`, value)
 end
 
 local function row(parent: Instance, textValue: string, color: Color3?, order: number)
@@ -44,6 +72,8 @@ local function row(parent: Instance, textValue: string, color: Color3?, order: n
 		Size = UDim2.new(1, -10, 0, 26),
 		TextScaled = false,
 		TextSize = 20,
+		TextWrapped = true,
+		AutomaticSize = Enum.AutomaticSize.Y,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = color or Color3.new(1, 1, 1),
 		LayoutOrder = order,
@@ -92,40 +122,76 @@ local function fillCrateOdds()
 end
 
 local function fillLuckOdds()
+	for _, child in oddsList:GetChildren() do
+		if child:IsA("TextLabel") then
+			child:Destroy()
+		end
+	end
+	local context = contexts[contextIndex]
+	local zone = Zones.ZONES[context.zone]
+	oddsContext.Text = Locale.t("odds_context", {
+		zone = Locale.term(Theme.ZONE_NAMES[context.zone]),
+		canyon = if context.canyon then Locale.term("Canyon") else Locale.term("Field"),
+		event = if context.shower then Locale.term("Meteor Shower") else Locale.term("Normal"),
+		index = contextIndex,
+		count = #contexts,
+	})
 	local boost = Products.SERVER_LUCK.boost
+	local current = if ((workspace:GetAttribute("ServerLuckUntil") :: number?) or 0)
+			> workspace:GetServerTimeNow()
+		then boost
+		else 1
 	local order = 1
 	row(
 		oddsList,
 		Locale.t("luck_effect", { boost = boost, minutes = Products.SERVER_LUCK.seconds // 60 }),
-		Color3.fromRGB(180, 200, 255),
+		nil,
 		order
 	)
-	for index, zone in Zones.ZONES do
-		order += 1
-		row(
-			oddsList,
-			Locale.term(Theme.ZONE_NAMES[index] or `Zone {index}`),
-			Color3.fromRGB(255, 220, 120),
-			order
-		)
-		for _, rarity in Rarity.ORDER do
-			if zone.weights[rarity] then
+	order += 1
+	row(oddsList, Locale.t("luck_odds_legend"), nil, order)
+	for _, rarity in Rarity.ORDER do
+		if not zone.weights[rarity] then
+			continue
+		end
+		local total = 0
+		for _, creature in Creatures.LIST do
+			if creature.rarity == rarity then
+				total += Creatures.weightOf(creature, context.zone)
+			end
+		end
+		for _, creature in Creatures.LIST do
+			if creature.rarity ~= rarity then
+				continue
+			end
+			local share = Creatures.weightOf(creature, context.zone) / total
+			for _, golden in { false, true } do
+				local mutationShare = if golden
+					then Rarity.MUTATIONS.Golden.chance
+					else 1 - Rarity.MUTATIONS.Golden.chance
+				local before = Odds.percent(zone.weights, rarity, context.boost * current)
+					* share
+					* mutationShare
+				local after = Odds.percent(zone.weights, rarity, context.boost * boost)
+					* share
+					* mutationShare
 				order += 1
-				local before = Odds.percent(zone.weights, rarity)
-				local boosted = {}
-				for r, w in zone.weights do
-					boosted[r] = if r ~= "Common" then w * boost else w
-				end
-				local after = Odds.percent(boosted, rarity)
 				row(
 					oddsList,
-					`    {Locale.term(rarity)}: {fmtPercent(before)} → {fmtPercent(after)}`,
+					Locale.t("luck_odds_row", {
+						name = Locale.term(Theme.CREATURE_NAMES[creature.id] or creature.id),
+						mutation = if golden then Locale.term("Golden") else "",
+						before = fmtPercent(before),
+						after = fmtPercent(after),
+					}),
 					Theme.RARITY_COLORS[rarity],
 					order
 				)
 			end
 		end
 	end
+	order += 1
+	row(oddsList, Locale.t("luck_first_visit"), nil, order)
 end
 
 local function openOdds(product: Products.Product)
@@ -136,27 +202,42 @@ local function openOdds(product: Products.Product)
 		end
 	end
 	oddsTitle.Text = Locale.t("odds_title", { name = Locale.ref(product.name) })
+	oddsContext.Visible = product.key == "ServerLuck"
+	oddsList.Position = if product.key == "ServerLuck"
+		then UDim2.fromScale(0.04, 0.23)
+		else UDim2.fromScale(0.04, 0.14)
+	oddsList.Size = if product.key == "ServerLuck"
+		then UDim2.fromScale(0.92, 0.57)
+		else UDim2.fromScale(0.92, 0.66)
 	if product.key == "ServerLuck" then
 		fillLuckOdds()
 	else
 		fillCrateOdds()
 	end
 	oddsBuy.Text = if product.id ~= 0
-		then Locale.t("odds_buy", { price = product.price })
+		then (if prices[product.key]
+			then Locale.t("odds_buy", { price = prices[product.key] })
+			else "…")
 		else Locale.term("Coming soon")
 	oddsBuy.BackgroundColor3 = if product.id ~= 0 then UiKit.BUTTON_COLOR else UiKit.DISABLED_COLOR
 	UiKit.show("Odds")
 end
 
 local function buy(item: Products.Product | Products.Pass, isPass: boolean)
-	if item.id == 0 then
+	if item.id == 0 or not prices[item.key] then
 		return
 	end
-	if isPass then
-		MarketplaceService:PromptGamePassPurchase(player, item.id)
-	else
-		MarketplaceService:PromptProductPurchase(player, item.id)
+	if not isPass then
+		if item.key == "StarterPack" and player:GetAttribute("StarterPackOwned") then
+			return
+		end
+		if ODDS_PRODUCTS[item.key] and player:GetAttribute("PaidRandomItemsAllowed") ~= true then
+			return
+		end
+	elseif player:GetAttribute(`Pass_{item.key}`) then
+		return
 	end
+	Remotes.event("RequestPurchase"):FireServer(if isPass then "pass" else "product", item.key)
 end
 
 local function card(
@@ -185,10 +266,7 @@ local function card(
 		TextColor3 = Color3.fromRGB(180, 180, 200),
 	})
 	local hasOdds = not isPass and ODDS_PRODUCTS[item.key] == true
-	local label = if item.id == 0
-		then Locale.term("Coming soon")
-		elseif hasOdds then Locale.t("odds_button", { price = item.price })
-		else Locale.t("price_robux", { price = item.price })
+	local label = if item.id == 0 then Locale.term("Coming soon") else "…"
 	local b = UiKit.button(frame, label, {
 		Size = UDim2.fromScale(0.3, 0.7),
 		Position = UDim2.fromScale(0.68, 0.15),
@@ -198,6 +276,9 @@ local function card(
 	})
 	b.Activated:Connect(function()
 		if hasOdds then
+			if player:GetAttribute("PaidRandomItemsAllowed") ~= true then
+				return
+			end
 			openOdds(item :: Products.Product)
 		else
 			buy(item, isPass)
@@ -205,10 +286,54 @@ local function card(
 	end)
 	if isPass then
 		passButtons[item.key] = b
+	else
+		productButtons[item.key] = b
+	end
+	if item.id ~= 0 then
+		task.spawn(function()
+			for attempt = 1, 3 do
+				local ok, info = pcall(function()
+					return MarketplaceService:GetProductInfoAsync(
+						item.id,
+						if isPass then Enum.InfoType.GamePass else Enum.InfoType.Product
+					)
+				end)
+				if ok and info.PriceInRobux then
+					prices[item.key] = info.PriceInRobux
+					if
+						not player:GetAttribute(`Pass_{item.key}`)
+						and not (
+							item.key == "StarterPack" and player:GetAttribute("StarterPackOwned")
+						)
+					then
+						b.Text = Locale.t(
+							if hasOdds then "odds_button" else "price_robux",
+							{ price = info.PriceInRobux }
+						)
+					end
+					return
+				end
+				task.wait(attempt)
+			end
+			b.Text = Locale.term("Coming soon")
+			b.Active = false
+		end)
 	end
 end
 
 local function refreshOwned()
+	for key, button in productButtons do
+		local owned = key == "StarterPack" and player:GetAttribute("StarterPackOwned") == true
+		local restricted = ODDS_PRODUCTS[key]
+			and player:GetAttribute("PaidRandomItemsAllowed") ~= true
+		button.Active = not owned and not restricted
+		button.BackgroundColor3 = if owned or restricted
+			then UiKit.DISABLED_COLOR
+			else UiKit.BUTTON_COLOR
+		if owned then
+			button.Text = Locale.term("Owned")
+		end
+	end
 	for key, b in passButtons do
 		if player:GetAttribute(`Pass_{key}`) then
 			b.Text = Locale.term("Owned")
@@ -233,6 +358,16 @@ function StoreController.init()
 
 	local odds = UiKit.panel("Odds", Locale.term("Odds"))
 	oddsTitle = odds:FindFirstChild("Title") :: TextLabel
+	oddsContext = UiKit.button(
+		odds,
+		"",
+		{ Size = UDim2.fromScale(0.92, 0.065), Position = UDim2.fromScale(0.04, 0.14) }
+	)
+	oddsContext.Visible = false
+	oddsContext.Activated:Connect(function()
+		contextIndex = contextIndex % #contexts + 1
+		fillLuckOdds()
+	end)
 	oddsList = UiKit.list(odds, UDim2.fromScale(0.04, 0.14), UDim2.fromScale(0.92, 0.66))
 	oddsBuy = UiKit.button(
 		odds,
@@ -253,6 +388,8 @@ function StoreController.init()
 end
 
 function StoreController.start()
+	player:GetAttributeChangedSignal("StarterPackOwned"):Connect(refreshOwned)
+	player:GetAttributeChangedSignal("PaidRandomItemsAllowed"):Connect(refreshOwned)
 	for _, pass in Products.PASSES do
 		player:GetAttributeChangedSignal(`Pass_{pass.key}`):Connect(refreshOwned)
 	end

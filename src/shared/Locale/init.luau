@@ -21,6 +21,18 @@ local Theme = require(script.Parent.Theme)
 export type Args = { [string]: any }
 
 local STRINGS: { [string]: string } = {
+	emote_wave = "Wave",
+	emote_wave_keyboard = "Wave · G",
+	emote_stop = "Stop gesture",
+	odds_context = "{zone} · {canyon} · {event} · {index}/{count} →",
+	luck_odds_legend = "Each outcome: current chance → chance with Server Luck",
+	luck_odds_row = "{name} {mutation}: {before} → {after}",
+	luck_first_visit = "First pickup in Zone 2 upgrades Common/Uncommon to Rare; creature and Golden chances use the same rolls",
+	purchase_delivered = "Purchase delivered! Your creatures are safe in your station or storage",
+
+	purchase_restricted = "This purchase is unavailable for your account",
+	purchase_fixed_reward = "Purchase delivered as guaranteed Cosmic Leviathan creatures",
+	transfer_pending = "Your creature is reserved safely. Rejoin if the transfer cannot finish",
 	arena_prep = "Void Run in {meters} m — get ready!",
 	arena_status = "{hearts}  ·  {meters} m to home",
 	arena_cleared = "Void Run cleared! Your egg made it home",
@@ -45,7 +57,7 @@ local STRINGS: { [string]: string } = {
 	snatcher_chasing = "Egg guard alerted! Yellow lane = incoming dash. Step sideways!",
 	snatcher_grabbed = "Dash hit! Your egg dropped here — pick it up to retry",
 	egg_reclaim = "A drone is coming for your egg — grab it before it's flown away!",
-	guard_spotted = "A guard spotted you! Get out of its beam before the bar fills",
+	guard_spotted = "A guard heard you! Stay out of its beam: one look and it gives chase",
 	hound_summoned = "A Void Hound tore through a portal! Watch for its yellow pounce lane",
 	creature_replaced = "Replaced {old} (+{amount} Stardust) — your station got stronger!",
 	meteor_pickup = "{rarity} Meteor{odds}! Bring it home",
@@ -136,6 +148,9 @@ local STRINGS: { [string]: string } = {
 
 -- Fixed words and sentences shown as-is (auto-translated when displayed).
 local STATIC_TERMS: { string } = {
+	"Canyon",
+	"Field",
+	"Normal",
 	"VOID RUN",
 	"RECLAIMING",
 	"HUNTING",

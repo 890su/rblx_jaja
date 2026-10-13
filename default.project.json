@@ -5,6 +5,9 @@
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"
+      },
+      "Assets": {
+        "$path": "assets/Assets.rbxmx"
       }
     },
     "ServerScriptService": {
@@ -25,6 +28,11 @@
     "Workspace": {
       "$properties": {
         "StreamingEnabled": true
+      }
+    },
+    "MaterialService": {
+      "AssistantMaterials": {
+        "$path": "assets/AssistantMaterials.rbxmx"
       }
     }
   }

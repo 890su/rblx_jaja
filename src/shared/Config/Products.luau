@@ -128,6 +128,7 @@ export type Config = {
 	SHIELD_SECONDS: number,
 	STARTER_SHIELD_SECONDS: number,
 	STARTER_CREATURES: { string },
+	RESTRICTED_REWARD: string,
 }
 
 local config: Config = {
@@ -138,6 +139,8 @@ local config: Config = {
 	SHIELD_SECONDS = SHIELD_SECONDS,
 	STARTER_SHIELD_SECONDS = STARTER_SHIELD_SECONDS,
 	STARTER_CREATURES = STARTER_CREATURES,
+	-- Fixed compensation for an already-charged receipt after policy changes.
+	RESTRICTED_REWARD = "cosmic_leviathan",
 }
 
 return deepFreeze(config)

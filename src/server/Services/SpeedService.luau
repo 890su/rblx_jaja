@@ -13,6 +13,7 @@ local Steal = require(Shared.Config.Steal)
 local Zones = require(Shared.Config.Zones)
 local Canyons = require(Shared.Config.Canyons)
 local ArenaPatterns = require(Shared.Util.ArenaPatterns)
+local MovementBudget = require(Shared.Util.MovementBudget)
 local Theme = require(Shared.Theme)
 local Locale = require(Shared.Locale)
 
@@ -32,12 +33,25 @@ local TELEPORT_GRACE = 2
 
 local SpeedService = {}
 
-type Track = { root: BasePart, position: Vector3 }
+type Track = { root: BasePart, position: Vector3, at: number }
 
 local tracked: { [Player]: Track } = {}
 local strikes: { [Player]: { number } } = {}
 local graceUntil: { [Player]: number } = {}
 local trainingMoving: { [Player]: boolean } = {}
+local movement: { [Player]: { root: BasePart, state: MovementBudget.State } } = {}
+local invalidCallbacks: { (player: Player, position: Vector3?) -> () } = {}
+
+function SpeedService.onInvalidMovement(callback: (player: Player, position: Vector3?) -> ())
+	table.insert(invalidCallbacks, callback)
+end
+
+local function discardCarry(player: Player, position: Vector3?)
+	for _, callback in invalidCallbacks do
+		-- Invalid movement must never yield and leave a deliverable carry alive.
+		callback(player, position)
+	end
+end
 
 local function rootOf(player: Player): (BasePart?, Humanoid?)
 	local character = player.Character
@@ -84,10 +98,22 @@ function SpeedService.isZoneUnlocked(player: Player, zoneIndex: number): boolean
 end
 
 -- Call before any server-initiated teleport so it isn't flagged as cheating.
-function SpeedService.markTeleport(player: Player)
+function SpeedService.markTeleport(player: Player, destination: Vector3?)
 	tracked[player] = nil
 	trainingMoving[player] = false
 	graceUntil[player] = os.clock() + TELEPORT_GRACE
+	local root = rootOf(player)
+	if root then
+		local previous = movement[player]
+		movement[player] = {
+			root = root,
+			state = {
+				position = destination or (previous and previous.state.position) or root.Position,
+				at = os.clock(),
+				budget = TELEPORT_FLAT,
+			},
+		}
+	end
 end
 
 -- Re-applies WalkSpeed from authoritative state (call after carry/buff changes).
@@ -137,7 +163,8 @@ end
 
 local function pushBehindGate(player: Player, root: BasePart, zoneIndex: number)
 	local gateZ = WorldService.gateZ(zoneIndex)
-	SpeedService.markTeleport(player)
+	discardCarry(player, nil)
+	SpeedService.markTeleport(player, Vector3.new(root.Position.X, root.Position.Y + 2, gateZ + 8))
 	local character = player.Character :: Model
 	character:PivotTo(CFrame.new(root.Position.X, root.Position.Y + 2, gateZ + 8))
 	local zone = Zones.ZONES[zoneIndex]
@@ -175,10 +202,56 @@ local function keepInBounds(player: Player, root: BasePart): boolean
 			math.clamp(p.Z, minZ + 4, maxZ - 4)
 		)
 	end
-	SpeedService.markTeleport(player)
+	discardCarry(player, nil)
+	SpeedService.markTeleport(player, target)
 	root.AssemblyLinearVelocity = Vector3.zero;
 	(player.Character :: Model):PivotTo(CFrame.new(target) * root.CFrame.Rotation)
 	return true
+end
+
+-- Every valuable proximity action calls this before changing the economy.
+function SpeedService.validatePosition(player: Player): Vector3?
+	local root, humanoid = rootOf(player)
+	if not root or not humanoid or not DataService.get(player) then
+		return nil
+	end
+	if not MovementBudget.isFinite(root.Position) then
+		discardCarry(player, nil)
+		player:Kick("Invalid movement detected.")
+		return nil
+	end
+	if keepInBounds(player, root) then
+		return nil
+	end
+	local previous = movement[player]
+	if not previous or previous.root ~= root then
+		local home = player:GetAttribute("HomePosition") :: Vector3?
+		if not home or (root.Position - home).Magnitude > 80 then
+			return nil
+		end
+		previous = {
+			root = root,
+			state = { position = root.Position, at = os.clock(), budget = TELEPORT_FLAT },
+		}
+		movement[player] = assert(previous, "movement seed missing")
+	end
+	if not MovementBudget.accept(previous.state, root.Position, os.clock(), humanoid.WalkSpeed) then
+		discardCarry(player, nil)
+		root.AssemblyLinearVelocity = Vector3.zero;
+		(player.Character :: Model):PivotTo(CFrame.new(previous.state.position))
+		if addStrike(player) >= STRIKES_TO_KICK then
+			player:Kick("Unusual movement detected.")
+		end
+		return nil
+	end
+	local zone = WorldService.zoneIndexAt(root.Position)
+	for i = 2, zone do
+		if not SpeedService.isZoneUnlocked(player, i) then
+			pushBehindGate(player, root, i)
+			return nil
+		end
+	end
+	return root.Position
 end
 
 local function tickPlayer(player: Player)
@@ -191,14 +264,14 @@ local function tickPlayer(player: Player)
 		player:SetAttribute("SpeedGainPerSecond", 0)
 		return
 	end
-	if keepInBounds(player, root) then
+	if not SpeedService.validatePosition(player) then
 		return
 	end
 	local position = root.Position
 	local previous = tracked[player]
 	-- New character (respawn) or after a server teleport: start fresh.
 	if not previous or previous.root ~= root or (graceUntil[player] or 0) > os.clock() then
-		tracked[player] = { root = root, position = position }
+		tracked[player] = { root = root, position = position, at = os.clock() }
 		trainingMoving[player] = false
 		SpeedService.apply(player)
 		return
@@ -206,7 +279,8 @@ local function tickPlayer(player: Player)
 
 	local delta =
 		Vector3.new(position.X - previous.position.X, 0, position.Z - previous.position.Z).Magnitude
-	local maxDistance = humanoid.WalkSpeed * TICK * TELEPORT_SLACK + TELEPORT_FLAT
+	local elapsed = math.max(0.01, os.clock() - previous.at)
+	local maxDistance = humanoid.WalkSpeed * elapsed * TELEPORT_SLACK + TELEPORT_FLAT
 	if delta > maxDistance then
 		-- Rubber-band to the last trusted position.
 		local count = addStrike(player)
@@ -218,16 +292,18 @@ local function tickPlayer(player: Player)
 			return
 		end
 		local character = player.Character :: Model
+		discardCarry(player, nil)
 		root.AssemblyLinearVelocity = Vector3.zero
 		character:PivotTo(CFrame.new(previous.position))
 		return
 	end
 	previous.position = position
+	previous.at = os.clock()
 	-- Treadmill training is awarded by StationService, never twice per tick.
 	trainingMoving[player] = delta >= Speed.MIN_MOVE_STUDS_PER_TICK
 		and player:GetAttribute("OnTreadmill") ~= true
 	if trainingMoving[player] then
-		local gain = Speed.GAIN_PER_SECOND * SpeedService.gainMultiplier(player)
+		local gain = Speed.GAIN_PER_SECOND * SpeedService.gainMultiplier(player) * elapsed
 		DataService.setSpeed(player, profile.speed + gain)
 	end
 
@@ -260,13 +336,14 @@ function SpeedService.init()
 				and WorldService.zoneIndexAt(root.Position) >= Canyons.FROM_ZONE
 				and math.abs(root.Position.X) > Canyons.LANE_WIDTH / 2
 			then
-				SpeedService.markTeleport(player)
+				SpeedService.markTeleport(player, Vector3.new(0, 3.2, root.Position.Z))
 				character:PivotTo(CFrame.new(0, 3.2, root.Position.Z))
 			end
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		tracked[player] = nil
+		movement[player] = nil
 		strikes[player] = nil
 		graceUntil[player] = nil
 		trainingMoving[player] = nil

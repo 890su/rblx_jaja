@@ -4,18 +4,20 @@
 --   and on in-game purchase; exposed as server-set Player attributes
 --   Pass_<key> that other services read.
 -- * Products: ProcessReceipt is idempotent (PurchaseId stored in the profile)
---   and grants before returning PurchaseGranted; the profile is saved at once.
+--   and acknowledges only after the receipt is in LastSavedData.
 -- Items with id 0 (not yet created in Creator Dashboard) are ignored.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
+local PolicyService = game:GetService("PolicyService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Products = require(Shared.Config.Products)
 local Creatures = require(Shared.Config.Creatures)
 local Rarity = require(Shared.Config.Rarity)
-local Theme = require(Shared.Theme)
 local Odds = require(Shared.Util.Odds)
 local Remotes = require(Shared.Remotes)
 local Locale = require(Shared.Locale)
@@ -25,7 +27,13 @@ local DataService = require(script.Parent.DataService)
 local StationService = require(script.Parent.StationService)
 local ShopService = require(script.Parent.ShopService)
 
-local MAX_RECEIPTS = 100
+local PurchaseGrants = require(script.Parent.Parent.Data.PurchaseGrants)
+local RateLimit = require(script.Parent.Parent.Util.RateLimit)
+local purchaseLimit = RateLimit.new(2, 0.5)
+local busy: { [Player]: boolean } = {}
+local productByKey: { [string]: Products.Product } = {}
+local RANDOM_PRODUCTS: { [string]: boolean } =
+	{ Crate1 = true, Crate3 = true, Crate10 = true, ServerLuck = true }
 
 local MonetizationService = {}
 
@@ -46,13 +54,40 @@ function MonetizationService.owns(player: Player, key: string): boolean
 	return player:GetAttribute(`Pass_{key}`) == true
 end
 
+local function retry(query: () -> any): any
+	for attempt = 1, 3 do
+		local ok, result = pcall(query)
+		if ok then
+			return result
+		end
+		if attempt < 3 then
+			task.wait(attempt)
+		end
+	end
+	error("Purchase entitlement/policy check unavailable")
+end
+
 local function checkPasses(player: Player)
+	-- Simulated Studio clients have negative IDs and cannot query account APIs.
+	-- This never affects real accounts or live servers.
+	if RunService:IsStudio() and player.UserId < 0 then
+		player:SetAttribute("PaidRandomItemsAllowed", true)
+		player:SetAttribute("PaidItemTradingAllowed", true)
+		player:SetAttribute("PolicyReady", true)
+		return
+	end
+	local policy = retry(function()
+		return PolicyService:GetPolicyInfoForPlayerAsync(player)
+	end)
+	player:SetAttribute("PaidRandomItemsAllowed", policy.ArePaidRandomItemsRestricted == false)
+	player:SetAttribute("PaidItemTradingAllowed", policy.IsPaidItemTradingAllowed == true)
+	player:SetAttribute("PolicyReady", true)
 	for _, pass in Products.PASSES do
 		if pass.id ~= 0 then
-			local ok, owned = pcall(function()
+			local owned = retry(function()
 				return MarketplaceService:UserOwnsGamePassAsync(player.UserId, pass.id)
 			end)
-			if ok and owned then
+			if owned then
 				setPass(player, pass.key)
 			end
 		end
@@ -60,7 +95,7 @@ local function checkPasses(player: Player)
 end
 
 -- Rolls a crate creature: rarity by CRATE_ODDS, then uniform within rarity.
--- Exactly the odds shown in the odds window (OddsController).
+-- Exactly the odds shown in the odds window (StoreController).
 function MonetizationService.rollCrate(random: Random): string
 	local rarity = Odds.roll(Products.CRATE_ODDS, Rarity.ORDER, random)
 	local pool = {}
@@ -72,127 +107,168 @@ function MonetizationService.rollCrate(random: Random): string
 	return pool[random:NextInteger(1, #pool)]
 end
 
-local function giveCreature(player: Player, creatureId: string, hatched: boolean): string
-	local creature = Creatures.BY_ID[creatureId]
-	local state: Types.PedestalState = {
-		creatureId = creatureId,
-		rarity = creature.rarity,
-		hatchAt = if hatched then nil else os.time() + Rarity.INFO[creature.rarity].hatchSeconds,
-	}
-	return StationService.give(player, state)
-end
-
--- Product handlers return true when the grant fully succeeded.
-local GRANTS: { [string]: (player: Player, profile: Types.PlayerProfile) -> boolean } = {
-	StarterPack = function(player, profile)
-		if profile.flags.starterPack then
-			return true -- already granted once; consume without double-granting
-		end
-		profile.flags.starterPack = true
-		for _, id in Products.STARTER_CREATURES do
-			giveCreature(player, id, true)
-		end
-		profile.shieldUntil = math.max(profile.shieldUntil, os.time())
-			+ Products.STARTER_SHIELD_SECONDS
-		notify(player, "starter_pack", "success")
-		return true
-	end,
-	Shield15 = function(player, profile)
-		profile.shieldUntil = math.max(profile.shieldUntil, os.time()) + Products.SHIELD_SECONDS
-		notify(player, "shielded", "success")
-		return true
-	end,
-	InstantHatch = function(player, profile)
-		local now = os.time()
-		for _, state in profile.pedestals do
-			if state.hatchAt and state.hatchAt > now then
-				state.hatchAt = now
-			end
-		end
-		StationService.refresh(player)
-		notify(player, "all_hatched", "success")
-		return true
-	end,
-	Restock = function(player, profile)
-		profile.shop.bought = {}
-		ShopService.pushState(player)
-		notify(player, "shop_refilled", "success")
-		return true
-	end,
-	ServerLuck = function(player)
-		local now = workspace:GetServerTimeNow()
+local function restoreLuck(profile: Types.PlayerProfile)
+	local remaining = profile.serverLuckUntil - os.time()
+	if remaining > 0 then
 		local current = (workspace:GetAttribute("ServerLuckUntil") :: number?) or 0
 		workspace:SetAttribute(
 			"ServerLuckUntil",
-			math.max(current, now) + Products.SERVER_LUCK.seconds
+			math.max(current, workspace:GetServerTimeNow() + remaining)
 		)
 		workspace:SetAttribute("ServerLuckBoost", Products.SERVER_LUCK.boost)
-		Notifier.all("server_luck", { player = player.DisplayName }, "pickup")
-		return true
-	end,
-}
-
-local function crateGrant(count: number): (player: Player, profile: Types.PlayerProfile) -> boolean
-	return function(player)
-		local names = {}
-		for _ = 1, count do
-			local id = MonetizationService.rollCrate(rng)
-			giveCreature(player, id, true)
-			table.insert(names, Locale.ref(Theme.CREATURE_NAMES[id] or id))
-			Remotes.event("Fx")
-				:FireClient(player, "crate", Vector3.zero, Creatures.BY_ID[id].rarity)
-		end
-		notify(player, "crate_result", "success", { list = names })
-		return true
 	end
 end
-GRANTS.Crate1 = crateGrant(1)
-GRANTS.Crate3 = crateGrant(3)
-GRANTS.Crate10 = crateGrant(10)
 
-local function processReceipt(receipt: { [string]: any }): Enum.ProductPurchaseDecision
-	local player = Players:GetPlayerByUserId(receipt.PlayerId)
-	local profile = player and DataService.get(player)
-	if not player or not profile then
+local function grant(
+	player: Player,
+	profile: Types.PlayerProfile,
+	key: string,
+	purchaseId: string
+): boolean
+	local ids: { string } = {}
+	local restricted = player:GetAttribute("PaidRandomItemsAllowed") ~= true
+	local count = ({ Crate1 = 1, Crate3 = 3, Crate10 = 10 } :: { [string]: number })[key]
+	if key == "StarterPack" then
+		ids = table.clone(Products.STARTER_CREATURES) -- a second charged receipt still gets its full reward
+	elseif count then
+		for _ = 1, count do
+			table.insert(
+				ids,
+				if restricted
+					then Products.RESTRICTED_REWARD
+					else MonetizationService.rollCrate(rng)
+			)
+		end
+	elseif key == "ServerLuck" and restricted then
+		ids = { Products.RESTRICTED_REWARD }
+	elseif not table.find({ "Shield15", "InstantHatch", "Restock", "ServerLuck" }, key) then
+		return false
+	end
+	local globalUntil = (workspace:GetAttribute("ServerLuckUntil") :: number?) or 0
+	local luckUntil = math.max(
+		os.time(),
+		profile.serverLuckUntil,
+		os.time() + math.max(0, globalUntil - workspace:GetServerTimeNow())
+	) + Products.SERVER_LUCK.seconds
+	PurchaseGrants.apply(profile, key, purchaseId, ids, os.time(), luckUntil, function()
+		return HttpService:GenerateGUID(false)
+	end)
+	-- Reserve the absolute expiry so concurrent purchases stack. The persisted
+	-- expiry restores the purchased benefit when the buyer rejoins.
+	restoreLuck(profile)
+	return true
+end
+
+local function afterGrant(player: Player, profile: Types.PlayerProfile, key: string)
+	player:SetAttribute("StarterPackOwned", profile.flags.starterPack == true)
+	StationService.refresh(player)
+	if key == "Restock" then
+		ShopService.pushState(player)
+	end
+	local message = ({
+		StarterPack = "starter_pack",
+		Shield15 = "shielded",
+		InstantHatch = "all_hatched",
+		Restock = "shop_refilled",
+	} :: { [string]: string })[key]
+	if player:GetAttribute("PaidRandomItemsAllowed") ~= true and RANDOM_PRODUCTS[key] then
+		message = "purchase_fixed_reward"
+	end
+	if key:sub(1, 5) == "Crate" then
+		message = message or "purchase_delivered"
+	end
+	if key == "ServerLuck" and not message then
+		Notifier.all("server_luck", { player = player.DisplayName }, "pickup")
+	elseif message then
+		notify(player, message, "success")
+	end
+end
+
+local function receiptForPlayer(
+	player: Player,
+	receipt: { [string]: any }
+): Enum.ProductPurchaseDecision
+	local profile = DataService.awaitReady(player)
+	if not profile then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
+	while busy[player] and player.Parent == Players and DataService.get(player) == profile do
+		task.wait(0.1)
+	end
+	if busy[player] or DataService.get(player) ~= profile then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+	busy[player] = true
 	local purchaseId = tostring(receipt.PurchaseId)
-	if profile.purchases[purchaseId] then
-		return Enum.ProductPurchaseDecision.PurchaseGranted
-	end
 	local product = productById[receipt.ProductId]
-	local grant = product and GRANTS[product.key]
-	if not grant then
-		warn(`[Monetization] unknown product {receipt.ProductId}`)
+	local ok, confirmed = pcall(function()
+		if not profile.purchases[purchaseId] then
+			if not product or not grant(player, profile, product.key, purchaseId) then
+				return false
+			end
+		end
+		-- Roblox does not retry NotProcessedYet on a timer. Keep this callback
+		-- yielding during a transient outage; release it only on save/session loss.
+		while player.Parent == Players and DataService.get(player) == profile do
+			if
+				DataService.saveConfirmed(player, function(saved)
+					return saved.purchases[purchaseId] ~= nil
+				end)
+			then
+				return true
+			end
+		end
+		return false
+	end)
+	busy[player] = nil
+	if not ok or not confirmed then
+		warn(`[Monetization] receipt {purchaseId} pending: {confirmed}`)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
-	local ok, granted = pcall(grant, player, profile)
-	if not ok or not granted then
-		warn(`[Monetization] grant failed for {product.key}: {granted}`)
-		return Enum.ProductPurchaseDecision.NotProcessedYet
-	end
-	profile.purchases[purchaseId] = os.time()
-	-- Keep only the newest receipts.
-	local count = 0
-	local oldestId, oldestTime = nil, math.huge
-	for id, time in profile.purchases do
-		count += 1
-		if time < oldestTime then
-			oldestId, oldestTime = id, time
+	if product then
+		local effectOk, effectErr = pcall(function()
+			afterGrant(player, profile, product.key)
+			return true
+		end)
+		if not effectOk then
+			warn(`[Monetization] display failed: {effectErr}`)
 		end
 	end
-	if count > MAX_RECEIPTS and oldestId then
-		profile.purchases[oldestId] = nil
-	end
-	DataService.saveNow(player)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 
--- Studio QA only (DebugService): run a product grant / fake a pass.
+local function processReceipt(receipt: { [string]: any }): Enum.ProductPurchaseDecision
+	local player = Players:GetPlayerByUserId(receipt.PlayerId)
+	if not player then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+	return receiptForPlayer(player, receipt)
+end
+
+function MonetizationService.debugReceipt(player: Player, key: string, purchaseId: string): string
+	assert(
+		RunService:IsStudio() and player.UserId < 0,
+		"receipt QA requires a simulated Studio client"
+	)
+	local product = assert(productByKey[key], "unknown QA product")
+	return processReceipt({
+		PlayerId = player.UserId,
+		ProductId = product.id,
+		PurchaseId = purchaseId,
+	}).Name
+end
+
+-- Called only through the Studio-gated DebugService.
 function MonetizationService.debugGrant(player: Player, key: string): boolean
 	local profile = DataService.get(player)
-	local grant = GRANTS[key]
-	return profile ~= nil and grant ~= nil and grant(player, profile)
+	if not profile then
+		return false
+	end
+	local result = grant(player, profile, key, `debug_{HttpService:GenerateGUID(false)}`)
+	if result then
+		afterGrant(player, profile, key)
+	end
+	return result
 end
 
 function MonetizationService.debugPass(player: Player, key: string)
@@ -208,12 +284,58 @@ function MonetizationService.init()
 		end
 	end
 	for _, product in Products.PRODUCTS do
+		productByKey[product.key] = product
 		if product.id ~= 0 then
 			productById[product.id] = product
 		end
 	end
-	DataService.onPreload(function(player)
+	DataService.onPreload(function(player, profile)
 		checkPasses(player)
+		player:SetAttribute("StarterPackOwned", profile.flags.starterPack == true)
+		restoreLuck(profile)
+	end)
+	Remotes.event("RequestPurchase").OnServerEvent:Connect(function(player, kind: any, key: any)
+		if
+			not purchaseLimit:allow(player)
+			or typeof(key) ~= "string"
+			or typeof(kind) ~= "string"
+		then
+			return
+		end
+		local profile = DataService.get(player)
+		if not profile or player:GetAttribute("PolicyReady") ~= true then
+			return
+		end
+		if kind == "pass" then
+			local pass = passByKey[key]
+			if pass and pass.id ~= 0 and not MonetizationService.owns(player, key) then
+				local ok, err = pcall(function()
+					MarketplaceService:PromptGamePassPurchase(player, pass.id)
+				end)
+				if not ok then
+					warn(err)
+				end
+			end
+		elseif kind == "product" then
+			local product = productByKey[key]
+			if
+				not product
+				or product.id == 0
+				or (key == "StarterPack" and profile.flags.starterPack)
+			then
+				return
+			end
+			if RANDOM_PRODUCTS[key] and player:GetAttribute("PaidRandomItemsAllowed") ~= true then
+				notify(player, "purchase_restricted", "warning")
+				return
+			end
+			local ok, err = pcall(function()
+				MarketplaceService:PromptProductPurchase(player, product.id)
+			end)
+			if not ok then
+				warn(err)
+			end
+		end
 	end)
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
 		local pass = passById[passId]

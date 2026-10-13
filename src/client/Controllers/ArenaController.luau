@@ -29,6 +29,8 @@ local COLORS: { [string]: Color3 } = {
 	blue = Color3.fromRGB(70, 170, 255),
 	orange = Color3.fromRGB(255, 150, 40),
 	warning = Color3.fromRGB(255, 210, 70),
+	red = Color3.fromRGB(255, 55, 70), -- drone spiral / laser
+	amber = Color3.fromRGB(255, 120, 30), -- drone bombs
 }
 
 local ArenaController = {}
@@ -300,7 +302,30 @@ local function drawHazards(now: number, world: Instance)
 			p.Color = if hazard.warning then COLORS.warning:Lerp(color, 0.25) else color
 			p.Transparency = if hazard.warning then 0.35 + math.abs(math.sin(now * 9)) * 0.3 else 0
 			local position = hazard.position
-			if hazard.shape == "rect" then
+			if hazard.style == "disc" then
+				-- Landing / charge mark flat on the ground.
+				p.Shape, p.Color = Enum.PartType.Cylinder, color
+				p.Transparency = 0.55 + math.abs(math.sin(now * 9)) * 0.25
+				p.Size = Vector3.new(0.15, hazard.radius * 2, hazard.radius * 2)
+				p.CFrame = CFrame.new(position.X, 0.6, position.Y)
+					* CFrame.Angles(0, 0, math.rad(90))
+			elseif hazard.style == "bomb" or hazard.style == "blast" then
+				-- A bomb in flight, or its burst.
+				p.Shape, p.Color = Enum.PartType.Ball, color
+				p.Transparency = if hazard.style == "blast" then 0.3 else 0
+				p.Size = Vector3.one * hazard.radius * 2
+				p.CFrame = CFrame.new(position.X, hazard.y or 1, position.Y)
+			elseif hazard.style == "beam" then
+				-- Drone laser at body height; its marks lie on the ground.
+				local finish = hazard.finish :: Vector2
+				local mid = (position + finish) / 2
+				local height = if hazard.warning then 0.15 else hazard.radius * 1.4
+				local y = if hazard.warning then 0.6 else 2.4
+				p.Shape, p.Color = Enum.PartType.Block, color
+				p.Size = Vector3.new(hazard.radius * 2, height, (finish - position).Magnitude)
+				p.CFrame =
+					CFrame.lookAt(Vector3.new(mid.X, y, mid.Y), Vector3.new(finish.X, y, finish.Y))
+			elseif hazard.shape == "rect" then
 				local size = hazard.size :: Vector2
 				local height = if hazard.warning
 					then 0.15

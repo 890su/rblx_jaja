@@ -5,6 +5,7 @@
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local Types = require(Shared.Types)
 local Zones = require(Shared.Config.Zones)
 local Canyons = require(Shared.Config.Canyons)
@@ -65,7 +66,8 @@ local spawnMeteor: (
 	lifetime: number?,
 	boost: number?,
 	droppedState: Types.PedestalState?,
-	originZone: number?
+	originZone: number?,
+	restrictedOnly: boolean?
 ) -> Part
 
 local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped: boolean)
@@ -78,10 +80,17 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 	if not character or not root or not humanoid or humanoid.Health <= 0 then
 		return
 	end
-	if (root.Position - meteor.Position).Magnitude > PICKUP_DISTANCE then
+	local acceptedPosition = SpeedService.validatePosition(player)
+	if not acceptedPosition or (acceptedPosition - meteor.Position).Magnitude > PICKUP_DISTANCE then
 		return
 	end
 	local profile = DataService.get(player)
+	if
+		meteor:GetAttribute("Paid") == true
+		and player:GetAttribute("PaidRandomItemsAllowed") ~= true
+	then
+		return
+	end
 	if not profile then
 		return
 	end
@@ -108,6 +117,7 @@ local function pickUp(player: Player, meteor: Part, zoneIndex: number, isDropped
 	local began = CarryService.begin(player, {
 		state = {
 			creatureId = creature.id,
+			paid = meteor:GetAttribute("Paid") == true,
 			rarity = rarity,
 			mutation = if isDropped
 				then meteor:GetAttribute("DroppedMutation") :: string?
@@ -171,12 +181,20 @@ spawnMeteor = function(
 	lifetime: number?,
 	boost: number?,
 	droppedState: Types.PedestalState?,
-	originZone: number?
+	originZone: number?,
+	restrictedOnly: boolean?
 ): Part
 	local meteor = makeMeteorPart(rarity)
 	meteor.Anchored = true
 	meteor.Position = position
 	meteor:SetAttribute("Boost", boost)
+	meteor:SetAttribute(
+		"Paid",
+		if droppedState
+			then droppedState.paid == true
+			else not restrictedOnly and MeteorService.luckBoost() > 1
+	)
+	meteor:SetAttribute("RestrictedOnly", restrictedOnly == true)
 	meteor:SetAttribute("ZoneIndex", zoneIndex)
 	meteor:SetAttribute("OriginZone", originZone or zoneIndex)
 	MeteorVisual.attach(meteor, false)
@@ -250,6 +268,31 @@ function MeteorService.luckBoost(): number
 	return 1
 end
 
+local function needsFreeMeteors(): boolean
+	for _, player in Players:GetPlayers() do
+		if player:GetAttribute("PaidRandomItemsAllowed") ~= true then
+			return true
+		end
+	end
+	return false
+end
+
+-- Restricted accounts receive an independent, unboosted pool. They never
+-- interact with the paid generator and do not pause another player's purchase.
+local function spawnFreeAlternative(
+	zoneIndex: number,
+	position: Vector3,
+	boost: number,
+	lifetime: number?,
+	random: Random
+)
+	if MeteorService.luckBoost() <= 1 or not needsFreeMeteors() then
+		return
+	end
+	local rarity = Odds.roll(Zones.ZONES[zoneIndex].weights, Rarity.ORDER, random, boost)
+	spawnMeteor(zoneIndex, position + Vector3.new(4, 0, 0), rarity, lifetime, boost, nil, nil, true)
+end
+
 -- Event meteor (Meteor Shower): boosted rarity, despawns after `lifetime`.
 function MeteorService.spawnEvent(
 	zoneIndex: number,
@@ -267,6 +310,13 @@ function MeteorService.spawnEvent(
 		* MeteorService.luckBoost()
 	local rarity = Odds.roll(zone.weights, Rarity.ORDER, eventRng, totalBoost)
 	spawnMeteor(zoneIndex, position, rarity, lifetime, totalBoost, nil)
+	spawnFreeAlternative(
+		zoneIndex,
+		position,
+		boost * (if inCanyon then Canyons.RARITY_BOOST else 1),
+		lifetime,
+		eventRng
+	)
 end
 
 function MeteorService.init()
@@ -301,6 +351,13 @@ function MeteorService.start()
 						* MeteorService.luckBoost()
 					local rarity = Odds.roll(zone.weights, Rarity.ORDER, rng, boost)
 					spawnMeteor(zoneIndex, position, rarity, nil, boost, nil)
+					spawnFreeAlternative(
+						zoneIndex,
+						position,
+						if inCanyon then Canyons.RARITY_BOOST else 1,
+						nil,
+						rng
+					)
 				end
 				task.wait(zone.spawnIntervalSeconds)
 			end

@@ -1,0 +1,4102 @@
+<?xml version='1.0' encoding='utf-8'?>
+<roblox version="4">
+  <Item class="Folder" referent="RBX1">
+    <Properties>
+      <string name="Name">Assets</string>
+    </Properties>
+    <Item class="Folder" referent="RBX2">
+      <Properties>
+        <string name="Name">Creatures</string>
+      </Properties>
+      <Item class="Model" referent="RBX3">
+        <Properties>
+          <string name="Name">comet_cat</string>
+          <Ref name="PrimaryPart">RBX5</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgkAAABjb21ldF9jYXQQAAAAUkJYX0FJX0dFTkVSQVRFRAMBFAAAAFJCWF9BSV9HRU5FUkFUSU9OX0lEAiQAAABkZDY2M2Q2ZC1jMjQzLTQyZDMtOTIwMi1hYWQ0ZWQ3ZWYzOGMWAAAAUkJYX0FJX0dFTkVSQVRJT05fVFlQRQIMAAAAR2VuZXJhdGVNZXNoEQAAAFJCWF9BSV9NT0RFTF9GTE9XAgQAAABtZXNo</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX4">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX5">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.076652765274048</X>
+                <Y>3.600087881088257</Y>
+                <Z>3.956481695175171</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://91537263680715</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://90397076561787</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX6">
+        <Properties>
+          <string name="Name">pebblit</string>
+          <Ref name="PrimaryPart">RBX8</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgcAAABwZWJibGl0EAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAAMjU3ODVmNmMtNjIxYi00MWY0LTk3ZTMtZjU0MGQyM2UyN2ZkFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX7">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX8">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.107290744781494</X>
+                <Y>3.0000555515289307</Y>
+                <Z>2.0965168476104736</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://137877867090524</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://111955387133220</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX9">
+        <Properties>
+          <string name="Name">dustbun</string>
+          <Ref name="PrimaryPart">RBX11</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgcAAABkdXN0YnVuEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAANDBhMTY0Y2ItODI4YS00ODZjLThmOGYtODc2YmY2NWFlNzUzFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX10">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX11">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.6146228313446045</X>
+                <Y>3.0001471042633057</Y>
+                <Z>3.4142866134643555</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://134673658171947</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://135335901386014</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX12">
+        <Properties>
+          <string name="Name">cindermite</string>
+          <Ref name="PrimaryPart">RBX14</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgoAAABjaW5kZXJtaXRlEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAANmIxYmIyOWYtMGFkMS00YzBkLWEzZjItYzIyMzhjNmRkNDg3FgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX13">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX14">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.934791326522827</X>
+                <Y>3</Y>
+                <Z>2.8646068572998047</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://78123135480524</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://71387153046675</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX15">
+        <Properties>
+          <string name="Name">glowgrub</string>
+          <Ref name="PrimaryPart">RBX17</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAggAAABnbG93Z3J1YhAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAAGJmYjE4MTYxLWM3ZjEtNGEwMC1iYjVhLWMxOGE4NjVmNzE1MhYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX16">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX17">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.7230570316314697</X>
+                <Y>3.0001931190490723</Y>
+                <Z>5.294918060302734</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://83140243483190</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://92546267394539</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX18">
+        <Properties>
+          <string name="Name">rockroo</string>
+          <Ref name="PrimaryPart">RBX20</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgcAAAByb2Nrcm9vEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAAMzk5Y2FkOWQtMjQ5OC00MzMxLTllMzUtMWU1ZmYzZDBiM2ZjFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX19">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX20">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.008150100708008</X>
+                <Y>3.0000734329223633</Y>
+                <Z>1.7222542762756348</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://115169073059398</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://125141528249634</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX21">
+        <Properties>
+          <string name="Name">emberfox</string>
+          <Ref name="PrimaryPart">RBX23</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAggAAABlbWJlcmZveBAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAADhmMjNhMGQyLTJlNTctNDI5Zi05NzI3LTg2YjA2MjQzOTgyMxYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX22">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX23">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.5946483612060547</X>
+                <Y>3.3000402450561523</Y>
+                <Z>2.6940550804138184</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://77653226135224</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://100098514907467</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX24">
+        <Properties>
+          <string name="Name">sparkle_snail</string>
+          <Ref name="PrimaryPart">RBX26</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAg0AAABzcGFya2xlX3NuYWlsEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAAZDEwNmJiNTgtYmFlNC00ZjU0LThhNDktYjAxZmYxZmNkMzJkFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX25">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX26">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.7214181423187256</X>
+                <Y>3.3000001907348633</Y>
+                <Z>4.371297359466553</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://103943682039430</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://83004720493325</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX27">
+        <Properties>
+          <string name="Name">crater_crab</string>
+          <Ref name="PrimaryPart">RBX29</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgsAAABjcmF0ZXJfY3JhYhAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAAGU1MzZmMmFlLWQzZjMtNGEyZC04ZTlhLWMwYzhlYzQ1OGU1MRYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX28">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX29">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.130312204360962</X>
+                <Y>3.299999952316284</Y>
+                <Z>3.3671011924743652</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://99560615373667</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://108061330424496</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX30">
+        <Properties>
+          <string name="Name">moon_moth</string>
+          <Ref name="PrimaryPart">RBX32</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgkAAABtb29uX21vdGgQAAAAUkJYX0FJX0dFTkVSQVRFRAMBFAAAAFJCWF9BSV9HRU5FUkFUSU9OX0lEAiQAAAAxOWQ2OWRmOC1mYjlkLTRhZmYtYWEwNy1lMTg3ZjQ5ZWY1Y2QWAAAAUkJYX0FJX0dFTkVSQVRJT05fVFlQRQIMAAAAR2VuZXJhdGVNZXNoEQAAAFJCWF9BSV9NT0RFTF9GTE9XAgQAAABtZXNo</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX31">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX32">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>4.989410400390625</X>
+                <Y>3.299999952316284</Y>
+                <Z>1.8738505840301514</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://85433208848754</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://138700940234359</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX33">
+        <Properties>
+          <string name="Name">pulsar_pup</string>
+          <Ref name="PrimaryPart">RBX35</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgoAAABwdWxzYXJfcHVwEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAANmE2ZWQ1YzgtZDcxZC00MzJiLWEzNWQtYzU4ZTU0MjQ3NmFhFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX34">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX35">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.363187551498413</X>
+                <Y>3.3000845909118652</Y>
+                <Z>4.06082010269165</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://80688050359163</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://73111521097880</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX36">
+        <Properties>
+          <string name="Name">frostfin</string>
+          <Ref name="PrimaryPart">RBX38</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAggAAABmcm9zdGZpbhAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAADQ0ZjNhYTlhLTc4YjEtNGNhNS04ZjZmLTQ4N2I1N2FiOTBlYxYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX37">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX38">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.6717779636383057</X>
+                <Y>3.6000003814697266</Y>
+                <Z>3.795940637588501</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://121753296771349</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://140419166832550</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX39">
+        <Properties>
+          <string name="Name">nebula_newt</string>
+          <Ref name="PrimaryPart">RBX41</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgsAAABuZWJ1bGFfbmV3dBAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAAGQ1NGUyZmM2LTQ3Y2EtNDFlMy1hNTkyLTRkNDkxOGQwYjk3YhYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX40">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX41">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.479175090789795</X>
+                <Y>3.5999999046325684</Y>
+                <Z>3.302375078201294</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://118941360754012</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://71006398274945</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX42">
+        <Properties>
+          <string name="Name">orbit_owl</string>
+          <Ref name="PrimaryPart">RBX44</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgkAAABvcmJpdF9vd2wQAAAAUkJYX0FJX0dFTkVSQVRFRAMBFAAAAFJCWF9BSV9HRU5FUkFUSU9OX0lEAiQAAAA5N2E2NmE3Zi1jOGEzLTRhZGQtODIzZC1hYWIyNGViMWYzNzkWAAAAUkJYX0FJX0dFTkVSQVRJT05fVFlQRQIMAAAAR2VuZXJhdGVNZXNoEQAAAFJCWF9BSV9NT0RFTF9GTE9XAgQAAABtZXNo</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX43">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX44">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.8177688121795654</X>
+                <Y>3.6000001430511475</Y>
+                <Z>3.8922650814056396</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://101504140871912</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://116519435124265</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX45">
+        <Properties>
+          <string name="Name">quartz_quokka</string>
+          <Ref name="PrimaryPart">RBX47</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAg0AAABxdWFydHpfcXVva2thEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAAMmM2NGM3YjgtMTE0Ni00NTlmLTkwYmUtZDQwMjVmMjlmMDgxFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX46">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX47">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.3560776710510254</X>
+                <Y>3.5999999046325684</Y>
+                <Z>2.782942771911621</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://124395678329775</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://121374743846980</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX48">
+        <Properties>
+          <string name="Name">void_viper</string>
+          <Ref name="PrimaryPart">RBX50</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgoAAAB2b2lkX3ZpcGVyEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAAYjczNjc2YWEtZjVkMS00ZjE0LThmZDMtMzRmM2FiOWU2YjhkFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX49">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX50">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.253521680831909</X>
+                <Y>4.000110149383545</Y>
+                <Z>3.753803253173828</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://73449287046391</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://102613081963078</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX51">
+        <Properties>
+          <string name="Name">solar_stag</string>
+          <Ref name="PrimaryPart">RBX53</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgoAAABzb2xhcl9zdGFnEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAAOTA5NGQ2NTQtMTFhMi00ZTc3LWJhZTQtZTgyZjI5NGU0YjRkFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX52">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX53">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.4321088790893555</X>
+                <Y>4.000097751617432</Y>
+                <Z>3.286193609237671</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://88368762480458</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://131973267179038</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX54">
+        <Properties>
+          <string name="Name">plasma_panda</string>
+          <Ref name="PrimaryPart">RBX56</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgwAAABwbGFzbWFfcGFuZGEQAAAAUkJYX0FJX0dFTkVSQVRFRAMBFAAAAFJCWF9BSV9HRU5FUkFUSU9OX0lEAiQAAABlOTFjMTY1NS00NjEyLTRlZDUtOTA4Mi05NTBiZDVmY2U0ZTQWAAAAUkJYX0FJX0dFTkVSQVRJT05fVFlQRQIMAAAAR2VuZXJhdGVNZXNoEQAAAFJCWF9BSV9NT0RFTF9GTE9XAgQAAABtZXNo</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX55">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX56">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.005160093307495</X>
+                <Y>4.000049114227295</Y>
+                <Z>2.264472723007202</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://130593945985990</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://130522633422281</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX57">
+        <Properties>
+          <string name="Name">ion_ibex</string>
+          <Ref name="PrimaryPart">RBX59</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAggAAABpb25faWJleBAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAADEwMGU5MTg1LTg4MGQtNDliNC1hYjc4LWYzNGUzNWZiZGU5YhYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX58">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX59">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.166290521621704</X>
+                <Y>4.000195503234863</Y>
+                <Z>3.7120907306671143</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://140287527530741</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://133965971783778</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX60">
+        <Properties>
+          <string name="Name">nova_drake</string>
+          <Ref name="PrimaryPart">RBX62</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgoAAABub3ZhX2RyYWtlEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAAOGVjYzUyY2QtZjlkNy00YTcyLTk0YjUtMDQwM2JhYzUyN2VjFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX61">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX62">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>5.355765342712402</X>
+                <Y>4.5</Y>
+                <Z>4.89873743057251</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://74357621509793</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://86216420511606</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX63">
+        <Properties>
+          <string name="Name">galaxy_griffin</string>
+          <Ref name="PrimaryPart">RBX65</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAg4AAABnYWxheHlfZ3JpZmZpbhAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAAGYxMjgyOTZiLTQ4OGMtNGY0Ni1iZDVjLTViNWYwNWQ5YjFlNBYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX64">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX65">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>4.87704610824585</X>
+                <Y>4.500110626220703</Y>
+                <Z>4.7206501960754395</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://72130847235221</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://120393268667533</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX66">
+        <Properties>
+          <string name="Name">eclipse_lynx</string>
+          <Ref name="PrimaryPart">RBX68</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAgwAAABlY2xpcHNlX2x5bngQAAAAUkJYX0FJX0dFTkVSQVRFRAMBFAAAAFJCWF9BSV9HRU5FUkFUSU9OX0lEAiQAAAA3ZGVlNDY5MS1kMTJmLTRkM2YtOTMwOC1mMTE0YTkyMzMxODIWAAAAUkJYX0FJX0dFTkVSQVRJT05fVFlQRQIMAAAAR2VuZXJhdGVNZXNoEQAAAFJCWF9BSV9NT0RFTF9GTE9XAgQAAABtZXNo</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX67">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX68">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.1823573112487793</X>
+                <Y>4.500054836273193</Y>
+                <Z>3.494680881500244</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://103942414615459</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://85426243764325</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX69">
+        <Properties>
+          <string name="Name">starlight_seraph</string>
+          <Ref name="PrimaryPart">RBX71</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAhAAAABzdGFybGlnaHRfc2VyYXBoEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAANWMxZTI2ZTUtYWU0NS00NjM3LWI3ZWQtMjY4ZmQzNzIzNDRjFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX70">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX71">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>5.814177989959717</X>
+                <Y>4.5</Y>
+                <Z>4.908809661865234</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://120190654428938</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://98923011855068</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX72">
+        <Properties>
+          <string name="Name">meteor_mammoth</string>
+          <Ref name="PrimaryPart">RBX74</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAg4AAABtZXRlb3JfbWFtbW90aBAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAADUyN2NiYzM3LTIzMTctNGUwMy04MzUxLTQzMDY1YjgwNjIyZRYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX73">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX74">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.459785223007202</X>
+                <Y>4.5</Y>
+                <Z>5.121582984924316</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://92284014102106</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://115576030434809</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX75">
+        <Properties>
+          <string name="Name">cosmic_leviathan</string>
+          <Ref name="PrimaryPart">RBX77</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAhAAAABjb3NtaWNfbGV2aWF0aGFuEAAAAFJCWF9BSV9HRU5FUkFURUQDARQAAABSQlhfQUlfR0VORVJBVElPTl9JRAIkAAAAYzg1OGI3YTUtNDg0Ni00ZjU0LWE3NjgtY2U4OWVhYWQxZmJiFgAAAFJCWF9BSV9HRU5FUkFUSU9OX1RZUEUCDAAAAEdlbmVyYXRlTWVzaBEAAABSQlhfQUlfTU9ERUxfRkxPVwIEAAAAbWVzaA==</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX76">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX77">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>2.535667896270752</X>
+                <Y>5</Y>
+                <Z>4.629638195037842</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://85997410633675</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://79682922300312</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX78">
+        <Properties>
+          <string name="Name">quasar_phoenix</string>
+          <Ref name="PrimaryPart">RBX80</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAg4AAABxdWFzYXJfcGhvZW5peBAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAADM1ZmEwYzI0LTY2MTMtNGU3YS1hN2RkLWU4YjFhYTU1MzU5NBYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX79">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX80">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>6.276453495025635</X>
+                <Y>5</Y>
+                <Z>5.091364860534668</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://99972352950248</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://81985175052267</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX81">
+        <Properties>
+          <string name="Name">singularity_sprite</string>
+          <Ref name="PrimaryPart">RBX83</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAhIAAABzaW5ndWxhcml0eV9zcHJpdGUQAAAAUkJYX0FJX0dFTkVSQVRFRAMBFAAAAFJCWF9BSV9HRU5FUkFUSU9OX0lEAiQAAAA2OGRhYThiYy1hNDAyLTQzZGEtODg4ZC0xZWRhMTAxOWRlNTMWAAAAUkJYX0FJX0dFTkVSQVRJT05fVFlQRQIMAAAAR2VuZXJhdGVNZXNoEQAAAFJCWF9BSV9NT0RFTF9GTE9XAgQAAABtZXNo</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX82">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX83">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>4.264252662658691</X>
+                <Y>5</Y>
+                <Z>4.2592549324035645</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://105082109690130</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://113372673873778</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX84">
+        <Properties>
+          <string name="Name">celestial_kirin</string>
+          <Ref name="PrimaryPart">RBX86</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAg8AAABjZWxlc3RpYWxfa2lyaW4QAAAAUkJYX0FJX0dFTkVSQVRFRAMBFAAAAFJCWF9BSV9HRU5FUkFUSU9OX0lEAiQAAAA1N2FmMGVhNC00ZWFmLTRkNDAtYjA1Mi05OGQ0Y2VhYjk2MjUWAAAAUkJYX0FJX0dFTkVSQVRJT05fVFlQRQIMAAAAR2VuZXJhdGVNZXNoEQAAAFJCWF9BSV9NT0RFTF9GTE9XAgQAAABtZXNo</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX85">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX86">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.4533278942108154</X>
+                <Y>5.00006103515625</Y>
+                <Z>4.005667686462402</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://76849421319504</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://137330250030683</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX87">
+        <Properties>
+          <string name="Name">big_bang_bunny</string>
+          <Ref name="PrimaryPart">RBX89</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAg4AAABiaWdfYmFuZ19idW5ueRAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAADgzMGNjZGFjLTI1OWUtNDE5NS1iNWNmLWU2YTVhNjYwMDYxORYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX88">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX89">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>3.5350348949432373</X>
+                <Y>5</Y>
+                <Z>2.960463762283325</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://91733006012986</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://106734425565365</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Model" referent="RBX90">
+        <Properties>
+          <string name="Name">aurora_axolotl</string>
+          <Ref name="PrimaryPart">RBX92</Ref>
+          <BinaryString name="AttributesSerialize">BQAAAAoAAABDcmVhdHVyZUlkAg4AAABhdXJvcmFfYXhvbG90bBAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAAGM0NWRiZTE1LWZiNWEtNGZiMi1iNjg4LTdlNDk0NGE0MDg0OBYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX91">
+          <Properties>
+            <string name="Name">body</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="MeshPart" referent="RBX92">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">0</token>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>4.316301345825195</X>
+                <Y>3.999999761581421</Y>
+                <Z>3.7511138916015625</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://82557772207519</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">body_geom</string>
+              <bool name="Massless">true</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <url>rbxassetid://85886766259841</url>
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="Model" referent="RBX93">
+      <Properties>
+        <string name="Name">Meteor</string>
+        <Ref name="PrimaryPart">RBX95</Ref>
+        <BinaryString name="AttributesSerialize">BAAAABAAAABSQlhfQUlfR0VORVJBVEVEAwEUAAAAUkJYX0FJX0dFTkVSQVRJT05fSUQCJAAAAGQyN2I4YjUyLTE4ZTQtNDkyMy1hNDJkLTJlMjE3ODViMGZhOBYAAABSQlhfQUlfR0VORVJBVElPTl9UWVBFAgwAAABHZW5lcmF0ZU1lc2gRAAAAUkJYX0FJX01PREVMX0ZMT1cCBAAAAG1lc2g=</BinaryString>
+      </Properties>
+      <Item class="Model" referent="RBX94">
+        <Properties>
+          <string name="Name">body</string>
+          <Ref name="PrimaryPart">null</Ref>
+        </Properties>
+        <Item class="MeshPart" referent="RBX95">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.6392157077789307</R>
+              <G>0.6352941393852234</G>
+              <B>0.6470588445663452</B>
+            </Color3>
+            <CoordinateFrame name="CFrame">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+              <R00>1</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1</R22>
+            </CoordinateFrame>
+            <token name="RenderFidelity">0</token>
+            <token name="Material">256</token>
+            <Vector3 name="Size">
+              <X>3.2000391483306885</X>
+              <Y>2.6224944591522217</Y>
+              <Z>1.9911218881607056</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <token name="TopSurface">0</token>
+            <Content name="MeshId">
+              <url>rbxassetid://137886219657082</url>
+            </Content>
+            <bool name="CanTouch">false</bool>
+            <double name="Reflectance">0</double>
+            <bool name="Anchored">true</bool>
+            <double name="Transparency">0</double>
+            <string name="Name">body_geom</string>
+            <bool name="Massless">true</bool>
+            <bool name="DoubleSided">false</bool>
+            <Content name="TextureID">
+              <url>rbxassetid://107802488761538</url>
+            </Content>
+            <bool name="CastShadow">true</bool>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="Model" referent="RBX96">
+      <Properties>
+        <string name="Name">Snatcher</string>
+        <Ref name="PrimaryPart">RBX112</Ref>
+        <BinaryString name="AttributesSerialize">AQAAAAYAAABTb3VyY2UCNwAAAENyZWF0b3IgU3RvcmUgMTAzNzA5NDI0OTQgKENlbmltb3NpdHkpLCBzY3JpcHRzIHJlbW92ZWQ=</BinaryString>
+      </Properties>
+      <Item class="Model" referent="RBX97">
+        <Properties>
+          <string name="Name">BTExport</string>
+          <Ref name="PrimaryPart">null</Ref>
+        </Properties>
+        <Item class="Part" referent="RBX98">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.5320976972579956</X>
+              <Y>1.1871203184127808</Y>
+              <Z>1.1871203184127808</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.0089530935510993</X>
+              <Y>0.001379251480102539</Y>
+              <Z>-1.354110598564148</Z>
+              <R00>0</R00>
+              <R01>0</R01>
+              <R02>1.0000003576278687</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>-1.0000003576278687</R20>
+              <R21>0</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX99">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.9106835126876831</X>
+              <Y>0.27239707112312317</Y>
+              <Z>0.27239707112312317</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0.015796661376953125</X>
+              <Y>1.5388412475585938</Y>
+              <Z>-0.00244140625</Z>
+              <R00>0</R00>
+              <R01>-1.0000003576278687</R01>
+              <R02>0</R02>
+              <R10>1.0000007152557373</R10>
+              <R11>0</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX100">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>0</G>
+              <B>0</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">288</token>
+            <Vector3 name="Size">
+              <X>0.41321247816085815</X>
+              <Y>1.2402147054672241</Y>
+              <Z>1.2402147054672241</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.00952529814094305</X>
+              <Y>0.001379251480102539</Y>
+              <Z>-1.2946624755859375</Z>
+              <R00>0</R00>
+              <R01>0</R01>
+              <R02>1.0000003576278687</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>-1.0000003576278687</R20>
+              <R21>0</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX101">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.7819873690605164</X>
+              <Y>0.22103404998779297</Y>
+              <Z>0.22103404998779297</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0.012653350830078125</X>
+              <Y>1.474493384361267</Y>
+              <Z>-0.180206298828125</Z>
+              <R00>0</R00>
+              <R01>-1.0000003576278687</R01>
+              <R02>0</R02>
+              <R10>1.0000007152557373</R10>
+              <R11>0</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX102">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.33068543672561646</X>
+              <Y>2.8745973110198975</Y>
+              <Z>2.8745973110198975</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.034641265869140625</X>
+              <Y>0.0028221607208251953</Y>
+              <Z>-0.0139007568359375</Z>
+              <R00>0</R00>
+              <R01>0</R01>
+              <R02>-1.0000003576278687</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>1.0000003576278687</R20>
+              <R21>0</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX103">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.06666667014360428</R>
+              <G>0.06666667014360428</G>
+              <B>0.06666667014360428</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">288</token>
+            <Vector3 name="Size">
+              <X>0.6215501427650452</X>
+              <Y>1.2886919975280762</Y>
+              <Z>1.2886919975280762</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0.9842719435691833</X>
+              <Y>-0.0006406307220458984</Y>
+              <Z>0.01811218075454235</Z>
+              <R00>1.0000003576278687</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX104">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.5320976972579956</X>
+              <Y>1.1871203184127808</Y>
+              <Z>1.1871203184127808</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.022808074951171875</X>
+              <Y>0.001379251480102539</Y>
+              <Z>1.3732298612594604</Z>
+              <R00>0</R00>
+              <R01>0</R01>
+              <R02>-1.0000003576278687</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>1.0000003576278687</R20>
+              <R21>0</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX105">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>2.3084499835968018</X>
+              <Y>0.5771124958992004</Y>
+              <Z>1.1542249917984009</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0.06637191772460938</X>
+              <Y>2.1884114742279053</Y>
+              <Z>0.005203246604651213</Z>
+              <R00>1.0000003576278687</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>0</R11>
+              <R12>1.0000007152557373</R12>
+              <R20>0</R20>
+              <R21>-1.0000003576278687</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">1</token>
+            <string name="MaterialVariant" />
+          </Properties>
+          <Item class="SpecialMesh" referent="RBX106">
+            <Properties>
+              <Vector3 name="Offset">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+              </Vector3>
+              <Vector3 name="VertexColor">
+                <X>1</X>
+                <Y>1</Y>
+                <Z>1</Z>
+              </Vector3>
+              <string name="Name">Mesh</string>
+              <Vector3 name="Scale">
+                <X>0.03462674841284752</X>
+                <Y>0.03462674841284752</Y>
+                <Z>0.03462674841284752</Z>
+              </Vector3>
+              <Content name="MeshId">
+                <url>rbxassetid://4833284747</url>
+              </Content>
+              <token name="MeshType">5</token>
+              <Content name="TextureId">
+                <null />
+              </Content>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="Part" referent="RBX107">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.10588235408067703</R>
+              <G>0.16470588743686676</G>
+              <B>0.2078431397676468</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.9326138496398926</X>
+              <Y>0.9326138496398926</Y>
+              <Z>0.9326138496398926</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.014984129928052425</X>
+              <Y>-0.013337134383618832</Y>
+              <Z>-1.404312014579773</Z>
+              <R00>-1.0000003576278687</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>-1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">0</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX108">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.10588235408067703</R>
+              <G>0.16470588743686676</G>
+              <B>0.2078431397676468</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.9326138496398926</X>
+              <Y>0.9326138496398926</Y>
+              <Z>0.9326138496398926</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.016765594482421875</X>
+              <Y>-0.013337134383618832</Y>
+              <Z>1.423416018486023</Z>
+              <R00>1.0000003576278687</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">0</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX109">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.5805751085281372</X>
+              <Y>1.3694878816604614</Y>
+              <Z>1.3694878816604614</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.0204849224537611</X>
+              <Y>0.001379251480102539</Y>
+              <Z>-1.193069338798523</Z>
+              <R00>0</R00>
+              <R01>0</R01>
+              <R02>1.0000003576278687</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>-1.0000003576278687</R20>
+              <R21>0</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX110">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.33068543672561646</X>
+              <Y>2.8745973110198975</Y>
+              <Z>2.8745973110198975</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.034641265869140625</X>
+              <Y>0.0028221607208251953</Y>
+              <Z>-0.0139007568359375</Z>
+              <R00>0</R00>
+              <R01>0</R01>
+              <R02>-1.0000003576278687</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>1.0000003576278687</R20>
+              <R21>0</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX111">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.7819873690605164</X>
+              <Y>0.42302340269088745</Y>
+              <Z>0.42302340269088745</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0.023036956787109375</X>
+              <Y>1.474493384361267</Y>
+              <Z>-0.0093536376953125</Z>
+              <R00>0</R00>
+              <R01>-1.0000003576278687</R01>
+              <R02>0</R02>
+              <R10>1.0000007152557373</R10>
+              <R11>0</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX112">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>2.8013041019439697</X>
+              <Y>2.8013041019439697</Y>
+              <Z>2.8013041019439697</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+              <R00>1.0000003576278687</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">0</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX113">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>0</G>
+              <B>0</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">288</token>
+            <Vector3 name="Size">
+              <X>0.41321247816085815</X>
+              <Y>1.2402147054672241</Y>
+              <Z>1.2402147054672241</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.022251129150390625</X>
+              <Y>0.001379251480102539</Y>
+              <Z>1.3137664794921875</Z>
+              <R00>0</R00>
+              <R01>0</R01>
+              <R02>-1.0000003576278687</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>1.0000003576278687</R20>
+              <R21>0</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX114">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.5782666802406311</X>
+              <Y>1.6089894771575928</Y>
+              <Z>1.6089894771575928</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0.9626159071922302</X>
+              <Y>-0.0006406307220458984</Y>
+              <Z>-0.013885497115552425</Z>
+              <R00>1.0000003576278687</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX115">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>0</G>
+              <B>0</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">288</token>
+            <Vector3 name="Size">
+              <X>0.7577486634254456</X>
+              <Y>1.1051702499389648</Y>
+              <Z>1.1051702499389648</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>1.0523719787597656</X>
+              <Y>-0.0015060900477692485</Y>
+              <Z>0.02073669247329235</Z>
+              <R00>1.0000003576278687</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX116">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.7819873690605164</X>
+              <Y>0.22103404998779297</Y>
+              <Z>0.22103404998779297</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0.0126495361328125</X>
+              <Y>1.474493384361267</Y>
+              <Z>0.1649017333984375</Z>
+              <R00>0</R00>
+              <R01>-1.0000003576278687</R01>
+              <R02>0</R02>
+              <R10>1.0000007152557373</R10>
+              <R11>0</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX117">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>1.1478767395019531</X>
+              <Y>0.22103404998779297</Y>
+              <Z>0.22103404998779297</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>0.0126457205042243</X>
+              <Y>1.6574381589889526</Y>
+              <Z>-0.0024566650390625</Z>
+              <R00>0</R00>
+              <R01>-1.0000003576278687</R01>
+              <R02>0</R02>
+              <R10>1.0000007152557373</R10>
+              <R11>0</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1.0000003576278687</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+        <Item class="Part" referent="RBX118">
+          <Properties>
+            <bool name="CanQuery">false</bool>
+            <Color3 name="Color">
+              <R>0.23529411852359772</R>
+              <G>0.11764705926179886</G>
+              <B>0.3529411852359772</B>
+            </Color3>
+            <bool name="Massless">false</bool>
+            <token name="Material">1568</token>
+            <Vector3 name="Size">
+              <X>0.5805751085281372</X>
+              <Y>1.3694878816604614</Y>
+              <Z>1.3694878816604614</Z>
+            </Vector3>
+            <token name="BottomSurface">0</token>
+            <bool name="CanCollide">false</bool>
+            <bool name="CanTouch">false</bool>
+            <token name="TopSurface">0</token>
+            <double name="Reflectance">0</double>
+            <double name="Transparency">0</double>
+            <string name="Name">Part</string>
+            <bool name="Anchored">true</bool>
+            <bool name="CastShadow">true</bool>
+            <CoordinateFrame name="CFrame">
+              <X>-0.011276244185864925</X>
+              <Y>0.001379251480102539</Y>
+              <Z>1.2122039794921875</Z>
+              <R00>0</R00>
+              <R01>0</R01>
+              <R02>-1.0000003576278687</R02>
+              <R10>0</R10>
+              <R11>1.0000007152557373</R11>
+              <R12>0</R12>
+              <R20>1.0000003576278687</R20>
+              <R21>0</R21>
+              <R22>0</R22>
+            </CoordinateFrame>
+            <token name="Shape">2</token>
+            <string name="MaterialVariant" />
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="RBX119">
+      <Properties>
+        <string name="Name">Decor</string>
+      </Properties>
+      <Item class="Model" referent="RBX120">
+        <Properties>
+          <string name="Name">Crystal</string>
+          <Ref name="PrimaryPart">RBX142</Ref>
+          <BinaryString name="AttributesSerialize">AQAAAAYAAABTb3VyY2UCLgAAAENyZWF0b3IgU3RvcmUgMTMwNDk1MjYxNDQxNTU1LCBzY3JpcHRzIHJlbW92ZWQ=</BinaryString>
+        </Properties>
+        <Item class="Model" referent="RBX121">
+          <Properties>
+            <string name="Name">Model</string>
+            <Ref name="PrimaryPart">null</Ref>
+          </Properties>
+          <Item class="Model" referent="RBX122">
+            <Properties>
+              <string name="Name">Model</string>
+              <Ref name="PrimaryPart">null</Ref>
+            </Properties>
+            <Item class="MeshPart" referent="RBX123">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>2.8339080810546875</X>
+                  <Y>0.059957683086395264</Y>
+                  <Z>-1.068634033203125</Z>
+                  <R00>0.7194651961326599</R00>
+                  <R01>-1.8586554233479546e-06</R01>
+                  <R02>0.6945291757583618</R02>
+                  <R10>-1.552525645820424e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>2.8366885089781135e-06</R12>
+                  <R20>-0.6945290565490723</R20>
+                  <R21>-2.148717612726614e-06</R21>
+                  <R22>0.7194649577140808</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX124">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>2.1759796142578125</X>
+                  <Y>0.060054779052734375</Y>
+                  <Z>-1.88946533203125</Z>
+                  <R00>0.01763094961643219</R00>
+                  <R01>-4.079303835169412e-06</R01>
+                  <R02>0.9998449683189392</R02>
+                  <R10>-2.2339554561767727e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>4.083703061041888e-06</R12>
+                  <R20>-0.9998447299003601</R20>
+                  <R21>-2.9537113732658327e-07</R21>
+                  <R22>0.017630934715270996</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX125">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>-0.326507568359375</X>
+                  <Y>0.060123443603515625</Y>
+                  <Z>-2.5191421508789062</Z>
+                  <R00>0.01763094961643219</R00>
+                  <R01>-4.079303835169412e-06</R01>
+                  <R02>0.9998449683189392</R02>
+                  <R10>-2.2339554561767727e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>4.083703061041888e-06</R12>
+                  <R20>-0.9998447299003601</R20>
+                  <R21>-2.9537113732658327e-07</R21>
+                  <R22>0.017630934715270996</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX126">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>1.0851593017578125</X>
+                  <Y>0.060068100690841675</Y>
+                  <Z>-2.0236129760742188</Z>
+                  <R00>-0.5151793956756592</R00>
+                  <R01>0.00010248820035485551</R01>
+                  <R02>-0.8570828437805176</R02>
+                  <R10>1.915559550980106e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>0.00011946313316002488</R12>
+                  <R20>0.8570826053619385</R20>
+                  <R21>6.138072058092803e-05</R21>
+                  <R22>-0.5151792764663696</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX127">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>-1.3782501220703125</X>
+                  <Y>0.059947192668914795</Y>
+                  <Z>-2.289325714111328</Z>
+                  <R00>-0.6945292353630066</R00>
+                  <R01>-2.2259835077420576e-06</R01>
+                  <R02>0.7194651365280151</R02>
+                  <R10>-1.6066405805759132e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>2.938529178209137e-06</R12>
+                  <R20>-0.7194649577140808</R20>
+                  <R21>1.925280230352655e-06</R21>
+                  <R22>-0.694529116153717</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX128">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>-1.426116943359375</X>
+                  <Y>0.05903935432434082</Y>
+                  <Z>2.3427047729492188</Z>
+                  <R00>-0.8747074007987976</R00>
+                  <R01>9.69535467447713e-05</R01>
+                  <R02>-0.4846522808074951</R02>
+                  <R10>1.083899405784905e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>0.00019985268590971828</R12>
+                  <R20>0.48465216159820557</R20>
+                  <R21>0.00017475985805504024</R21>
+                  <R22>-0.8747071623802185</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX129">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>-2.7515716552734375</X>
+                  <Y>0.059287577867507935</Y>
+                  <Z>0.4961700439453125</Z>
+                  <R00>-0.8747074007987976</R00>
+                  <R01>9.69535467447713e-05</R01>
+                  <R02>-0.4846522808074951</R02>
+                  <R10>1.083899405784905e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>0.00019985268590971828</R12>
+                  <R20>0.48465216159820557</R20>
+                  <R21>0.00017475985805504024</R21>
+                  <R22>-0.8747071623802185</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX130">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>-2.7824859619140625</X>
+                  <Y>0.059578243643045425</Y>
+                  <Z>-0.5600433349609375</Z>
+                  <R00>-0.9703404903411865</R00>
+                  <R01>-1.8637206267158035e-07</R01>
+                  <R02>-0.24174410104751587</R02>
+                  <R10>5.410447556641884e-08</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>-9.873620001599193e-07</R12>
+                  <R20>0.2417440563440323</R20>
+                  <R21>-9.711529855849221e-07</R21>
+                  <R22>-0.9703402519226074</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX131">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>-2.0173492431640625</X>
+                  <Y>0.059233009815216064</Y>
+                  <Z>1.0658493041992188</Z>
+                  <R00>0.7194696068763733</R00>
+                  <R01>-1.8586260921438225e-06</R01>
+                  <R02>0.6945245265960693</R02>
+                  <R10>-1.552589310449548e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>2.8366648621158674e-06</R12>
+                  <R20>-0.6945242881774902</R20>
+                  <R21>-2.1487157937372103e-06</R21>
+                  <R22>0.719469428062439</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX132">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>1.3489990234375</X>
+                  <Y>0.05929023399949074</Y>
+                  <Z>1.5204200744628906</Z>
+                  <R00>-0.8570714592933655</R00>
+                  <R01>-6.44570536678657e-05</R01>
+                  <R02>0.5151984095573425</R02>
+                  <R10>0.00012588674144353718</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>0.00033453290234319866</R12>
+                  <R20>-0.5151981115341187</R20>
+                  <R21>0.0003515748248901218</R21>
+                  <R22>-0.8570712804794312</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX133">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>0.9886322021484375</X>
+                  <Y>0.05907699465751648</Y>
+                  <Z>2.3772125244140625</Z>
+                  <R00>0.6945275068283081</R00>
+                  <R01>-2.2259819161263295e-06</R01>
+                  <R02>-0.7194663882255554</R02>
+                  <R10>1.6064950614236295e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>-2.9384873414528556e-06</R12>
+                  <R20>0.7194662094116211</R20>
+                  <R21>1.9252674974268302e-06</R21>
+                  <R22>0.6945275068283081</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX134">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>-0.062957763671875</X>
+                  <Y>0.05904358625411987</Y>
+                  <Z>2.606884002685547</Z>
+                  <R00>-0.01763094961643219</R00>
+                  <R01>-4.079303835169412e-06</R01>
+                  <R02>-0.9998449683189392</R02>
+                  <R10>2.2339554561767727e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>-4.083703061041888e-06</R12>
+                  <R20>0.9998447299003601</R20>
+                  <R21>-2.9537113732658327e-07</R21>
+                  <R22>-0.017630934715270996</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX135">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>2.42926025390625</X>
+                  <Y>0.05959931015968323</Y>
+                  <Z>0.6188583374023438</Z>
+                  <R00>0.6945275068283081</R00>
+                  <R01>-2.2259819161263295e-06</R01>
+                  <R02>-0.7194663882255554</R02>
+                  <R10>1.6064950614236295e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>-2.9384873414528556e-06</R12>
+                  <R20>0.7194662094116211</R20>
+                  <R21>1.9252674974268302e-06</R21>
+                  <R22>0.6945275068283081</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+            <Item class="MeshPart" referent="RBX136">
+              <Properties>
+                <bool name="CanQuery">false</bool>
+                <Color3 name="Color">
+                  <R>0.9725490212440491</R>
+                  <G>0.9725490212440491</G>
+                  <B>0.9725490212440491</B>
+                </Color3>
+                <CoordinateFrame name="CFrame">
+                  <X>-2.24444580078125</X>
+                  <Y>0.059807151556015015</Y>
+                  <Z>-1.61297607421875</Z>
+                  <R00>0.24174416065216064</R00>
+                  <R01>-3.898208888131194e-06</R01>
+                  <R02>-0.970340371131897</R02>
+                  <R10>2.167726051993668e-07</R10>
+                  <R11>1.000001072883606</R11>
+                  <R12>-3.963127255701693e-06</R12>
+                  <R20>0.9703402519226074</R20>
+                  <R21>7.477265171473846e-07</R21>
+                  <R22>0.24174410104751587</R22>
+                </CoordinateFrame>
+                <token name="RenderFidelity">1</token>
+                <token name="Material">288</token>
+                <Vector3 name="Size">
+                  <X>0.05428675189614296</X>
+                  <Y>0.14046278595924377</Y>
+                  <Z>0.08629143238067627</Z>
+                </Vector3>
+                <token name="BottomSurface">0</token>
+                <bool name="CanCollide">false</bool>
+                <token name="TopSurface">0</token>
+                <Content name="MeshId">
+                  <url>rbxassetid://3277668616</url>
+                </Content>
+                <bool name="CanTouch">false</bool>
+                <double name="Reflectance">0</double>
+                <bool name="Anchored">true</bool>
+                <double name="Transparency">0</double>
+                <string name="Name">MeshPart</string>
+                <bool name="Massless">false</bool>
+                <bool name="DoubleSided">false</bool>
+                <Content name="TextureID">
+                  <null />
+                </Content>
+                <bool name="CastShadow">true</bool>
+                <string name="MaterialVariant" />
+              </Properties>
+            </Item>
+          </Item>
+          <Item class="MeshPart" referent="RBX137">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.501960813999176</R>
+                <G>0</G>
+                <B>1</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>-0.0578460693359375</X>
+                <Y>5.43284273147583</Y>
+                <Z>0.5116081237792969</Z>
+                <R00>1.0000003576278687</R00>
+                <R01>-8.049028110690415e-11</R01>
+                <R02>0</R02>
+                <R10>-8.049028110690415e-11</R10>
+                <R11>1.000001072883606</R11>
+                <R12>-1.8189894035458565e-12</R12>
+                <R20>0</R20>
+                <R21>-1.8189894035458565e-12</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">1</token>
+              <token name="Material">1568</token>
+              <Vector3 name="Size">
+                <X>3.3181803226470947</X>
+                <Y>2.7998759746551514</Y>
+                <Z>3.625638008117676</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://3304890945</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0.550000011920929</double>
+              <string name="Name">Meshes/2</string>
+              <bool name="Massless">false</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <null />
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+          <Item class="Part" referent="RBX138">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.6392157077789307</R>
+                <G>0.6352941393852234</G>
+                <B>0.6470588445663452</B>
+              </Color3>
+              <bool name="Massless">false</bool>
+              <token name="Material">256</token>
+              <Vector3 name="Size">
+                <X>6.559579849243164</X>
+                <Y>1.1765146255493164</Y>
+                <Z>6.20915412902832</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <bool name="CanTouch">false</bool>
+              <token name="TopSurface">0</token>
+              <double name="Reflectance">0</double>
+              <double name="Transparency">1</double>
+              <string name="Name">Part</string>
+              <bool name="Anchored">true</bool>
+              <bool name="CastShadow">true</bool>
+              <CoordinateFrame name="CFrame">
+                <X>-0.1681365966796875</X>
+                <Y>0.421386182308197</Y>
+                <Z>-0.20490264892578125</Z>
+                <R00>1.0000003576278687</R00>
+                <R01>3.323963755974546e-05</R01>
+                <R02>-6.490200757980347e-05</R02>
+                <R10>-3.3244912629015744e-05</R10>
+                <R11>1.000001072883606</R11>
+                <R12>-7.783282489981502e-05</R12>
+                <R20>6.488710641860962e-05</R20>
+                <R21>7.783490582369268e-05</R21>
+                <R22>1.000000238418579</R22>
+              </CoordinateFrame>
+              <token name="Shape">1</token>
+              <string name="MaterialVariant" />
+            </Properties>
+            <Item class="ParticleEmitter" referent="RBX139">
+              <Properties>
+                <ColorSequence name="Color">0 0 0 0 0 0.006655573844909668 0 0 0 0 0.6505823135375977 0 0 0 0 0.7354409098625183 0.3333333432674408 0 0.49803921580314636 0 1 0.3333333432674408 0 0.49803921580314636 0 </ColorSequence>
+                <double name="Drag">0</double>
+                <double name="ZOffset">0</double>
+                <double name="TimeScale">1</double>
+                <double name="LightInfluence">1</double>
+                <NumberRange name="Lifetime">5 10 </NumberRange>
+                <NumberRange name="Speed">0 0 </NumberRange>
+                <Content name="Texture">
+                  <url>rbxasset://textures/particles/smoke_main.dds</url>
+                </Content>
+                <bool name="Enabled">true</bool>
+                <Vector3 name="Acceleration">
+                  <X>0</X>
+                  <Y>0</Y>
+                  <Z>0</Z>
+                </Vector3>
+                <NumberRange name="RotSpeed">0 0 </NumberRange>
+                <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                <bool name="LockedToPart">false</bool>
+                <double name="Rate">15</double>
+                <double name="VelocityInheritance">0</double>
+                <NumberRange name="Rotation">0 0 </NumberRange>
+                <NumberSequence name="Transparency">0 1 0 0.08381170779466629 0 0 0.842709481716156 0 0 1 1 0 </NumberSequence>
+                <string name="Name">ParticleEmitter</string>
+                <token name="Orientation">0</token>
+                <double name="LightEmission">0.6000000238418579</double>
+                <token name="EmissionDirection">1</token>
+                <Vector2 name="SpreadAngle">
+                  <X>0</X>
+                  <Y>0</Y>
+                </Vector2>
+                <NumberSequence name="Size">0 0.8401261568069458 0 0.4981108009815216 1.7852685451507568 0 1 0.47257092595100403 0 </NumberSequence>
+              </Properties>
+            </Item>
+            <Item class="ParticleEmitter" referent="RBX140">
+              <Properties>
+                <ColorSequence name="Color">0 0 0 0 0 0.006655573844909668 0 0 0 0 0.6505823135375977 0 0 0 0 0.7354409098625183 0.3333333432674408 0 0.49803921580314636 0 1 0.3333333432674408 0 0.49803921580314636 0 </ColorSequence>
+                <double name="Drag">0</double>
+                <double name="ZOffset">0</double>
+                <double name="TimeScale">1</double>
+                <double name="LightInfluence">1</double>
+                <NumberRange name="Lifetime">2 5 </NumberRange>
+                <NumberRange name="Speed">0.8401264548301697 0.8401264548301697 </NumberRange>
+                <Content name="Texture">
+                  <url>rbxassetid://1185677116</url>
+                </Content>
+                <bool name="Enabled">true</bool>
+                <Vector3 name="Acceleration">
+                  <X>0</X>
+                  <Y>0</Y>
+                  <Z>0</Z>
+                </Vector3>
+                <NumberRange name="RotSpeed">-150 -150 </NumberRange>
+                <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                <bool name="LockedToPart">false</bool>
+                <double name="Rate">15</double>
+                <double name="VelocityInheritance">0</double>
+                <NumberRange name="Rotation">0 0 </NumberRange>
+                <NumberSequence name="Transparency">0 1 0 0.08381170779466629 0 0 0.9231737852096558 0 0 1 1 0 </NumberSequence>
+                <string name="Name">ParticleEmitter</string>
+                <token name="Orientation">0</token>
+                <double name="LightEmission">0.4000000059604645</double>
+                <token name="EmissionDirection">1</token>
+                <Vector2 name="SpreadAngle">
+                  <X>50</X>
+                  <Y>50</Y>
+                </Vector2>
+                <NumberSequence name="Size">0 0.26253950595855713 0 0.4930730164051056 0.10501570999622345 0 1 0 0 </NumberSequence>
+              </Properties>
+            </Item>
+            <Item class="PointLight" referent="RBX141">
+              <Properties>
+                <bool name="Enabled">true</bool>
+                <bool name="Shadows">false</bool>
+                <string name="Name">PointLight</string>
+                <Color3 name="Color">
+                  <R>0.3176470696926117</R>
+                  <G>0</G>
+                  <B>1</B>
+                </Color3>
+                <double name="Brightness">1</double>
+                <double name="Range">25</double>
+              </Properties>
+            </Item>
+          </Item>
+          <Item class="MeshPart" referent="RBX142">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.06666667014360428</R>
+                <G>0.06666667014360428</G>
+                <B>0.06666667014360428</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1.0000003576278687</R00>
+                <R01>-8.049028110690415e-11</R01>
+                <R02>0</R02>
+                <R10>-8.049028110690415e-11</R10>
+                <R11>1.000001072883606</R11>
+                <R12>-1.8189894035458565e-12</R12>
+                <R20>0</R20>
+                <R21>-1.8189894035458565e-12</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">1</token>
+              <token name="Material">272</token>
+              <Vector3 name="Size">
+                <X>7.136706829071045</X>
+                <Y>0.22344592213630676</Y>
+                <Z>6.542190074920654</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://3304890732</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">Meshes/1</string>
+              <bool name="Massless">false</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <null />
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+          <Item class="MeshPart" referent="RBX143">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.2235294133424759</R>
+                <G>0</G>
+                <B>0.3019607961177826</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0.020355224609375</X>
+                <Y>2.1729238033294678</Y>
+                <Z>-0.1885223388671875</Z>
+                <R00>1.0000003576278687</R00>
+                <R01>-8.049028110690415e-11</R01>
+                <R02>0</R02>
+                <R10>-8.049028110690415e-11</R10>
+                <R11>1.000001072883606</R11>
+                <R12>-1.8189894035458565e-12</R12>
+                <R20>0</R20>
+                <R21>-1.8189894035458565e-12</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">1</token>
+              <token name="Material">272</token>
+              <Vector3 name="Size">
+                <X>4.471908092498779</X>
+                <Y>3.025770902633667</Y>
+                <Z>4.53225564956665</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://3304891564</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">Meshes/7</string>
+              <bool name="Massless">false</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <null />
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+          <Item class="MeshPart" referent="RBX144">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.250980406999588</R>
+                <G>0</G>
+                <B>0.7960784435272217</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0.023345947265625</X>
+                <Y>1.7061207294464111</Y>
+                <Z>-0.17836380004882812</Z>
+                <R00>1.0000003576278687</R00>
+                <R01>-8.049028110690415e-11</R01>
+                <R02>0</R02>
+                <R10>-8.049028110690415e-11</R10>
+                <R11>1.000001072883606</R11>
+                <R12>-1.8189894035458565e-12</R12>
+                <R20>0</R20>
+                <R21>-1.8189894035458565e-12</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">1</token>
+              <token name="Material">288</token>
+              <Vector3 name="Size">
+                <X>4.396191596984863</X>
+                <Y>2.0618011951446533</Y>
+                <Z>4.45551872253418</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://3304891434</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">Meshes/6</string>
+              <bool name="Massless">false</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <null />
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+          <Item class="MeshPart" referent="RBX145">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.06666667014360428</R>
+                <G>0.06666667014360428</G>
+                <B>0.06666667014360428</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>-0.05670166015625</X>
+                <Y>5.318367004394531</Y>
+                <Z>0.5136642456054688</Z>
+                <R00>1.0000003576278687</R00>
+                <R01>-8.049028110690415e-11</R01>
+                <R02>0</R02>
+                <R10>-8.049028110690415e-11</R10>
+                <R11>1.000001072883606</R11>
+                <R12>-1.8189894035458565e-12</R12>
+                <R20>0</R20>
+                <R21>-1.8189894035458565e-12</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">1</token>
+              <token name="Material">272</token>
+              <Vector3 name="Size">
+                <X>3.0843424797058105</X>
+                <Y>2.25093674659729</Y>
+                <Z>3.442831516265869</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://3304891071</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">Meshes/3</string>
+              <bool name="Massless">false</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <null />
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+          <Item class="MeshPart" referent="RBX146">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.1921568661928177</R>
+                <G>0</G>
+                <B>0.24313725531101227</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>0.004852294921875</X>
+                <Y>-0.000729680061340332</Y>
+                <Z>0.021945953369140625</Z>
+                <R00>1.0000003576278687</R00>
+                <R01>-8.049028110690415e-11</R01>
+                <R02>0</R02>
+                <R10>-8.049028110690415e-11</R10>
+                <R11>1.000001072883606</R11>
+                <R12>-1.8189894035458565e-12</R12>
+                <R20>0</R20>
+                <R21>-1.8189894035458565e-12</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">1</token>
+              <token name="Material">288</token>
+              <Vector3 name="Size">
+                <X>6.446373462677002</X>
+                <Y>0.2522084712982178</Y>
+                <Z>5.9092817306518555</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://3304891307</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">Meshes/5</string>
+              <bool name="Massless">false</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <null />
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+          </Item>
+          <Item class="MeshPart" referent="RBX147">
+            <Properties>
+              <bool name="CanQuery">false</bool>
+              <Color3 name="Color">
+                <R>0.10588235408067703</R>
+                <G>0.16470588743686676</G>
+                <B>0.2078431397676468</B>
+              </Color3>
+              <CoordinateFrame name="CFrame">
+                <X>-0.0688629150390625</X>
+                <Y>0.6018185615539551</Y>
+                <Z>0.19525146484375</Z>
+                <R00>1.0000003576278687</R00>
+                <R01>4.089745289093116e-06</R01>
+                <R02>-6.705522537231445e-08</R02>
+                <R10>-4.089955837116577e-06</R10>
+                <R11>1.000001072883606</R11>
+                <R12>-1.5146542864385992e-07</R12>
+                <R20>6.705522537231445e-08</R20>
+                <R21>1.5146179066505283e-07</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <token name="RenderFidelity">1</token>
+              <token name="Material">800</token>
+              <Vector3 name="Size">
+                <X>5.8008222579956055</X>
+                <Y>1.1635868549346924</Y>
+                <Z>5.136030197143555</Z>
+              </Vector3>
+              <token name="BottomSurface">0</token>
+              <bool name="CanCollide">false</bool>
+              <token name="TopSurface">0</token>
+              <Content name="MeshId">
+                <url>rbxassetid://3304891182</url>
+              </Content>
+              <bool name="CanTouch">false</bool>
+              <double name="Reflectance">0</double>
+              <bool name="Anchored">true</bool>
+              <double name="Transparency">0</double>
+              <string name="Name">Meshes/4</string>
+              <bool name="Massless">false</bool>
+              <bool name="DoubleSided">false</bool>
+              <Content name="TextureID">
+                <null />
+              </Content>
+              <bool name="CastShadow">true</bool>
+              <string name="MaterialVariant" />
+            </Properties>
+            <Item class="ManualWeld" referent="RBX148">
+              <Properties>
+                <bool name="Enabled">true</bool>
+                <Ref name="Part1">RBX125</Ref>
+                <string name="Name">Meshes/4-to-MeshPart Strong Joint</string>
+                <Ref name="Part0">RBX147</Ref>
+                <CoordinateFrame name="C0">
+                  <X>2.9339146614074707</X>
+                  <Y>-0.6154137849807739</Y>
+                  <Z>-2.6015992164611816</Z>
+                  <R00>-1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>-1</R22>
+                </CoordinateFrame>
+                <CoordinateFrame name="C1">
+                  <X>-0.05650752782821655</X>
+                  <Y>-0.07374409586191177</Y>
+                  <Z>3.193027973175049</Z>
+                  <R00>-0.01763087511062622</R00>
+                  <R01>-3.027309389835864e-07</R01>
+                  <R02>0.9998446702957153</R02>
+                  <R10>8.169020475179423e-06</R10>
+                  <R11>1</R11>
+                  <R12>4.468274141800066e-07</R12>
+                  <R20>-0.9998446702957153</R20>
+                  <R21>8.175628863682505e-06</R21>
+                  <R22>-0.01763087511062622</R22>
+                </CoordinateFrame>
+              </Properties>
+            </Item>
+          </Item>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="Model" referent="RBX149">
+      <Properties>
+        <string name="Name">VoidHound</string>
+        <Ref name="PrimaryPart">RBX150</Ref>
+        <BinaryString name="AttributesSerialize">AQAAAAYAAABTb3VyY2UCRQAAAENyZWF0b3IgU3RvcmUgODU3MDQwNjA4IChIZWxsaG91bmQpLCBzY3JpcHRzIGFuZCBoZWxwZXIgcGFydHMgcmVtb3ZlZA==</BinaryString>
+      </Properties>
+      <Item class="MeshPart" referent="RBX150">
+        <Properties>
+          <bool name="CanQuery">false</bool>
+          <Color3 name="Color">
+            <R>0.6392157077789307</R>
+            <G>0.6352941393852234</G>
+            <B>0.6470588445663452</B>
+          </Color3>
+          <CoordinateFrame name="CFrame">
+            <X>0</X>
+            <Y>3.299999952316284</Y>
+            <Z>130</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1.000000238418579</R02>
+            <R10>0</R10>
+            <R11>1.0000004768371582</R11>
+            <R12>0</R12>
+            <R20>1.000000238418579</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <token name="RenderFidelity">0</token>
+          <token name="Material">256</token>
+          <Vector3 name="Size">
+            <X>4.800000190734863</X>
+            <Y>7.868326187133789</Y>
+            <Z>14.460022926330566</Z>
+          </Vector3>
+          <token name="BottomSurface">0</token>
+          <bool name="CanCollide">false</bool>
+          <token name="TopSurface">0</token>
+          <Content name="MeshId">
+            <url>rbxassetid://857026706</url>
+          </Content>
+          <bool name="CanTouch">false</bool>
+          <double name="Reflectance">0</double>
+          <bool name="Anchored">true</bool>
+          <double name="Transparency">0</double>
+          <string name="Name">Body</string>
+          <bool name="Massless">false</bool>
+          <bool name="DoubleSided">false</bool>
+          <Content name="TextureID">
+            <url>rbxassetid://857026723</url>
+          </Content>
+          <bool name="CastShadow">true</bool>
+          <string name="MaterialVariant" />
+        </Properties>
+        <Item class="PointLight" referent="RBX151">
+          <Properties>
+            <bool name="Enabled">true</bool>
+            <bool name="Shadows">false</bool>
+            <string name="Name">PointLight</string>
+            <Color3 name="Color">
+              <R>0.6666666865348816</R>
+              <G>0.3137255012989044</G>
+              <B>1</B>
+            </Color3>
+            <double name="Brightness">2.5</double>
+            <double name="Range">14</double>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+</roblox>

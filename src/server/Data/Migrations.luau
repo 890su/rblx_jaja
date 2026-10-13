@@ -4,11 +4,25 @@
 
 local Migrations = {}
 
-Migrations.LATEST = 1
+Migrations.LATEST = 2
 
 -- [from] = step producing from + 1
 local STEPS: { [number]: (data: { [string]: any }) -> { [string]: any } } = {
-	-- [1] = function(data) data.newField = default; data.schema = 2; return data end,
+	[1] = function(data)
+		data.uncollectedCoins = data.uncollectedCoins or 0
+		data.serverLuckUntil = data.serverLuckUntil or 0
+		data.outgoingTransfers = data.outgoingTransfers or {}
+		data.incomingTransfers = data.incomingTransfers or {}
+		-- Historical profiles did not track paid provenance; conservatively protect them.
+		for _, collection in { data.pedestals or {}, data.storage or {} } do
+			for _, state in collection do
+				if state.paid == nil then
+					state.paid = true
+				end
+			end
+		end
+		return data
+	end,
 }
 
 -- Brings `data` up to LATEST. Returns the data and whether anything changed.
