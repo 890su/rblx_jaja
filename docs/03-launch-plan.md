@@ -26,6 +26,7 @@ Version 0.1 · 2026-10-11 · Soft launch window: 2026-11-23 → 11-29. Scale dec
 - [ ] Today's Picks nomination form submitted (new-game curation).
 
 ## 3. Closed test (Nov 16–22)
+- Before the larger cohort: run the [3–5-player smoke test](11-small-group-playtest.md) for 20–30 minutes after publishing to a fresh server.
 - 20–50 players (friends, small Discord, DevForum testers). Private server links.
 - Measure: time to first hatch, % reaching Zone 2, % completing steal tutorial, D1 of testers, crash/error logs.
 - Gate to soft launch: median first reward < 30 s; ≥ 70% reach Zone 2 in session 1; no data loss reports.
