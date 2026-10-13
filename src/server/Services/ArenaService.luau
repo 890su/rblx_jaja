@@ -76,6 +76,14 @@ local function qualifies(carry: CarryService.Carry?): boolean
 	return carry ~= nil and (carry.originZone or 0) >= Arena.FROM_ORIGIN_ZONE
 end
 
+local function canStage(position: Vector3): boolean
+	return math.abs(position.X) <= Economy.SERVER_SIZE * Arena.LANE_WIDTH / 2
+		and position.Y >= 1
+		and position.Y < 12
+		and position.Z > WorldService.gateZ(Arena.FIELD_ZONE + 1) - Arena.PREP_DEPTH
+		and position.Z < WorldService.gateZ(Arena.FIELD_ZONE) - FINAL_STRETCH
+end
+
 local function finish(player: Player, reason: string)
 	local run = active[player]
 	if not run then
@@ -346,11 +354,7 @@ local function tick(dt: number)
 				endPrep(player)
 				prep = nil
 			end
-			if
-				onTrack
-				and position.Z > zMin - Arena.PREP_DEPTH
-				and position.Z < zMax - FINAL_STRETCH
-			then
+			if canStage(position) then
 				-- Staging strip (or already in the corridor, e.g. a re-grabbed egg).
 				local staged = prep or startPrep(player, carry, root, humanoid)
 				if position.Z > zMin then
@@ -379,6 +383,23 @@ end
 
 function ArenaService.isActive(player: Player): boolean
 	return active[player] ~= nil
+end
+
+-- Pursuit runs every frame; staging is sampled at 30 Hz. Protect the valid
+-- entry position immediately, before that heartbeat publishes ArenaPrep.
+-- Use server-owned cargo/state so replicated flags cannot grant immunity.
+function ArenaService.isProtected(player: Player): boolean
+	if active[player] or preps[player] then
+		return true
+	end
+	local carry = CarryService.get(player)
+	local _, root = body(player)
+	return carry ~= nil
+		and qualifies(carry)
+		and completed[player] ~= carry
+		and workspace:GetServerTimeNow() >= (retryUntil[player] or 0)
+		and root ~= nil
+		and canStage(root.Position)
 end
 
 function ArenaService.init()

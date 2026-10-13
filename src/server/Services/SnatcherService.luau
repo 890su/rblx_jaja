@@ -29,6 +29,7 @@ local Knockback = require(script.Parent.Parent.Util.Knockback)
 local DataService = require(script.Parent.DataService)
 local WorldService = require(script.Parent.WorldService)
 local CarryService = require(script.Parent.CarryService)
+local ArenaService = require(script.Parent.ArenaService)
 local Telemetry = require(script.Parent.TelemetryService)
 
 type Drone = {
@@ -1068,6 +1069,9 @@ local function warning(drone: Drone, point: Vector3, speed: number, now: number)
 end
 
 local function knockOut(player: Player, root: BasePart, telemetry: string, from: Vector3?)
+	if ArenaService.isProtected(player) then
+		return
+	end
 	CarryService.drop(player, root.Position)
 	Knockback.apply(player, from)
 	fieldWaves[player] = nil
@@ -1144,7 +1148,7 @@ local function stepChaser(index: number, drone: Drone, now: number, dt: number):
 		player.Parent ~= Players
 		or not root
 		or CarryService.get(player) ~= drone.carry
-		or (player:GetAttribute("ArenaActive") == true or player:GetAttribute("ArenaPrep") == true)
+		or ArenaService.isProtected(player)
 		or now - drone.bornAt > Config.GIVE_UP_SECONDS
 		or WorldService.zoneIndexAt(root.Position) == 0
 	then
@@ -1351,12 +1355,7 @@ local function stepAttacks(players: { Player })
 	for _, player in players do
 		local root = rootOf(player)
 		local waves = fieldWaves[player]
-		if
-			not root
-			or not CarryService.get(player)
-			or player:GetAttribute("ArenaActive")
-			or player:GetAttribute("ArenaPrep")
-		then
+		if not root or not CarryService.get(player) or ArenaService.isProtected(player) then
 			fieldWaves[player] = nil
 			chaseSince[player] = nil
 			continue
@@ -1634,13 +1633,7 @@ local function stepRelay(now: number)
 	for _, player in Players:GetPlayers() do
 		local carry = CarryService.get(player)
 		local root = rootOf(player)
-		if
-			not carry
-			or not root
-			or introChase[carry]
-			or player:GetAttribute("ArenaActive") == true
-			or player:GetAttribute("ArenaPrep") == true
-		then
+		if not carry or not root or introChase[carry] or ArenaService.isProtected(player) then
 			continue
 		end
 		local chasers: { Drone } = {}
@@ -1729,8 +1722,7 @@ local function step(dt: number, guardDt: number?)
 				if
 					carry
 					and carry.fresh
-					and player:GetAttribute("ArenaActive") ~= true
-					and player:GetAttribute("ArenaPrep") ~= true
+					and not ArenaService.isProtected(player)
 					and WorldService.zoneIndexAt(root.Position) > 0
 				then
 					table.insert(carriers, { player = player, root = root, carry = carry })
@@ -1756,7 +1748,9 @@ local function requireChaseQA()
 	assert(RunService:IsStudio(), "Studio only")
 	local args = game:GetService("StudioTestService"):GetTestArgs()
 	assert(
-		typeof(args) == "table" and args.suite == "preprod" and args.mode == "chase",
+		typeof(args) == "table"
+			and args.suite == "preprod"
+			and (args.mode == "chase" or args.mode == "arena"),
 		"opt-in isolated chase test only"
 	)
 end
@@ -1859,6 +1853,16 @@ function Service.debugDash(player: Player): boolean
 	place(drone, CFrame.lookAt(drone.position, drone.endpoint))
 	state(drone, "lock")
 	return true
+end
+
+-- Exercise the same damage boundary as dash/ground attacks before the arena
+-- heartbeat can set its replicated flags. Only isolated Studio QA can call it.
+function Service.debugIncomingHit(player: Player): boolean
+	requireChaseQA()
+	local before = assert(CarryService.get(player), "no QA cargo")
+	local root = assert(rootOf(player), "no QA body")
+	knockOut(player, root, "QAIncomingHit", root.Position - Vector3.zAxis)
+	return CarryService.get(player) == before
 end
 
 function Service.init()
