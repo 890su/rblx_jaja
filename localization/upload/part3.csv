@@ -1,4 +1,5 @@
 Key,Source,Context,Example
+purchase_unavailable,Unavailable,,
 purchase_use_credit,Use credit · {count},,
 rebirth_coins,Stardust: {have} / {need},,
 rebirth_count,Rebirths: {count},,
@@ -28,4 +29,3 @@ starter_pack,Starter Pack unlocked! Enjoy your new creatures,,
 station_carry_replaced,Meteor placed! The previous creature is safe in storage,,
 station_changed,Your station changed. Select the creature again,,
 station_confirm_sell,Confirm sale · {amount},,
-station_full_manual_hint,Station full! Hold E at a creature to replace it; the old one stays in storage. Or open Station,,

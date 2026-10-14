@@ -24,7 +24,7 @@ local ZONES: { Types.ZoneInfo } = {
 		lengthStuds = 1000,
 		maxMeteors = 8,
 		spawnIntervalSeconds = 5,
-		weights = { Common = 64, Uncommon = 30, Rare = 5.5, Epic = 0.5 },
+		weights = { Uncommon = 70, Rare = 28, Epic = 2 },
 	},
 	{
 		index = 3,
@@ -33,7 +33,7 @@ local ZONES: { Types.ZoneInfo } = {
 		lengthStuds = 1000,
 		maxMeteors = 8,
 		spawnIntervalSeconds = 6,
-		weights = { Common = 55, Uncommon = 33, Rare = 10, Epic = 1.8, Legendary = 0.2 },
+		weights = { Rare = 70, Epic = 28, Legendary = 2 },
 	},
 	{
 		index = 4,
@@ -43,12 +43,9 @@ local ZONES: { Types.ZoneInfo } = {
 		maxMeteors = 6,
 		spawnIntervalSeconds = 7,
 		weights = {
-			Common = 52,
-			Uncommon = 33,
-			Rare = 11,
-			Epic = 3.5,
-			Legendary = 0.45,
-			Mythic = 0.05,
+			Epic = 75,
+			Legendary = 24,
+			Mythic = 1,
 		},
 	},
 	{
@@ -59,12 +56,8 @@ local ZONES: { Types.ZoneInfo } = {
 		maxMeteors = 6,
 		spawnIntervalSeconds = 8,
 		weights = {
-			Common = 47.4,
-			Uncommon = 33.3,
-			Rare = 15,
-			Epic = 3.5,
-			Legendary = 0.75,
-			Mythic = 0.05,
+			Legendary = 90,
+			Mythic = 10,
 		},
 	},
 }

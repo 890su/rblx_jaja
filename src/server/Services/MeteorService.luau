@@ -259,7 +259,7 @@ spawnMeteor = function(
 	return meteor
 end
 
--- Server Luck product: multiplier on non-Common spawn weights while active.
+-- Server Luck: weights above the zone's minimum rarity are boosted.
 function MeteorService.luckBoost(): number
 	local untilTime = (workspace:GetAttribute("ServerLuckUntil") :: number?) or 0
 	if untilTime > workspace:GetServerTimeNow() then
@@ -323,6 +323,16 @@ function MeteorService.init()
 	fieldFolder = Instance.new("Folder")
 	fieldFolder.Name = "Meteors"
 	fieldFolder.Parent = workspace
+end
+
+function MeteorService.debugPickup(player: Player, meteor: BasePart)
+	require(script.Parent.Parent.Util.CommerceQA)()
+	pickUp(
+		player,
+		meteor :: Part,
+		meteor:GetAttribute("ZoneIndex") :: number,
+		meteor:GetAttribute("DroppedCreatureId") ~= nil
+	)
 end
 
 function MeteorService.start()

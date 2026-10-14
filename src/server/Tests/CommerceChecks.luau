@@ -112,6 +112,7 @@ function Checks.run(): any
 			return replies[player].result
 		end
 		at(owner, ownerPlot.center + Vector3.new(0, 4, 55))
+		require(script.Parent.ZoneProgressionChecks).run(buyer, at, check)
 		at(buyer, buyerPlot.center + Vector3.new(0, 4, 55))
 		check(
 			"fresh plot starts with neither facility",

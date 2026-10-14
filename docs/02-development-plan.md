@@ -127,3 +127,7 @@ Owner's weekly work, five distinct zone prototypes, emote groups, achievement un
 Unified menu layout, mobile navigation, optional chat, readable creature discovery labels and viewport portrait fitting implemented 2026-10-13. Current hound status and proposed AFK/difficulty tuning: [UI and speed balance](10-ui-and-speed-balance.md). Speed losses and economy tuning remain proposals; no saved progress is reduced by this UI work.
 
 2026-10-14: single gameplay Menu button, corner stats, translucent menus, zone arrivals and approved speed-transition validation: [validation report](../reports/hud-and-movement-2026-10-14.md).
+
+## 12. Zone loot and income progression
+
+2026-10-14: increasing rarity floors, progressive species pools, shorter hatch times and matching Luck/FTUE odds implemented. Saved creature identities remain intact; old long hatch deadlines only shorten. Specification: [zone loot progression](14-zone-loot-progression.md). Source-backed balance comparison, two-client acceptance and remaining live checks: [validation report](../reports/zone-progression-2026-10-14.md).

@@ -116,7 +116,35 @@ local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
 			rarity = creature.rarity,
 		})
 	end,
-	-- Isolated visual QA: long name, mutation and a pending hatch timer.
+	-- Isolated visual QA: persist a legacy timer and inspect it after rejoin.
+	progressionFixture = function(player, action)
+		assert(player, "no player")
+		local args = game:GetService("StudioTestService"):GetTestArgs()
+		assert(
+			typeof(args) == "table" and args.suite == "preprod" and args.mode == "visual",
+			"isolated visual QA only"
+		)
+		local profile = assert(DataService.get(player), "no profile")
+		if action == "seed" then
+			assert(#profile.storage == 0, "use a fresh QA profile")
+			table.insert(profile.storage, {
+				id = "qa-old-mythic",
+				creatureId = "big_bang_bunny",
+				rarity = "Mythic",
+				paid = true,
+				mutation = "Golden",
+				hatchAt = os.time() + 8 * 3600,
+			})
+			assert(
+				DataService.saveConfirmed(player, function(saved)
+					return saved.storage[1] ~= nil and saved.storage[1].id == "qa-old-mythic"
+				end),
+				"fixture save failed"
+			)
+		end
+		return game:GetService("HttpService")
+			:JSONEncode({ now = os.time(), storage = profile.storage })
+	end,
 	warehouseItem = function(player)
 		assert(player, "no player")
 		local args = game:GetService("StudioTestService"):GetTestArgs()

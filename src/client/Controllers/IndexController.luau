@@ -43,13 +43,13 @@ local function render()
 			then Locale.term(Theme.CREATURE_NAMES[creature.id])
 			else Locale.term("Undiscovered")
 		entry.detail.Text = if known
-			then Locale.t("index_detail", {
+			then Locale.t("index_field_detail", {
 				rarity = Locale.ref(creature.rarity),
 				zone = creature.zone,
 				income = Format.short(Rarity.INFO[creature.rarity].incomePerSecond),
 			})
 			else Locale.t(
-				"index_locked",
+				"index_field_locked",
 				{ rarity = Locale.ref(creature.rarity), zone = creature.zone }
 			)
 	end

@@ -8,11 +8,11 @@ local ORDER: { Types.Rarity } = { "Common", "Uncommon", "Rare", "Epic", "Legenda
 
 local INFO: { [string]: Types.RarityInfo } = {
 	Common = { order = 1, incomePerSecond = 1, hatchSeconds = 10 },
-	Uncommon = { order = 2, incomePerSecond = 4, hatchSeconds = 60 },
-	Rare = { order = 3, incomePerSecond = 15, hatchSeconds = 5 * 60 },
-	Epic = { order = 4, incomePerSecond = 60, hatchSeconds = 20 * 60 },
-	Legendary = { order = 5, incomePerSecond = 250, hatchSeconds = 60 * 60 },
-	Mythic = { order = 6, incomePerSecond = 1200, hatchSeconds = 8 * 60 * 60 },
+	Uncommon = { order = 2, incomePerSecond = 4, hatchSeconds = 30 },
+	Rare = { order = 3, incomePerSecond = 15, hatchSeconds = 90 },
+	Epic = { order = 4, incomePerSecond = 60, hatchSeconds = 3 * 60 },
+	Legendary = { order = 5, incomePerSecond = 250, hatchSeconds = 5 * 60 },
+	Mythic = { order = 6, incomePerSecond = 1200, hatchSeconds = 10 * 60 },
 }
 
 local MUTATIONS = {

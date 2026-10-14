@@ -101,7 +101,7 @@ local PRODUCTS: { Product } = {
 		id = 3717974429,
 		price = 249,
 		name = "Server Luck 15 min",
-		description = "x2 chance for Uncommon+ meteors for everyone on the server",
+		description = "x2 weights above each zone's minimum rarity; see exact odds before buying",
 	},
 }
 

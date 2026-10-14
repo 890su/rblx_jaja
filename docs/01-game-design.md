@@ -67,16 +67,19 @@ Goal: make escaping and chasing a decision ("which way do I run?") without killi
 - Metrics to judge it: bounce bands, session length, % chases ending in a catch, canyon vs lane pickup share. Tunables in `Config/Canyons`.
 
 ### 4.3 Meteors, rarity, creatures
-- 6 rarities, shown as "1 in X" (Fish It style). Default spawn weights per zone in `Config/Rarity`.
-| Rarity | Income/s | Hatch time | Approx. odds in its best zone |
-|---|---|---|---|
-| Common | 1 | 10 s | — |
-| Uncommon | 4 | 1 min | 1 in 3 |
-| Rare | 15 | 5 min | 1 in 10 |
-| Epic | 60 | 20 min | 1 in 40 |
-| Legendary | 250 | 1 h | 1 in 200 |
-| Mythic | 1,200 | 8 h | 1 in 2,000 |
-- ~30 creatures in MVP (≈5 per rarity), each with a home zone. An egg hatches any creature of its rarity, weighted toward the pickup zone (home ×4, neighbouring zone ×2, others ×1), so a zone keeps its flavour without repeats (Common in Zone 1: 46% / 22% / 11% ×3). While hatching, the capsule shows the meteor itself (spinning, rarity aura). Mutation: Golden (2% at hatch, ×2 income). More mutations are live-ops content.
+- 6 rarities, shown as "1 in X" (Fish It style). Spawn weights live in `Config/Zones`; income and hatch times in `Config/Rarity`.
+| Rarity | Income/s | Hatch time |
+|---|---|---|
+| Common | 1 | 10 s |
+| Uncommon | 4 | 30 s |
+| Rare | 15 | 90 s |
+| Epic | 60 | 3 min |
+| Legendary | 250 | 5 min |
+| Mythic | 1,200 | 10 min |
+- **Zone progression (2026-10-14):** Zone 1 Common 80 / Uncommon 18 / Rare 2%; Zone 2 Uncommon 70 / Rare 28 / Epic 2%; Zone 3 Rare 70 / Epic 28 / Legendary 2%; Zone 4 Epic 75 / Legendary 24 / Mythic 1%; Zone 5 Legendary 90 / Mythic 10%. The floor rises one rarity per zone; occasional early jackpots can still beat the next zone's minimum. These are normal field odds before boosts and the first Zone 2 pickup guarantee.
+- Thirty creatures (five per rarity). Each has a **first field zone**: future species are excluded, eligible species weigh ×4 in their first zone, ×2 in the next, ×1 later. Each positive rarity in each zone has at least two possible species. All thirty are obtainable in fields; shop and Robux crate pools remain global within the purchased rarity. Existing creature IDs and rarity/income stay intact. While hatching, the capsule shows the meteor itself (spinning, rarity aura). Golden chance is 2%, decided at pickup, with ×2 income.
+- Canyon, shower and Server Luck multiply weights **above the current zone's minimum**, then normalize; they do not boost the minimum. Paid Luck's exact species/Golden odds include a separate first Zone 2 pickup context. See [progression specification and validation](14-zone-loot-progression.md).
+- On load, old pending hatch deadlines are capped to the new rarity duration from the current time. Ready and shorter timers never restart; pedestal and storage items retain their IDs, mutations and paid provenance. Schema remains v4.
 - Carrying: one meteor at a time; carrier speed ×0.6; dropping on death/reset returns it to the field for 10 s.
 
 ### 4.4 Station (base)
@@ -120,7 +123,7 @@ Each server income tick produces a floating Stardust amount above the correspond
 - Treadmill running and the egg-holding pose support both Motor6D and modern AnimationConstraint avatar joints.
 
 ### 4.6 Rebirth
-- Cost: coins `300,000 × 4^n` and Speed ≥ 5,000 × (n+1) (tuned with tools/balance_sim.py: F2P Rebirth 1 ≈ 1h40, Zone 5 ≈ 3h, a new goal every 10–20 min). Resets Speed and coins; keeps creatures and pedestals.
+- Cost: coins `300,000 × 4^n` and Speed ≥ 5,000 × (n+1). The source-backed simulation after the 2026-10-14 loot change reaches Rebirth 1 around 67 min and Zone 5 around 132 min under an active F2P policy; these are model estimates, not live-player targets. See [assumptions and comparisons](../reports/zone-progression-2026-10-14.md). Resets Speed and coins; keeps creatures and pedestals.
 - Rewards: +50% income multiplier (additive per rebirth), +25% speed gain, unlocks Zone 5 at Rebirth 1, cosmetic trail tier.
 
 ### 4.7 Shops
@@ -131,7 +134,7 @@ Each server income tick produces a floating Stardust amount above the correspond
 - Native checkout closes the game menu and restores the Store after completion or cancellation. Entitlements and rewards come from the server. If an Instant Hatch or Restock payment completes after the effect becomes inapplicable, it becomes a saved credit with a Use Credit button; credits are consumed only when the effect can run.
 
 ### 4.7a Creature Index (implemented 2026-10-13)
-- Separate side-menu button. Thirty roster entries: undiscovered creatures appear as dark silhouettes and `???`; discovered creatures show their model, name, rarity, home zone and base income.
+- Separate side-menu button. Thirty roster entries: undiscovered creatures appear as dark silhouettes and `???`; discovered creatures show their model, name, rarity, first field zone and base income.
 - Discovery is server-owned and recorded when a creature is hatched on a pedestal or in storage. Selling or losing a creature does not erase its discovery. Unhatched meteors do not reveal the creature early. The index is private to its owner.
 - Model previews are static ViewportFrames using existing game assets; no extra paid image asset or per-frame rotation is required.
 

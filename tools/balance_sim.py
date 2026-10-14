@@ -1,127 +1,192 @@
-"""Economy / progression simulation for a typical free-to-play player.
+"""Source-backed balance comparison, not a prediction of player skill.
 
-Mirrors src/shared/Config (keep numbers in sync when tuning). The simulated
-player repeatedly runs to the farthest unlocked zone, grabs one meteor, carries
-it home (slowed), places it (replacing the weakest creature when full), banks
-income, buys pedestals when affordable and rebirths when possible.
-
-Usage: python tools/balance_sim.py [hours]
+Export with scripts/export_balance_config.py, then pass --config, --before and
+--out. Active policy: farthest unlocked zone, random pickup, configured arena
+corridor, 6 seconds handling, no Robux/shop/AFK/events, keep strongest hatched
+creatures active and incubate reserves in storage. Buys facilities, slots and
+training; rebirths when eligible. Failure scenarios still spend a full trip.
+Maze detours, menu skill and real combat must be measured in live playtests.
 """
-
+import argparse
+import json
 import math
 import random
-import sys
+import statistics
+from pathlib import Path
 
-# --- Config mirror -----------------------------------------------------------
-BASE_WALK, COEF, CAP = 16, 6, 400
-CARRY = 0.6
-ZONE_LEN = 1000
-ZONES = [  # speed gate, rebirth gate, weights
-    (0, 0, {"Common": 80, "Uncommon": 18, "Rare": 2}),
-    (100, 0, {"Common": 64, "Uncommon": 30, "Rare": 5.5, "Epic": 0.5}),
-    (500, 0, {"Common": 55, "Uncommon": 33, "Rare": 10, "Epic": 1.8, "Legendary": 0.2}),
-    (2000, 0, {"Common": 52, "Uncommon": 33, "Rare": 11, "Epic": 3.5, "Legendary": 0.45, "Mythic": 0.05}),
-    (8000, 1, {"Common": 47.4, "Uncommon": 33.3, "Rare": 15, "Epic": 3.5, "Legendary": 0.75, "Mythic": 0.05}),
-]
-CANYON_FROM, CANYON_SHARE, CANYON_BOOST = 3, 0.7, 2
-INCOME = {"Common": 1, "Uncommon": 4, "Rare": 15, "Epic": 60, "Legendary": 250, "Mythic": 1200}
-HATCH = {"Common": 10, "Uncommon": 60, "Rare": 300, "Epic": 1200, "Legendary": 3600, "Mythic": 28800}
-PEDESTALS_START, PEDESTAL_COSTS = 3, [500, 2500, 10000, 60000, 250000]
-REBIRTH_BASE, REBIRTH_GROWTH, REBIRTH_SPEED = 300000, 4, 5000
-REBIRTH_INCOME, REBIRTH_GAIN = 0.5, 0.25
-SELL_SECONDS = 30
-TRAINING_BASE, TRAINING_GROWTH, TRAINING_BONUS, TRAINING_MAX = 2000, 2.2, 0.10, 10  # sell value of a replaced creature = income * SELL_SECONDS
-PICKUP_OVERHEAD = 6  # seconds per trip (prompt, placing, turning)
 ORDER = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"]
 
 
-def walk(speed):
-    return min(BASE_WALK + COEF * math.sqrt(speed), CAP)
+def probabilities(config, zone, boost=1):
+    weights = zone["weights"]
+    floor = next(r for r in ORDER if weights.get(r, 0) > 0) if config.get("boostAboveZoneFloor") else "Common"
+    values = {r: weights.get(r, 0) * (1 if r == floor else boost) for r in ORDER}
+    return {r: w / sum(values.values()) for r, w in values.items()}
 
 
-def roll(weights, boost, rng):
-    w = {r: (v * boost if r != "Common" else v) for r, v in weights.items()}
-    pick = rng.random() * sum(w.values())
-    for r in ORDER:
-        if r in w:
-            pick -= w[r]
-            if pick <= 0:
-                return r
-    return "Common"
+def walk(config, speed):
+    s = config["speed"]
+    return min(s["BASE_WALKSPEED"] + s["WALKSPEED_COEFFICIENT"] * math.sqrt(max(0, speed)), s["WALKSPEED_CAP"])
 
 
-def simulate(hours, seed=1, verbose=True):
+def arena_pace(config, speed):
+    a = config["arena"]
+    return min(a["WALK_SPEED_MAX"], max(a["WALK_SPEED_MIN"], walk(config, speed) * a["WALK_SPEED_SHARE"]))
+
+
+def zone_rows(config):
+    rows, start = [], 0
+    pace = walk(config, 2000)
+    for index, zone in enumerate(config["zones"], 1):
+        distance = 60 + start + zone["lengthStuds"] / 2
+        start += zone["lengthStuds"]
+        back = distance / (pace * config["speed"]["CARRY_MULTIPLIER"])
+        if index >= config["arena"]["FROM_ORIGIN_ZONE"]:
+            length = config["zones"][config["arena"]["FIELD_ZONE"] - 1]["lengthStuds"]
+            back += length / arena_pace(config, 2000) - length / (pace * config["speed"]["CARRY_MULTIPLIER"])
+        row = {"zone": index, "minimum": next(r for r in ORDER if zone["weights"].get(r, 0) > 0), "roundTripSecondsAtSpeed2000": distance / pace + back + 6}
+        for boost in (1, 2, 6):
+            p = probabilities(config, zone, boost)
+            row[f"expectedIncomeBoost{boost}"] = sum(p[r] * config["rarity"][r]["incomePerSecond"] for r in ORDER)
+        p = probabilities(config, zone)
+        row["expectedHatchSeconds"] = sum(p[r] * config["rarity"][r]["hatchSeconds"] for r in ORDER)
+        for horizon in (600, 1800):
+            row[f"expectedCoinsAfter{horizon}sFromPickup"] = sum(p[r] * config["rarity"][r]["incomePerSecond"] * max(0, horizon - back - config["rarity"][r]["hatchSeconds"]) for r in ORDER)
+        rows.append(row)
+    return rows
+
+
+def simulate(config, hours, seed, failure_rate):
     rng = random.Random(seed)
-    t, speed, coins, rebirths = 0.0, 0.0, 0.0, 0
-    pedestals = []  # list of (rarity, hatch_at)
-    capacity = PEDESTALS_START
-    training = 0
-    milestones = {}
-    log_every, next_log = 600, 600
+    e, s = config["economy"], config["speed"]
+    specs = {x["key"]: x for x in config["upgrades"]}
+    t = speed = coins = 0.0
+    rebirths = training = 0
+    capacity = e["PEDESTALS_START"]
+    treadmill = warehouse = False
+    # TutorialService grants this starter at the beginning.
+    slots = [("Common", config["rarity"]["Common"]["hatchSeconds"], 1)]
+    reserve, milestones = [], {}
+    guarantee_used = False
+    end = hours * 3600
 
-    def income_rate():
-        base = sum(INCOME[r] for r, h in pedestals if h <= t)
-        return base * (1 + rebirths * REBIRTH_INCOME)
+    def income(item):
+        return config["rarity"][item[0]]["incomePerSecond"] * item[2]
 
-    while t < hours * 3600:
-        # farthest unlocked zone
+    def advance(seconds, moving=True):
+        nonlocal t, speed, coins
+        dt = min(seconds, end - t)
+        multiplier = 1 + rebirths * e["REBIRTH_INCOME_BONUS"]
+        coins += sum(income(x) * max(0, t + dt - max(t, x[1])) for x in slots) * multiplier
+        if moving:
+            speed += dt * s["GAIN_PER_SECOND"] * (1 + rebirths * s["REBIRTH_GAIN_BONUS"]) * (1 + training * e["TRAINING_BONUS"])
+        t += dt
+
+    def travel(distance, carrying=False, arena=False):
+        while distance > 1e-6 and t < end - 1e-9:
+            pace = arena_pace(config, speed) if arena else walk(config, speed) * (s["CARRY_MULTIPLIER"] if carrying else 1)
+            dt = min(1, distance / pace, end - t)
+            distance -= pace * dt
+            advance(dt)
+
+    def roll(zone):
+        boost = config["canyons"]["RARITY_BOOST"] if zone >= config["canyons"]["FROM_ZONE"] and rng.random() < config["canyons"]["SPAWN_SHARE"] else 1
+        value = rng.random()
+        for r, chance in probabilities(config, config["zones"][zone - 1], boost).items():
+            value -= chance
+            if value <= 0:
+                return r
+        return ORDER[-1]
+
+    trips = delivered = 0
+    while t < end:
         zone = 1
-        for i, (sg, rg, _) in enumerate(ZONES, start=1):
-            if speed >= sg and rebirths >= rg:
-                zone = i
-        for i in range(2, len(ZONES) + 1):
-            key = f"zone{i}"
-            if zone >= i and key not in milestones:
-                milestones[key] = t
-        # trip: run to the middle of the zone, carry back
-        dist = (zone - 0.5) * ZONE_LEN + 60
-        out = dist / walk(speed)
-        back = dist / (walk(speed) * CARRY)
-        trip = out + back + PICKUP_OVERHEAD
-        gain = (1 + rebirths * REBIRTH_GAIN) * (1 + training * TRAINING_BONUS)
-        speed += out * gain  # speed grows only while running (carrying counts too)
-        speed += back * gain
-        coins += income_rate() * trip
-        t += trip
-        boost = CANYON_BOOST if (zone >= CANYON_FROM and rng.random() < CANYON_SHARE) else 1
-        rarity = roll(ZONES[zone - 1][2], boost, rng)
-        entry = (rarity, t + HATCH[rarity])
-        if len(pedestals) < capacity:
-            pedestals.append(entry)
-        else:
-            weakest = min(range(len(pedestals)), key=lambda i: INCOME[pedestals[i][0]])
-            if INCOME[rarity] > INCOME[pedestals[weakest][0]]:
-                coins += INCOME[pedestals[weakest][0]] * SELL_SECONDS
-                pedestals[weakest] = entry
-        # buy pedestals
-        while capacity - PEDESTALS_START < len(PEDESTAL_COSTS) and coins >= PEDESTAL_COSTS[capacity - PEDESTALS_START]:
-            coins -= PEDESTAL_COSTS[capacity - PEDESTALS_START]
-            capacity += 1
-            milestones.setdefault(f"pedestal{capacity}", t)
-        # training upgrade (after pedestals), keep a reserve for rebirth
-        while training < TRAINING_MAX and coins >= TRAINING_BASE * TRAINING_GROWTH ** training * 2:
-            coins -= TRAINING_BASE * TRAINING_GROWTH ** training
-            training += 1
-            milestones.setdefault(f"training{training}", t)
-        # rebirth
-        cost = REBIRTH_BASE * REBIRTH_GROWTH ** rebirths
-        if speed >= REBIRTH_SPEED * (rebirths + 1) and coins >= cost:
+        for index, z in enumerate(config["zones"], 1):
+            if speed >= z["speedGate"] and rebirths >= z["rebirthGate"]:
+                zone = index
+        milestones.setdefault(f"zone{zone}", t)
+        distance = 60 + sum(z["lengthStuds"] for z in config["zones"][:zone - 1]) + config["zones"][zone - 1]["lengthStuds"] / 2
+        travel(distance)
+        if t >= end:
+            break
+        rarity = roll(zone)
+        if zone == config["guarantee"]["zone"] and not guarantee_used:
+            rarity = ORDER[max(ORDER.index(rarity), ORDER.index(config["guarantee"]["rarity"]))]
+            guarantee_used = True
+        golden = rng.random() < config["mutations"]["Golden"]["chance"]
+        success = rng.random() >= failure_rate
+        length = config["zones"][config["arena"]["FIELD_ZONE"] - 1]["lengthStuds"] if zone >= config["arena"]["FROM_ORIGIN_ZONE"] else 0
+        travel(distance - length, carrying=True)
+        if length:
+            travel(length, arena=True)
+        advance(6, moving=False)
+        if t >= end:
+            break
+        trips += 1
+        if not treadmill and coins >= specs["treadmill"]["installCost"]:
+            coins -= specs["treadmill"]["installCost"]
+            treadmill = True
+            milestones["treadmill"] = t
+        if len(slots) >= capacity and not warehouse and coins >= specs["warehouse"]["base"]:
+            coins -= specs["warehouse"]["base"]
+            warehouse = True
+            milestones["warehouse"] = t
+        if success and (len(slots) < capacity or warehouse):
+            reserve.append((rarity, t + config["rarity"][rarity]["hatchSeconds"], config["mutations"]["Golden"]["incomeMultiplier"] if golden else 1))
+            delivered += 1
+        pool = slots + reserve
+        pool.sort(key=lambda x: (x[1] <= t, income(x)), reverse=True)
+        slots, reserve = pool[:capacity], pool[capacity:]
+        cost = e["REBIRTH_BASE_COST"] * e["REBIRTH_COST_GROWTH"] ** rebirths
+        if speed >= e["REBIRTH_SPEED_REQUIREMENT"] * (rebirths + 1) and coins >= cost:
             rebirths += 1
             milestones[f"rebirth{rebirths}"] = t
-            speed, coins = 0.0, 0.0
-        if verbose and t >= next_log:
-            next_log += log_every
-            mix = {}
-            for r, _ in pedestals:
-                mix[r] = mix.get(r, 0) + 1
-            print(f"{t/60:6.0f} min | speed {speed:8.0f} | zone {zone} | coins {coins:12.0f} | "
-                  f"income {income_rate():8.1f}/s | rebirths {rebirths} | pedestals {mix}")
-    return milestones
+            speed = coins = 0.0
+        else:
+            costs = e["PEDESTAL_COSTS"]
+            while capacity - e["PEDESTALS_START"] < len(costs) and coins >= costs[capacity - e["PEDESTALS_START"]]:
+                coins -= costs[capacity - e["PEDESTALS_START"]]
+                capacity += 1
+                milestones.setdefault(f"pedestal{capacity}", t)
+            cost = math.floor(e["TRAINING_BASE_COST"] * e["TRAINING_COST_GROWTH"] ** training)
+            while training < e["TRAINING_MAX"] and coins >= cost * 2:
+                coins -= cost
+                training += 1
+                cost = math.floor(e["TRAINING_BASE_COST"] * e["TRAINING_COST_GROWTH"] ** training)
+    return {"milestones": milestones, "income": sum(income(x) for x in slots if x[1] <= t) * (1 + rebirths * e["REBIRTH_INCOME_BONUS"]), "rebirths": rebirths, "trips": trips, "delivered": delivered}
+
+
+def summary(config, hours, seeds, failure_rate):
+    runs = [simulate(config, hours, seed, failure_rate) for seed in range(seeds)]
+    timings = {}
+    for key in sorted({key for run in runs for key in run["milestones"]}):
+        values = sorted(run["milestones"][key] / 60 for run in runs if key in run["milestones"])
+        timings[key] = {"reached": len(values), "medianMinutesAmongReached": round(statistics.median(values), 2), "minMinutes": round(values[0], 2), "maxMinutes": round(values[-1], 2)}
+    return {"failureRate": failure_rate, "runs": seeds, "hours": hours, "milestones": timings, "medianFinalIncome": statistics.median(run["income"] for run in runs)}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--before", type=Path)
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--hours", type=float, default=3)
+    parser.add_argument("--seeds", type=int, default=100)
+    args = parser.parse_args()
+    result = {"assumptions": __doc__}
+    for label, path in (("before", args.before), ("after", args.config)):
+        if not path:
+            continue
+        config = json.loads(path.read_text(encoding="utf-8"))
+        result[label] = {"zones": zone_rows(config), "runs": [summary(config, args.hours, args.seeds, rate) for rate in (0, 0.2, 0.4)]}
+        print(label.upper())
+        for row in result[label]["zones"]:
+            print(f"zone {row['zone']}: minimum {row['minimum']}, income {row['expectedIncomeBoost1']:.2f}/s, mean hatch {row['expectedHatchSeconds']:.1f}s")
+        for run in result[label]["runs"]:
+            print(f"failures {run['failureRate']:.0%}: first rebirth {run['milestones'].get('rebirth1')}; zone5 {run['milestones'].get('zone5')}")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
-    hours = float(sys.argv[1]) if len(sys.argv) > 1 else 4
-    ms = simulate(hours)
-    print("\nMilestones (minutes):")
-    for k, v in sorted(ms.items(), key=lambda kv: kv[1]):
-        print(f"  {k:10s} {v/60:7.1f}")
+    main()

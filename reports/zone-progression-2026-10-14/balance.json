@@ -1,0 +1,677 @@
+{
+  "assumptions": "Source-backed balance comparison, not a prediction of player skill.\n\nExport with scripts/export_balance_config.py, then pass --config, --before and\n--out. Active policy: farthest unlocked zone, random pickup, configured arena\ncorridor, 6 seconds handling, no Robux/shop/AFK/events, keep strongest hatched\ncreatures active and incubate reserves in storage. Buys facilities, slots and\ntraining; rebirths when eligible. Failure scenarios still spend a full trip.\nMaze detours, menu skill and real combat must be measured in live playtests.\n",
+  "before": {
+    "zones": [
+      {
+        "zone": 1,
+        "minimum": "Common",
+        "roundTripSecondsAtSpeed2000": 8.907438624851032,
+        "expectedIncomeBoost1": 1.82,
+        "expectedIncomeBoost2": 2.3666666666666667,
+        "expectedIncomeBoost6": 3.46,
+        "expectedHatchSeconds": 24.799999999999997,
+        "expectedCoinsAfter600sFromPickup": 947.4927885642319,
+        "expectedCoinsAfter1800sFromPickup": 3131.492788564232
+      },
+      {
+        "zone": 2,
+        "minimum": "Common",
+        "roundTripSecondsAtSpeed2000": 15.941564330135787,
+        "expectedIncomeBoost1": 2.965,
+        "expectedIncomeBoost2": 3.889705882352941,
+        "expectedIncomeBoost6": 5.210714285714286,
+        "expectedHatchSeconds": 46.9,
+        "expectedCoinsAfter600sFromPickup": 1256.5410819126175,
+        "expectedCoinsAfter1800sFromPickup": 4632.6770386007165
+      },
+      {
+        "zone": 3,
+        "minimum": "Common",
+        "roundTripSecondsAtSpeed2000": 35.54740763015559,
+        "expectedIncomeBoost1": 4.95,
+        "expectedIncomeBoost2": 6.448275862068965,
+        "expectedIncomeBoost6": 8.292307692307693,
+        "expectedHatchSeconds": 84.10000000000001,
+        "expectedCoinsAfter600sFromPickup": 1412.1413900219898,
+        "expectedCoinsAfter1800sFromPickup": 6080.0549512159805
+      },
+      {
+        "zone": 4,
+        "minimum": "Common",
+        "roundTripSecondsAtSpeed2000": 44.926241903868586,
+        "expectedIncomeBoost1": 7.315,
+        "expectedIncomeBoost2": 9.533783783783784,
+        "expectedIncomeBoost6": 12.144117647058824,
+        "expectedHatchSeconds": 130.60000000000002,
+        "expectedCoinsAfter600sFromPickup": 1416.3075367840074,
+        "expectedCoinsAfter1800sFromPickup": 6805.163074676963
+      },
+      {
+        "zone": 5,
+        "minimum": "Common",
+        "roundTripSecondsAtSpeed2000": 54.3050761775816,
+        "expectedIncomeBoost1": 8.631,
+        "expectedIncomeBoost2": 11.001310615989516,
+        "expectedIncomeBoost6": 13.613223140495867,
+        "expectedHatchSeconds": 153.12,
+        "expectedCoinsAfter600sFromPickup": 1535.9313511608182,
+        "expectedCoinsAfter1800sFromPickup": 7591.677169069525
+      }
+    ],
+    "runs": [
+      {
+        "failureRate": 0,
+        "runs": 100,
+        "hours": 3.0,
+        "milestones": {
+          "pedestal4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 4.86,
+            "minMinutes": 3.09,
+            "maxMinutes": 6.41
+          },
+          "pedestal5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 13.29,
+            "minMinutes": 7.83,
+            "maxMinutes": 18.52
+          },
+          "pedestal6": {
+            "reached": 100,
+            "medianMinutesAmongReached": 22.65,
+            "minMinutes": 16.32,
+            "maxMinutes": 29.86
+          },
+          "pedestal7": {
+            "reached": 100,
+            "medianMinutesAmongReached": 43.77,
+            "minMinutes": 35.88,
+            "maxMinutes": 57.88
+          },
+          "pedestal8": {
+            "reached": 100,
+            "medianMinutesAmongReached": 83.58,
+            "minMinutes": 62.92,
+            "maxMinutes": 114.29
+          },
+          "rebirth1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 100.71,
+            "minMinutes": 76.04,
+            "maxMinutes": 140.53
+          },
+          "rebirth2": {
+            "reached": 20,
+            "medianMinutesAmongReached": 176.97,
+            "minMinutes": 164.74,
+            "maxMinutes": 179.73
+          },
+          "treadmill": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.13,
+            "minMinutes": 1.84,
+            "maxMinutes": 3.09
+          },
+          "warehouse": {
+            "reached": 100,
+            "medianMinutesAmongReached": 8.29,
+            "minMinutes": 4.3,
+            "maxMinutes": 10.45
+          },
+          "zone1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 0.0,
+            "minMinutes": 0.0,
+            "maxMinutes": 0.0
+          },
+          "zone2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.41,
+            "minMinutes": 2.41,
+            "maxMinutes": 2.41
+          },
+          "zone3": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.86,
+            "minMinutes": 10.86,
+            "maxMinutes": 10.86
+          },
+          "zone4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 36.13,
+            "minMinutes": 34.48,
+            "maxMinutes": 37.78
+          },
+          "zone5": {
+            "reached": 71,
+            "medianMinutesAmongReached": 170.15,
+            "minMinutes": 147.82,
+            "maxMinutes": 179.02
+          }
+        },
+        "medianFinalIncome": 960.0
+      },
+      {
+        "failureRate": 0.2,
+        "runs": 100,
+        "hours": 3.0,
+        "milestones": {
+          "pedestal4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 4.86,
+            "minMinutes": 3.09,
+            "maxMinutes": 6.41
+          },
+          "pedestal5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 13.29,
+            "minMinutes": 6.89,
+            "maxMinutes": 18.52
+          },
+          "pedestal6": {
+            "reached": 100,
+            "medianMinutesAmongReached": 23.35,
+            "minMinutes": 17.06,
+            "maxMinutes": 30.49
+          },
+          "pedestal7": {
+            "reached": 100,
+            "medianMinutesAmongReached": 46.84,
+            "minMinutes": 35.78,
+            "maxMinutes": 62.39
+          },
+          "pedestal8": {
+            "reached": 100,
+            "medianMinutesAmongReached": 87.65,
+            "minMinutes": 62.91,
+            "maxMinutes": 118.69
+          },
+          "rebirth1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 106.45,
+            "minMinutes": 76.03,
+            "maxMinutes": 146.79
+          },
+          "rebirth2": {
+            "reached": 15,
+            "medianMinutesAmongReached": 176.37,
+            "minMinutes": 164.73,
+            "maxMinutes": 179.91
+          },
+          "treadmill": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.13,
+            "minMinutes": 1.84,
+            "maxMinutes": 3.09
+          },
+          "warehouse": {
+            "reached": 100,
+            "medianMinutesAmongReached": 8.29,
+            "minMinutes": 4.3,
+            "maxMinutes": 10.86
+          },
+          "zone1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 0.0,
+            "minMinutes": 0.0,
+            "maxMinutes": 0.0
+          },
+          "zone2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.41,
+            "minMinutes": 2.41,
+            "maxMinutes": 2.41
+          },
+          "zone3": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.86,
+            "minMinutes": 10.86,
+            "maxMinutes": 10.86
+          },
+          "zone4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 36.47,
+            "minMinutes": 35.02,
+            "maxMinutes": 37.81
+          },
+          "zone5": {
+            "reached": 52,
+            "medianMinutesAmongReached": 169.96,
+            "minMinutes": 147.81,
+            "maxMinutes": 179.13
+          }
+        },
+        "medianFinalIncome": 870.0
+      },
+      {
+        "failureRate": 0.4,
+        "runs": 100,
+        "hours": 3.0,
+        "milestones": {
+          "pedestal4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 4.86,
+            "minMinutes": 3.09,
+            "maxMinutes": 7.37
+          },
+          "pedestal5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 13.29,
+            "minMinutes": 6.89,
+            "maxMinutes": 19.94
+          },
+          "pedestal6": {
+            "reached": 100,
+            "medianMinutesAmongReached": 24.01,
+            "minMinutes": 16.31,
+            "maxMinutes": 35.44
+          },
+          "pedestal7": {
+            "reached": 100,
+            "medianMinutesAmongReached": 49.86,
+            "minMinutes": 37.35,
+            "maxMinutes": 68.24
+          },
+          "pedestal8": {
+            "reached": 100,
+            "medianMinutesAmongReached": 92.38,
+            "minMinutes": 67.8,
+            "maxMinutes": 132.95
+          },
+          "rebirth1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 111.85,
+            "minMinutes": 82.89,
+            "maxMinutes": 155.43
+          },
+          "rebirth2": {
+            "reached": 6,
+            "medianMinutesAmongReached": 177.76,
+            "minMinutes": 172.23,
+            "maxMinutes": 179.85
+          },
+          "treadmill": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.13,
+            "minMinutes": 1.84,
+            "maxMinutes": 3.71
+          },
+          "warehouse": {
+            "reached": 100,
+            "medianMinutesAmongReached": 8.73,
+            "minMinutes": 4.3,
+            "maxMinutes": 10.86
+          },
+          "zone1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 0.0,
+            "minMinutes": 0.0,
+            "maxMinutes": 0.0
+          },
+          "zone2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.41,
+            "minMinutes": 2.41,
+            "maxMinutes": 2.41
+          },
+          "zone3": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.86,
+            "minMinutes": 10.86,
+            "maxMinutes": 10.86
+          },
+          "zone4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 36.48,
+            "minMinutes": 35.06,
+            "maxMinutes": 38.42
+          },
+          "zone5": {
+            "reached": 34,
+            "medianMinutesAmongReached": 172.15,
+            "minMinutes": 155.3,
+            "maxMinutes": 179.55
+          }
+        },
+        "medianFinalIncome": 720.0
+      }
+    ]
+  },
+  "after": {
+    "zones": [
+      {
+        "zone": 1,
+        "minimum": "Common",
+        "roundTripSecondsAtSpeed2000": 8.907438624851032,
+        "expectedIncomeBoost1": 1.82,
+        "expectedIncomeBoost2": 2.3666666666666667,
+        "expectedIncomeBoost6": 3.46,
+        "expectedHatchSeconds": 15.2,
+        "expectedCoinsAfter600sFromPickup": 1032.092788564232,
+        "expectedCoinsAfter1800sFromPickup": 3216.0927885642323
+      },
+      {
+        "zone": 2,
+        "minimum": "Uncommon",
+        "roundTripSecondsAtSpeed2000": 15.941564330135787,
+        "expectedIncomeBoost1": 8.2,
+        "expectedIncomeBoost2": 10.461538461538462,
+        "expectedIncomeBoost6": 14.08,
+        "expectedHatchSeconds": 49.800000000000004,
+        "expectedCoinsAfter600sFromPickup": 4191.049482808054,
+        "expectedCoinsAfter1800sFromPickup": 14031.049482808054
+      },
+      {
+        "zone": 3,
+        "minimum": "Rare",
+        "roundTripSecondsAtSpeed2000": 35.54740763015559,
+        "expectedIncomeBoost1": 32.3,
+        "expectedIncomeBoost2": 41.61538461538461,
+        "expectedIncomeBoost6": 56.52,
+        "expectedHatchSeconds": 119.4,
+        "expectedCoinsAfter600sFromPickup": 13190.637061635094,
+        "expectedCoinsAfter1800sFromPickup": 51950.6370616351
+      },
+      {
+        "zone": 4,
+        "minimum": "Epic",
+        "roundTripSecondsAtSpeed2000": 44.926241903868586,
+        "expectedIncomeBoost1": 117.0,
+        "expectedIncomeBoost2": 151.2,
+        "expectedIncomeBoost6": 212.0,
+        "expectedHatchSeconds": 213.0,
+        "expectedCoinsAfter600sFromPickup": 33942.77689464779,
+        "expectedCoinsAfter1800sFromPickup": 174004.8085397504
+      },
+      {
+        "zone": 5,
+        "minimum": "Legendary",
+        "roundTripSecondsAtSpeed2000": 54.3050761775816,
+        "expectedIncomeBoost1": 345.0,
+        "expectedIncomeBoost2": 422.72727272727275,
+        "expectedIncomeBoost6": 630.0,
+        "expectedHatchSeconds": 330.0,
+        "expectedCoinsAfter600sFromPickup": 59844.19477593296,
+        "expectedCoinsAfter1800sFromPickup": 469761.0986564305
+      }
+    ],
+    "runs": [
+      {
+        "failureRate": 0,
+        "runs": 100,
+        "hours": 3.0,
+        "milestones": {
+          "pedestal4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 4.86,
+            "minMinutes": 2.41,
+            "maxMinutes": 4.86
+          },
+          "pedestal5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.03,
+            "minMinutes": 5.39,
+            "maxMinutes": 11.69
+          },
+          "pedestal6": {
+            "reached": 100,
+            "medianMinutesAmongReached": 14.45,
+            "minMinutes": 8.73,
+            "maxMinutes": 17.8
+          },
+          "pedestal7": {
+            "reached": 100,
+            "medianMinutesAmongReached": 22.57,
+            "minMinutes": 19.41,
+            "maxMinutes": 27.77
+          },
+          "pedestal8": {
+            "reached": 100,
+            "medianMinutesAmongReached": 36.08,
+            "minMinutes": 28.31,
+            "maxMinutes": 43.88
+          },
+          "rebirth1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 67.44,
+            "minMinutes": 65.47,
+            "maxMinutes": 69.52
+          },
+          "rebirth2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 147.59,
+            "minMinutes": 145.54,
+            "maxMinutes": 150.78
+          },
+          "treadmill": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.13,
+            "minMinutes": 1.53,
+            "maxMinutes": 2.41
+          },
+          "warehouse": {
+            "reached": 100,
+            "medianMinutesAmongReached": 7.83,
+            "minMinutes": 3.09,
+            "maxMinutes": 8.73
+          },
+          "zone1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 0.0,
+            "minMinutes": 0.0,
+            "maxMinutes": 0.0
+          },
+          "zone2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.41,
+            "minMinutes": 2.41,
+            "maxMinutes": 2.41
+          },
+          "zone3": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.86,
+            "minMinutes": 10.43,
+            "maxMinutes": 10.86
+          },
+          "zone4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 33.14,
+            "minMinutes": 31.41,
+            "maxMinutes": 33.89
+          },
+          "zone5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 132.14,
+            "minMinutes": 130.09,
+            "maxMinutes": 135.33
+          }
+        },
+        "medianFinalIncome": 14250.0
+      },
+      {
+        "failureRate": 0.2,
+        "runs": 100,
+        "hours": 3.0,
+        "milestones": {
+          "pedestal4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 4.86,
+            "minMinutes": 2.13,
+            "maxMinutes": 5.39
+          },
+          "pedestal5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.03,
+            "minMinutes": 5.91,
+            "maxMinutes": 12.5
+          },
+          "pedestal6": {
+            "reached": 100,
+            "medianMinutesAmongReached": 15.2,
+            "minMinutes": 10.43,
+            "maxMinutes": 19.22
+          },
+          "pedestal7": {
+            "reached": 100,
+            "medianMinutesAmongReached": 23.8,
+            "minMinutes": 19.39,
+            "maxMinutes": 29.65
+          },
+          "pedestal8": {
+            "reached": 100,
+            "medianMinutesAmongReached": 38.24,
+            "minMinutes": 28.27,
+            "maxMinutes": 45.15
+          },
+          "rebirth1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 68.08,
+            "minMinutes": 65.41,
+            "maxMinutes": 70.1
+          },
+          "rebirth2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 148.74,
+            "minMinutes": 145.48,
+            "maxMinutes": 151.32
+          },
+          "treadmill": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.13,
+            "minMinutes": 1.53,
+            "maxMinutes": 3.09
+          },
+          "warehouse": {
+            "reached": 100,
+            "medianMinutesAmongReached": 7.83,
+            "minMinutes": 3.71,
+            "maxMinutes": 9.17
+          },
+          "zone1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 0.0,
+            "minMinutes": 0.0,
+            "maxMinutes": 0.0
+          },
+          "zone2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.41,
+            "minMinutes": 2.41,
+            "maxMinutes": 2.41
+          },
+          "zone3": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.86,
+            "minMinutes": 10.43,
+            "maxMinutes": 10.86
+          },
+          "zone4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 33.19,
+            "minMinutes": 31.39,
+            "maxMinutes": 34.51
+          },
+          "zone5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 133.29,
+            "minMinutes": 130.03,
+            "maxMinutes": 135.87
+          }
+        },
+        "medianFinalIncome": 12100.0
+      },
+      {
+        "failureRate": 0.4,
+        "runs": 100,
+        "hours": 3.0,
+        "milestones": {
+          "pedestal4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 4.86,
+            "minMinutes": 2.13,
+            "maxMinutes": 5.91
+          },
+          "pedestal5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.03,
+            "minMinutes": 5.39,
+            "maxMinutes": 14.07
+          },
+          "pedestal6": {
+            "reached": 100,
+            "medianMinutesAmongReached": 15.59,
+            "minMinutes": 11.27,
+            "maxMinutes": 20.63
+          },
+          "pedestal7": {
+            "reached": 100,
+            "medianMinutesAmongReached": 24.87,
+            "minMinutes": 19.76,
+            "maxMinutes": 31.63
+          },
+          "pedestal8": {
+            "reached": 100,
+            "medianMinutesAmongReached": 40.42,
+            "minMinutes": 30.06,
+            "maxMinutes": 47.31
+          },
+          "rebirth1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 68.72,
+            "minMinutes": 66.05,
+            "maxMinutes": 70.93
+          },
+          "rebirth2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 149.41,
+            "minMinutes": 146.13,
+            "maxMinutes": 152.18
+          },
+          "treadmill": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.13,
+            "minMinutes": 1.53,
+            "maxMinutes": 3.71
+          },
+          "warehouse": {
+            "reached": 100,
+            "medianMinutesAmongReached": 7.83,
+            "minMinutes": 3.71,
+            "maxMinutes": 9.6
+          },
+          "zone1": {
+            "reached": 100,
+            "medianMinutesAmongReached": 0.0,
+            "minMinutes": 0.0,
+            "maxMinutes": 0.0
+          },
+          "zone2": {
+            "reached": 100,
+            "medianMinutesAmongReached": 2.41,
+            "minMinutes": 2.41,
+            "maxMinutes": 2.41
+          },
+          "zone3": {
+            "reached": 100,
+            "medianMinutesAmongReached": 10.86,
+            "minMinutes": 10.44,
+            "maxMinutes": 10.86
+          },
+          "zone4": {
+            "reached": 100,
+            "medianMinutesAmongReached": 33.75,
+            "minMinutes": 32.02,
+            "maxMinutes": 35.24
+          },
+          "zone5": {
+            "reached": 100,
+            "medianMinutesAmongReached": 133.96,
+            "minMinutes": 130.68,
+            "maxMinutes": 136.73
+          }
+        },
+        "medianFinalIncome": 10700.0
+      }
+    ]
+  }
+}

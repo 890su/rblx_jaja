@@ -1,9 +1,10 @@
 Key,Source,Context,Example
+,Meteor Crate x3,,
 ,3 random Rare+ creatures,,
 ,Meteor Crate x10,,
 ,10 random Rare+ creatures,,
 ,Server Luck 15 min,,
-,x2 chance for Uncommon+ meteors for everyone on the server,,
+,x2 weights above each zone's minimum rarity; see exact odds before buying,,
 ,300 Stardust,,
 ,Emberfox (Uncommon),,
 ,"2,000 Stardust",,

@@ -14,6 +14,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Types = require(Shared.Types)
 local Economy = require(Shared.Config.Economy)
 local Environment = require(Shared.Config.Environment)
+local HatchTime = require(Shared.Util.HatchTime)
 
 local ProfileStore =
 	require(ServerScriptService:WaitForChild("ServerPackages"):WaitForChild("ProfileStore")) :: any
@@ -204,6 +205,9 @@ local function onPlayerAdded(player: Player)
 	if sessions[player] ~= session then
 		return
 	end
+	-- Run after transfer recovery, so restored escrow items also receive the
+	-- shorter schedule. No new fields; ready/short timers remain untouched.
+	HatchTime.capProfile(profile, os.time())
 	createLeaderstats(player)
 	syncAttributes(player, profile)
 	ready[player] = true

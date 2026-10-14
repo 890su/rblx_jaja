@@ -1,4 +1,5 @@
 Key,Source,Context,Example
+station_full_manual_hint,Station full! Hold E at a creature to replace it; the old one stays in storage. Or open Station,,
 station_item_hatching,Hatching · {time},,
 station_item_income,+{amount}/s{mutation},,
 station_manage_home,Return to your station to manage creatures,,
@@ -28,4 +29,3 @@ steal_success,You stole {creature}!,,
 steal_too_far,Too far away,,
 steal_wait,Wait {seconds}s to steal again,,
 storage_manage,{count} stored creatures · open Station,,
-training_button,Run Training {level} → {next} · {amount} Stardust,,

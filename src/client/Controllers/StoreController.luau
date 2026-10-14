@@ -35,7 +35,8 @@ local oddsBuy: TextButton
 local oddsTitle: TextLabel
 local oddsContext: TextButton
 local contextIndex = 1
-local contexts: { { zone: number, canyon: boolean, shower: boolean, boost: number } } = {}
+local contexts: { { zone: number, canyon: boolean, shower: boolean, boost: number, first: boolean? } } =
+	{}
 for index in Zones.ZONES do
 	for _, canyon in { false, true } do
 		for _, shower in { false, true } do
@@ -53,6 +54,12 @@ for index in Zones.ZONES do
 					* (if shower then Events.SHOWER_RARITY_BOOST else 1),
 			})
 		end
+	end
+	if index == Zones.FIRST_VISIT_GUARANTEE.zone then
+		table.insert(
+			contexts,
+			{ zone = index, canyon = false, shower = false, boost = 1, first = true }
+		)
 	end
 end
 local pendingProduct: Products.Product? = nil
@@ -182,7 +189,10 @@ local function fillLuckOdds()
 	oddsContext.Text = Locale.t("odds_context", {
 		zone = Locale.term(Theme.ZONE_NAMES[context.zone]),
 		canyon = if context.canyon then Locale.term("Canyon") else Locale.term("Field"),
-		event = if context.shower then Locale.term("Meteor Shower") else Locale.term("Normal"),
+		event = if context.first
+			then Locale.t("odds_first_pickup_context")
+			elseif context.shower then Locale.term("Meteor Shower")
+			else Locale.term("Normal"),
 		index = contextIndex,
 		count = #contexts,
 	})
@@ -194,14 +204,21 @@ local function fillLuckOdds()
 	local order = 1
 	row(
 		oddsList,
-		Locale.t("luck_effect", { boost = boost, minutes = Products.SERVER_LUCK.seconds // 60 }),
+		Locale.t(
+			"luck_zone_effect",
+			{ boost = boost, minutes = Products.SERVER_LUCK.seconds // 60 }
+		),
 		nil,
 		order
 	)
 	order += 1
 	row(oddsList, Locale.t("luck_odds_legend"), nil, order)
 	for _, rarity in Rarity.ORDER do
-		if not zone.weights[rarity] then
+		local guarantee = if context.first then Zones.FIRST_VISIT_GUARANTEE.rarity else nil
+		if
+			not zone.weights[rarity]
+			or Odds.pickupPercent(zone.weights, rarity, context.boost * current, guarantee) == 0
+		then
 			continue
 		end
 		local total = 0
@@ -211,7 +228,7 @@ local function fillLuckOdds()
 			end
 		end
 		for _, creature in Creatures.LIST do
-			if creature.rarity ~= rarity then
+			if creature.rarity ~= rarity or Creatures.weightOf(creature, context.zone) == 0 then
 				continue
 			end
 			local share = Creatures.weightOf(creature, context.zone) / total
@@ -219,12 +236,18 @@ local function fillLuckOdds()
 				local mutationShare = if golden
 					then Rarity.MUTATIONS.Golden.chance
 					else 1 - Rarity.MUTATIONS.Golden.chance
-				local before = Odds.percent(zone.weights, rarity, context.boost * current)
-					* share
-					* mutationShare
-				local after = Odds.percent(zone.weights, rarity, context.boost * boost)
-					* share
-					* mutationShare
+				local before = Odds.pickupPercent(
+					zone.weights,
+					rarity,
+					context.boost * current,
+					guarantee
+				) * share * mutationShare
+				local after = Odds.pickupPercent(
+					zone.weights,
+					rarity,
+					context.boost * boost,
+					guarantee
+				) * share * mutationShare
 				order += 1
 				row(
 					oddsList,

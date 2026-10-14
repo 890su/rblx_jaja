@@ -21,6 +21,7 @@ local Theme = require(script.Parent.Theme)
 export type Args = { [string]: any }
 
 local STRINGS: { [string]: string } = {
+	odds_first_pickup_context = "First pickup guarantee",
 	facility_offer = "{name} · {amount} Stardust",
 	facility_build = "Build · {amount}",
 	facility_ready = "Built",
@@ -50,8 +51,8 @@ local STRINGS: { [string]: string } = {
 	upgrade_training_effect = "+{bonus}% to all Speed gains",
 	upgrade_pedestal_effect = "{count} unlocked pedestals",
 	index_summary = "{count}/{total} discovered · discoveries stay after selling or theft",
-	index_locked = "{rarity} · home zone {zone} · collect and hatch to reveal",
-	index_detail = "{rarity} · home zone {zone} · base +{income}/s",
+	index_field_locked = "{rarity} · first field zone {zone} · collect and hatch to reveal",
+	index_field_detail = "{rarity} · first field zone {zone} · base +{income}/s",
 	purchase_loading = "Loading price…",
 	purchase_unavailable = "Unavailable",
 	purchase_prompt_failed = "Purchase window could not open. Try again",
@@ -63,7 +64,7 @@ local STRINGS: { [string]: string } = {
 	odds_context = "{zone} · {canyon} · {event} · {index}/{count} →",
 	luck_odds_legend = "Each outcome: current chance → chance with Server Luck",
 	luck_odds_row = "{name} {mutation}: {before} → {after}",
-	luck_first_visit = "First pickup in Zone 2 upgrades Common/Uncommon to Rare; creature and Golden chances use the same rolls",
+	luck_first_visit = "Your first field pickup in Zone 2 is at least Rare. Species and Golden chances use the same rolls.",
 	purchase_delivered = "Purchase delivered! Your creatures are safe in your station or storage",
 
 	purchase_restricted = "This purchase is unavailable for your account",
@@ -179,7 +180,9 @@ local STRINGS: { [string]: string } = {
 	odds_button = "Odds · R$ {price}",
 	odds_buy = "Buy · R$ {price}",
 	odds_total = "Total: {pct} · each crate item is rolled independently",
-	luck_effect = "Effect: x{boost} weight for every non-Common meteor spawn on this server for {minutes} min.",
+	-- New keys avoid stale cloud translations of the previous home-zone and
+	-- non-Common boost rules while updated translations are being uploaded.
+	luck_zone_effect = "Effect: x{boost} weight for rarities above each zone's minimum for {minutes} min. The minimum rarity is not boosted.",
 }
 
 -- Fixed words and sentences shown as-is (auto-translated when displayed).

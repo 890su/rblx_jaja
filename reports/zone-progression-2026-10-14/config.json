@@ -1,0 +1,420 @@
+{
+  "zones": [
+    {
+      "lengthStuds": 500,
+      "index": 1,
+      "weights": {
+        "Rare": 2,
+        "Uncommon": 18,
+        "Common": 80
+      },
+      "spawnIntervalSeconds": 4,
+      "speedGate": 0,
+      "maxMeteors": 10,
+      "rebirthGate": 0
+    },
+    {
+      "lengthStuds": 1000,
+      "index": 2,
+      "weights": {
+        "Epic": 2,
+        "Uncommon": 70,
+        "Rare": 28
+      },
+      "spawnIntervalSeconds": 5,
+      "speedGate": 100,
+      "maxMeteors": 8,
+      "rebirthGate": 0
+    },
+    {
+      "lengthStuds": 1000,
+      "index": 3,
+      "weights": {
+        "Epic": 28,
+        "Legendary": 2,
+        "Rare": 70
+      },
+      "spawnIntervalSeconds": 6,
+      "speedGate": 500,
+      "maxMeteors": 8,
+      "rebirthGate": 0
+    },
+    {
+      "lengthStuds": 1000,
+      "index": 4,
+      "weights": {
+        "Epic": 75,
+        "Legendary": 24,
+        "Mythic": 1
+      },
+      "spawnIntervalSeconds": 7,
+      "speedGate": 2000,
+      "maxMeteors": 6,
+      "rebirthGate": 0
+    },
+    {
+      "lengthStuds": 1000,
+      "index": 5,
+      "weights": {
+        "Mythic": 10,
+        "Legendary": 90
+      },
+      "spawnIntervalSeconds": 8,
+      "speedGate": 8000,
+      "maxMeteors": 6,
+      "rebirthGate": 1
+    }
+  ],
+  "guarantee": {
+    "rarity": "Rare",
+    "zone": 2
+  },
+  "rarity": {
+    "Legendary": {
+      "order": 5,
+      "incomePerSecond": 250,
+      "hatchSeconds": 300
+    },
+    "Common": {
+      "order": 1,
+      "incomePerSecond": 1,
+      "hatchSeconds": 10
+    },
+    "Epic": {
+      "order": 4,
+      "incomePerSecond": 60,
+      "hatchSeconds": 180
+    },
+    "Mythic": {
+      "order": 6,
+      "incomePerSecond": 1200,
+      "hatchSeconds": 600
+    },
+    "Uncommon": {
+      "order": 2,
+      "incomePerSecond": 4,
+      "hatchSeconds": 30
+    },
+    "Rare": {
+      "order": 3,
+      "incomePerSecond": 15,
+      "hatchSeconds": 90
+    }
+  },
+  "upgrades": [
+    {
+      "title": "Run Training",
+      "key": "training",
+      "growth": 2.2,
+      "max": 10,
+      "description": "Training improves all Speed gains",
+      "base": 2000,
+      "bonus": 0.1
+    },
+    {
+      "title": "Treadmill",
+      "growth": 2,
+      "key": "treadmill",
+      "installCost": 250,
+      "max": 11,
+      "description": "Build a treadmill, then improve its idle Speed gain",
+      "base": 1500,
+      "bonus": 0.2
+    },
+    {
+      "title": "Storage",
+      "key": "warehouse",
+      "growth": 1,
+      "max": 1,
+      "description": "Build a locker to store and exchange your creatures",
+      "base": 1000,
+      "bonus": 0
+    },
+    {
+      "title": "Carry speed",
+      "key": "carryTraining",
+      "growth": 2.2,
+      "max": 5,
+      "description": "Move faster while carrying an egg or stolen creature",
+      "base": 3000,
+      "bonus": 0.04
+    }
+  ],
+  "serverLuck": {
+    "boost": 2,
+    "seconds": 900
+  },
+  "boostAboveZoneFloor": true,
+  "creatures": [
+    {
+      "id": "pebblit",
+      "rarity": "Common",
+      "zone": 1
+    },
+    {
+      "id": "dustbun",
+      "rarity": "Common",
+      "zone": 1
+    },
+    {
+      "id": "cindermite",
+      "rarity": "Common",
+      "zone": 1
+    },
+    {
+      "id": "glowgrub",
+      "rarity": "Common",
+      "zone": 1
+    },
+    {
+      "id": "rockroo",
+      "rarity": "Common",
+      "zone": 1
+    },
+    {
+      "id": "emberfox",
+      "rarity": "Uncommon",
+      "zone": 1
+    },
+    {
+      "id": "sparkle_snail",
+      "rarity": "Uncommon",
+      "zone": 1
+    },
+    {
+      "id": "crater_crab",
+      "rarity": "Uncommon",
+      "zone": 2
+    },
+    {
+      "id": "moon_moth",
+      "rarity": "Uncommon",
+      "zone": 2
+    },
+    {
+      "id": "pulsar_pup",
+      "rarity": "Uncommon",
+      "zone": 2
+    },
+    {
+      "id": "frostfin",
+      "rarity": "Rare",
+      "zone": 1
+    },
+    {
+      "id": "comet_cat",
+      "rarity": "Rare",
+      "zone": 1
+    },
+    {
+      "id": "nebula_newt",
+      "rarity": "Rare",
+      "zone": 2
+    },
+    {
+      "id": "orbit_owl",
+      "rarity": "Rare",
+      "zone": 3
+    },
+    {
+      "id": "quartz_quokka",
+      "rarity": "Rare",
+      "zone": 3
+    },
+    {
+      "id": "void_viper",
+      "rarity": "Epic",
+      "zone": 2
+    },
+    {
+      "id": "solar_stag",
+      "rarity": "Epic",
+      "zone": 2
+    },
+    {
+      "id": "plasma_panda",
+      "rarity": "Epic",
+      "zone": 3
+    },
+    {
+      "id": "aurora_axolotl",
+      "rarity": "Epic",
+      "zone": 4
+    },
+    {
+      "id": "ion_ibex",
+      "rarity": "Epic",
+      "zone": 4
+    },
+    {
+      "id": "nova_drake",
+      "rarity": "Legendary",
+      "zone": 3
+    },
+    {
+      "id": "galaxy_griffin",
+      "rarity": "Legendary",
+      "zone": 3
+    },
+    {
+      "id": "eclipse_lynx",
+      "rarity": "Legendary",
+      "zone": 4
+    },
+    {
+      "id": "starlight_seraph",
+      "rarity": "Legendary",
+      "zone": 5
+    },
+    {
+      "id": "meteor_mammoth",
+      "rarity": "Legendary",
+      "zone": 5
+    },
+    {
+      "id": "cosmic_leviathan",
+      "rarity": "Mythic",
+      "zone": 4
+    },
+    {
+      "id": "quasar_phoenix",
+      "rarity": "Mythic",
+      "zone": 4
+    },
+    {
+      "id": "singularity_sprite",
+      "rarity": "Mythic",
+      "zone": 5
+    },
+    {
+      "id": "celestial_kirin",
+      "rarity": "Mythic",
+      "zone": 5
+    },
+    {
+      "id": "big_bang_bunny",
+      "rarity": "Mythic",
+      "zone": 5
+    }
+  ],
+  "events": {
+    "CRATE_ROTATION_PERIOD": 1800,
+    "SHOP_RESTOCK_PERIOD": 300,
+    "SHOWER_DURATION": 60,
+    "SHOWER_WARNING": 60,
+    "SHOWER_ZONES": [
+      3,
+      4,
+      5
+    ],
+    "SHOWER_RARITY_BOOST": 3,
+    "SHOWER_METEORS": 12,
+    "SHOWER_PERIOD": 900,
+    "SHOP_SLOTS": 6
+  },
+  "arena": {
+    "CAMERA_FALL_SECONDS": 0.7,
+    "WALK_SPEED_SHARE": 0.3,
+    "MAX_LEVEL": 1.6,
+    "FIELD_ZONE": 1,
+    "PREP_DEPTH": 70,
+    "WALK_SPEED_MIN": 24,
+    "LANE_WIDTH": 70,
+    "INVULNERABLE_SECONDS": 1.1,
+    "EDGE_MARGIN": 2.5,
+    "LIVES": 3,
+    "VIEW_WIDTH": 80,
+    "CAMERA_LEAD": 12,
+    "CAMERA_RISE_SECONDS": 1.4,
+    "WALK_SPEED_MAX": 38,
+    "CAMERA_FOV": 50,
+    "PLAYER_RADIUS": 1.25,
+    "RETRY_GRACE": 2,
+    "MAX_LEAD": 60,
+    "FIRST_WAVE_DELAY": 1.6,
+    "LEAD_TIME": 0.25,
+    "STILL_SPEED": 3,
+    "SERVER_TICK": 0.03333333333333333,
+    "FROM_ORIGIN_ZONE": 3
+  },
+  "speed": {
+    "GAIN_PER_SECOND": 1,
+    "BASE_WALKSPEED": 16,
+    "MIN_MOVE_STUDS_PER_TICK": 2,
+    "PHYSICS": {
+      "replicationGrace": 0.3,
+      "maxSlopeAngle": 50,
+      "probeHeight": 1.8,
+      "launchSlack": 10,
+      "wallSkin": 0.4,
+      "maxClimbRiseSpeed": 20,
+      "probeLift": 0.2,
+      "brakeSeconds": 0.5,
+      "maxStep": 0.1,
+      "highSpeed": 80
+    },
+    "CARRY_MULTIPLIER": 0.6,
+    "WALKSPEED_CAP": 400,
+    "PASS_MULTIPLIER": 2,
+    "FRIEND_GAIN_BONUS_CAP": 0.3,
+    "WALKSPEED_COEFFICIENT": 6,
+    "FRIEND_GAIN_BONUS": 0.1,
+    "REBIRTH_GAIN_BONUS": 0.25,
+    "TREADMILL_RATE_NO_PASS": 0.5
+  },
+  "mutations": {
+    "Golden": {
+      "chance": 0.02,
+      "onlineOnly": false,
+      "incomeMultiplier": 2
+    },
+    "Starborn": {
+      "chance": 0,
+      "onlineOnly": true,
+      "incomeMultiplier": 3
+    }
+  },
+  "canyons": {
+    "BRAID": 0.35,
+    "FROM_ZONE": 3,
+    "WALL_THICKNESS": 3,
+    "WALL_HEIGHT": 28,
+    "RARITY_BOOST": 2,
+    "LANE_OPENING_EVERY": 4,
+    "LANE_WIDTH": 80,
+    "SPAWN_SHARE": 0.7,
+    "RESEED_PERIOD": 86400,
+    "CELL": 48
+  },
+  "economy": {
+    "OFFLINE_RATE": 0.25,
+    "REBIRTH_BASE_COST": 300000,
+    "OFFLINE_RATE_PASS": 0.5,
+    "REBIRTH_SPEED_REQUIREMENT": 5000,
+    "TRAINING_BONUS": 0.1,
+    "INCOME_TICK_SECONDS": 1,
+    "SELL_SECONDS": 30,
+    "PEDESTALS_EXPANSION_PASS": 2,
+    "PEDESTAL_COSTS": [
+      500,
+      2500,
+      10000,
+      60000,
+      250000
+    ],
+    "SERVER_SIZE": 8,
+    "AUTOSAVE_SECONDS": 60,
+    "COINS_PASS_MULTIPLIER": 2,
+    "OFFLINE_CAP_HOURS_PASS": 24,
+    "PEDESTALS_START": 3,
+    "TRAINING_BASE_COST": 2000,
+    "VIP_COIN_BONUS": 0.5,
+    "REBIRTH_INCOME_BONUS": 0.5,
+    "PEDESTALS_MAX_COINS": 8,
+    "PROFILE_LOAD_TIMEOUT_SECONDS": 120,
+    "TRAINING_MAX": 10,
+    "REBIRTH_COST_GROWTH": 4,
+    "TRAINING_COST_GROWTH": 2.2,
+    "OFFLINE_CAP_HOURS": 12
+  }
+}

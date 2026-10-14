@@ -1,0 +1,78 @@
+{
+  "runId": "zone-timer-1792003751",
+  "before": {
+    "now": 1792003763,
+    "storage": [
+      {
+        "rarity": "Mythic",
+        "creatureId": "big_bang_bunny",
+        "id": "qa-old-mythic",
+        "mutation": "Golden",
+        "hatchAt": 1792032562,
+        "paid": true
+      }
+    ]
+  },
+  "firstRejoin": {
+    "now": 1792003824,
+    "storage": [
+      {
+        "rarity": "Mythic",
+        "creatureId": "big_bang_bunny",
+        "id": "qa-old-mythic",
+        "mutation": "Golden",
+        "hatchAt": 1792004420,
+        "paid": true
+      }
+    ]
+  },
+  "secondRejoin": {
+    "now": 1792003893,
+    "storage": [
+      {
+        "rarity": "Mythic",
+        "creatureId": "big_bang_bunny",
+        "id": "qa-old-mythic",
+        "mutation": "Golden",
+        "hatchAt": 1792004420,
+        "paid": true
+      }
+    ]
+  },
+  "checks": {
+    "shortened": true,
+    "remainingAtFirstLoad": 596,
+    "preservedIdentity": true,
+    "secondLoadDidNotExtend": true
+  },
+  "readyTimerEarlierRejoin": {
+    "now": 1792003626,
+    "hatchAt": 1791995389,
+    "paid": true,
+    "mutation": "Golden",
+    "id": "qa-old-mythic",
+    "unchanged": true
+  },
+  "manualPickup": {
+    "zone": 4,
+    "input": "E keyboard hold 500ms",
+    "naturalMeteorRarity": "Epic",
+    "serverCarrying": "Epic",
+    "serverCarryIncome": 60
+  },
+  "ui": {
+    "context": "Ember Ridge · Field · First pickup guarantee · 3/15 →",
+    "portraitViewport": [
+      320,
+      548
+    ],
+    "landscapeViewport": [
+      568,
+      300
+    ],
+    "textFits": true,
+    "oddsClosedWithMouse": true,
+    "mouseBehaviorAfterClose": "Default",
+    "defaultViewportRestored": true
+  }
+}
