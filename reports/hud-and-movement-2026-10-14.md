@@ -61,4 +61,6 @@
 
 Исходники выпуска: ветка `codex/hud-motion-2026-10-14`, тег `hud-cargo-ready-2026-10-14`. Резервная Rojo-сборка: `C:/Users/user/AppData/Local/Temp/meteor-heist-hud-release-2026-10-14.rbxlx`.
 
+Повторная попытка публикации после сохранения тега: native Computer Use читает окно, но клик File возвращает `coordinate input geometry is unavailable`. Отправка Alt+P не дала подтверждения в интерфейсе или консоли. Marketplace ProductInfo в 05:44 UTC показывал Updated `2026-10-14T05:41:44.979Z`, что предшествует попытке и не подтверждает её успех. Требуется ручной File → Publish to Roblox в открытом Studio, затем проверка на новом сервере. Это техническая передача последнего действия, а не запрос нового разрешения на публикацию.
+
 Актуальная сверка художественного плана: [метеориты и гончая](../docs/12-current-status-and-art-plan.md).
