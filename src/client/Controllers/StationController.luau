@@ -109,6 +109,7 @@ local function refreshReplacePrompts(plot: Instance?)
 		if instance:IsA("ProximityPrompt") then
 			local pedestal = instance.Parent
 			instance.Enabled = carrying
+				and player:GetAttribute("FacilityOwned_warehouse") == true
 				and plot ~= nil
 				and pedestal ~= nil
 				and pedestal.Parent == plot

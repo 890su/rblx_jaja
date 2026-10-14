@@ -25,6 +25,7 @@ local EVENT_NAMES: { string } = {
 	"BuyPedestal", -- client -> server: ()
 	"BuyTraining", -- client -> server: ()
 	"BuyUpgrade", -- client -> server: whitelisted upgrade key
+	"OpenUpgrade", -- server -> client: focus a facility purchase card
 	"IndexState", -- server -> client: own persistent collection
 	"RequestIndex", -- client -> server: request own collection
 	"Rebirth", -- client -> server: ()

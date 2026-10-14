@@ -53,6 +53,14 @@ local function icon(key: string): Model
 		for z = -2, 2, 2 do
 			part("Stripe", Vector3.new(4.4, 0.1, 0.35), Vector3.new(0, 0.3, z), gold)
 		end
+	elseif key == "warehouse" then
+		part("Locker", Vector3.new(6, 5, 2), Vector3.zero, Color3.fromRGB(31, 45, 62))
+		for y = -1, 1 do
+			for x = -1, 0 do
+				part("Door", Vector3.new(1.5, 1.35, 0.2), Vector3.new(x * 1.8, y * 1.55, 1.1), cyan)
+			end
+		end
+		part("Screen", Vector3.new(1.1, 2.8, 0.2), Vector3.new(2, 0, 1.1), gold)
 	elseif key == "pedestal" or key == "Expansion" then
 		part("Base", Vector3.new(5, 1, 5), Vector3.zero, cyan)
 		part("Capsule", Vector3.new(3, 4, 3), Vector3.new(0, 2.5, 0), gold, Enum.PartType.Ball)

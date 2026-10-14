@@ -31,6 +31,7 @@ local StationInventory = require(Shared.Util.StationInventory)
 local CryoCapsuleBuild = require(script.Parent.Parent.Util.CryoCapsuleBuild)
 local MeteorVisual = require(script.Parent.Parent.Util.MeteorVisual)
 local WarehouseBuild = require(script.Parent.Parent.Util.WarehouseBuild)
+local FacilityBuild = require(script.Parent.Parent.Util.FacilityBuild)
 local Warehouse = require(Shared.Config.Warehouse)
 
 type Plot = WorldService.Plot
@@ -207,8 +208,15 @@ end
 
 local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 	local now = os.time()
-	local owner = plotOwner[plot.index]
+	local owner: Player? = plotOwner[plot.index]
 	plot.model:SetAttribute("OwnerUserId", if owner then owner.UserId else nil)
+	for key, facility in plot.facilities do
+		local owned = profile ~= nil and owner ~= nil and UpgradeMath.level(profile, key) > 0
+		FacilityBuild.setOwned(plot.model, facility, key, owned)
+		if owner then
+			owner:SetAttribute(`FacilityOwned_{key}`, owned)
+		end
+	end
 	local capacity = if profile and owner then StationService.capacity(owner, profile) else 0
 	WarehouseBuild.refresh(
 		plot.warehouse,
@@ -605,6 +613,7 @@ function StationService.replaceSlot(
 	if
 		not profile
 		or not plot
+		or profile.flags.warehouseOwned ~= true
 		or not Creatures.BY_ID[state.creatureId]
 		or slot % 1 ~= 0
 		or slot < 1
@@ -662,9 +671,13 @@ function StationService.pushInventory(player: Player, openStorage: boolean?)
 end
 
 local function atWarehouse(player: Player, plot: Plot, radius: number): boolean
+	local profile = DataService.get(player)
 	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if
 		playerPlot[player] ~= plot
+		or not profile
+		or profile.flags.warehouseOwned ~= true
+		or not plot.warehouse:IsDescendantOf(workspace)
 		or not humanoid
 		or humanoid.Health <= 0
 		or player:GetAttribute("Carrying") ~= nil
@@ -790,7 +803,9 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 	if root then
 		local offset = root.Position - plot.treadmill.Position
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		local onTreadmill = humanoid ~= nil
+		local onTreadmill = profile.treadmill > 0
+			and plot.treadmill:IsDescendantOf(workspace)
+			and humanoid ~= nil
 			and humanoid.Health > 0
 			and math.abs(offset.X) <= 4.5
 			and math.abs(offset.Z) <= 7.5

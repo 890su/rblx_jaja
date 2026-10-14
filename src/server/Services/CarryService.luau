@@ -222,7 +222,14 @@ local function checkDeliveries()
 			then
 				if os.clock() - (fullWarnedAt[player] or -math.huge) > FULL_WARN_COOLDOWN then
 					fullWarnedAt[player] = os.clock()
-					Notifier.send(player, "station_full_manual_hint", nil, "warning")
+					Notifier.send(
+						player,
+						if player:GetAttribute("FacilityOwned_warehouse") == true
+							then "station_full_manual_hint"
+							else "warehouse_required",
+						nil,
+						"warning"
+					)
 				end
 			end
 		end

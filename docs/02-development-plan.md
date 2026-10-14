@@ -47,12 +47,12 @@ src/
 ```
 Rules: no `_G`; services expose typed APIs; client never decides outcomes (rarity, steal, income, purchases); every `:Connect` cleaned up (Trove); no per-frame allocations in hot paths.
 
-## 3. Data schema (v3)
+## 3. Data schema (v4)
 
 Authoritative definitions: `src/shared/Types.luau` (`Profile`), `src/server/Services/DataService.luau` (`TEMPLATE`) and `src/server/Data/Migrations.luau` (`LATEST = 3`). Abbreviated current shape:
 ```
 Profile = {
-  schema = 3,
+  schema = 4,
   coins: number, speed: number, rebirths: number,
   pedestals: { [slot]: { creatureId, rarity, mutation?, hatchAt: number?, paid? } },
   pedestalCount: number,
@@ -62,13 +62,14 @@ Profile = {
   shieldUntil: number, codes: { [code]: true },
   purchases: { [purchaseId]: number },
   training: number, treadmill: number, carryTraining: number,
+  // treadmill 0=unbuilt, 1=installed, 2..11=upgrades; flags.warehouseOwned=locker purchase
   hatchCredits: number, restockCredits: number,
   uncollectedCoins: number, serverLuckUntil: number,
   outgoingTransfers: {...}, incomingTransfers: {...},
   stats: { steals, defends, timesRobbed }
 }
 ```
-Migrations are pure functions `vN → vN+1`, unit-tested.
+Migrations are pure functions `vN → vN+1`, unit-tested. v3→v4 keeps the old free facilities: treadmill level increases by one without changing its rate or next upgrade price, and warehouseOwned becomes true. New v4 profiles start with neither facility. See [base progression](13-physical-warehouse.md).
 
 ## 4. Milestones (weeks)
 | Wk | Dates | Deliverable | Acceptance criteria |

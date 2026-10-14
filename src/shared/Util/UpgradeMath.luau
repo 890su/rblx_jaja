@@ -19,6 +19,9 @@ function UpgradeMath.level(profile: Types.PlayerProfile, key: string): number
 	if key == "treadmill" then
 		return profile.treadmill
 	end
+	if key == "warehouse" then
+		return if profile.flags.warehouseOwned == true then 1 else 0
+	end
 	if key == "carryTraining" then
 		return profile.carryTraining
 	end
@@ -29,7 +32,10 @@ function UpgradeMath.cost(key: string, level: number): number?
 	if not spec or level < 0 or level % 1 ~= 0 or level >= spec.max then
 		return nil
 	end
-	return math.floor(spec.base * spec.growth ^ level)
+	if spec.installCost and level == 0 then
+		return spec.installCost
+	end
+	return math.floor(spec.base * spec.growth ^ (level - (if spec.installCost then 1 else 0)))
 end
 function UpgradeMath.buy(profile: Types.PlayerProfile, key: string): (string, number)
 	local level = UpgradeMath.level(profile, key)
@@ -45,6 +51,8 @@ function UpgradeMath.buy(profile: Types.PlayerProfile, key: string): (string, nu
 		profile.training += 1
 	elseif key == "treadmill" then
 		profile.treadmill += 1
+	elseif key == "warehouse" then
+		profile.flags.warehouseOwned = true
 	elseif key == "carryTraining" then
 		profile.carryTraining += 1
 	end
@@ -52,7 +60,10 @@ function UpgradeMath.buy(profile: Types.PlayerProfile, key: string): (string, nu
 end
 function UpgradeMath.treadmillRate(level: number): number
 	local spec = assert(UpgradeMath.spec("treadmill"))
-	return Speed.TREADMILL_RATE_NO_PASS * (1 + math.clamp(level, 0, spec.max) * spec.bonus)
+	return if level <= 0
+		then 0
+		else Speed.TREADMILL_RATE_NO_PASS
+			* (1 + math.clamp(level - 1, 0, spec.max - 1) * spec.bonus)
 end
 function UpgradeMath.carryMultiplier(level: number): number
 	local spec = assert(UpgradeMath.spec("carryTraining"))

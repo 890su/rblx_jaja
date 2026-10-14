@@ -113,6 +113,36 @@ function Checks.run(): any
 		end
 		at(owner, ownerPlot.center + Vector3.new(0, 4, 55))
 		at(buyer, buyerPlot.center + Vector3.new(0, 4, 55))
+		check(
+			"fresh plot starts with neither facility",
+			buyerData.treadmill == 0
+				and buyerData.flags.warehouseOwned ~= true
+				and not buyerPlot.treadmill:IsDescendantOf(workspace)
+				and not buyerPlot.warehouse:IsDescendantOf(workspace)
+		)
+		at(buyer, buyerPlot.treadmill.Position + Vector3.new(0, 3, 0))
+		task.wait(1.2)
+		check("unbuilt treadmill cannot train", buyer:GetAttribute("OnTreadmill") ~= true)
+		local initialCoins = buyerData.coins
+		check("owner opens facility purchase", Shop.openFacility(buyer, buyerPlot, "treadmill"))
+		local facilityView = client(buyer, "facility", "treadmill")
+		check(
+			"purchase card shows install price without charging",
+			facilityView.open
+				and string.find(facilityView.label, "250", 1, true) ~= nil
+				and buyerData.coins == initialCoins
+		)
+		check("foreign facility offers hidden", facilityView.foreign == 0)
+		check("foreign build site rejected", not Shop.openFacility(buyer, ownerPlot, "treadmill"))
+		client(buyer, "upgrade", { key = "treadmill", expected = 0 })
+		check(
+			"poor install cannot charge or create geometry",
+			buyerData.coins == initialCoins
+				and buyerData.treadmill == 0
+				and not buyerPlot.treadmill:IsDescendantOf(workspace)
+		)
+		at(buyer, buyerPlot.center + Vector3.new(0, 4, 55))
+		check("distant build site rejected", not Shop.openFacility(buyer, buyerPlot, "warehouse"))
 		Data.setSpeed(buyer, 10000)
 		ownerData.index = {}
 		buyerData.index = {}
@@ -124,6 +154,23 @@ function Checks.run(): any
 		buyerData.shop.bought["1"] = offer.stock - 1
 		Shop.pushState(buyer)
 		local before = buyerData.coins
+		local priorPedestals = buyerData.pedestals
+		local priorStock = buyerData.shop.bought["1"]
+		buyerData.pedestals = {}
+		for slot = 1, Station.capacity(buyer, buyerData) do
+			buyerData.pedestals[tostring(slot)] =
+				{ id = `full-{slot}`, creatureId = "pebblit", rarity = "Common" }
+		end
+		Station.refresh(buyer)
+		client(buyer, "buy", 1)
+		check(
+			"full base without warehouse cannot buy overflow",
+			buyerData.coins == before
+				and buyerData.shop.bought["1"] == priorStock
+				and #buyerData.storage == 0
+		)
+		buyerData.pedestals = priorPedestals
+		Station.refresh(buyer)
 		client(buyer, "buy", 1)
 		check(
 			"coin purchase charges exact price",
@@ -140,6 +187,20 @@ function Checks.run(): any
 		check("sold out cannot charge again", buyerData.coins == before)
 		client(buyer, "buy", 0 / 0)
 		check("invalid slot cannot charge", buyerData.coins == before)
+		local unbuiltItem = buyerData.pedestals["1"]
+		if unbuiltItem then
+			at(buyer, buyerPlot.warehouse.Position + Vector3.new(0, -2.2, -5))
+			client(
+				buyer,
+				"stationAction",
+				{ action = "store", slot = 1, expectedSlot = Inventory.key(unbuiltItem) }
+			)
+			check(
+				"unbought warehouse cannot store",
+				buyerData.pedestals["1"] == unbuiltItem and #buyerData.storage == 0
+			)
+			check("unbought warehouse cannot open", not Station.openWarehouse(buyer, buyerPlot))
+		end
 		task.wait(1)
 		for _, spec in Specs do
 			before = buyerData.coins
@@ -150,12 +211,40 @@ function Checks.run(): any
 				UpgradeMath.level(buyerData, spec.key) == 1 and buyerData.coins == before - cost
 			)
 		end
-		buyerData.treadmill = 10
+		check(
+			"purchases create real facilities",
+			buyerPlot.treadmill:IsDescendantOf(workspace)
+				and buyerPlot.warehouse:IsDescendantOf(workspace)
+		)
+		before = buyerData.coins
+		client(buyer, "upgrade", { key = "treadmill", expected = 0 })
+		check(
+			"stale install cannot buy next upgrade",
+			buyerData.treadmill == 1 and buyerData.coins == before
+		)
+		client(buyer, "upgrade", "warehouse")
+		check(
+			"warehouse cannot charge twice",
+			buyerData.coins == before and buyerData.flags.warehouseOwned == true
+		)
+		at(buyer, buyerPlot.treadmill.Position + Vector3.new(0, 3, 0))
+		task.wait(1.2)
+		check("installed treadmill trains", buyer:GetAttribute("OnTreadmill") == true)
+		at(buyer, buyerPlot.center + Vector3.new(0, 4, 55))
+		check(
+			"facility ownership saved",
+			Data.saveConfirmed(buyer, function(saved)
+				return saved.treadmill == 1
+					and saved.flags.warehouseOwned == true
+					and saved.schema == 4
+			end)
+		)
+		buyerData.treadmill = 11
 		Shop.pushState(buyer)
 		task.wait(0.6)
 		before = buyerData.coins
 		client(buyer, "upgrade", "treadmill")
-		check("max upgrade cannot charge", buyerData.coins == before and buyerData.treadmill == 10)
+		check("max upgrade cannot charge", buyerData.coins == before and buyerData.treadmill == 11)
 		local function fillOwner()
 			ownerData.pedestals = {}
 			for slot = 1, 3 do

@@ -21,6 +21,12 @@ local Theme = require(script.Parent.Theme)
 export type Args = { [string]: any }
 
 local STRINGS: { [string]: string } = {
+	facility_offer = "{name} · {amount} Stardust",
+	facility_build = "Build · {amount}",
+	facility_ready = "Built",
+	facility_unbuilt = "Not built yet",
+	warehouse_build_hint = "Build your storage locker for {amount} Stardust to manage creatures",
+	warehouse_required = "Your pedestals are full. Build storage or unlock another pedestal",
 	warehouse_approach = "Approach the storage terminal on your plot to manage creatures",
 	warehouse_stored = "Creature safely stored. It earns Stardust when placed on a pedestal",
 	warehouse_swap_preview = "Slot {slot}: {incoming} in · {outgoing} goes to storage",
@@ -203,7 +209,9 @@ local STATIC_TERMS: { string } = {
 	"Pedestals",
 	"Max level",
 	"Training improves all Speed gains",
-	"Upgrade the treadmill already installed at your base",
+	"Build a treadmill, then improve its idle Speed gain",
+	"Build a locker to store and exchange your creatures",
+	"Build",
 	"Move faster while carrying an egg or stolen creature",
 	"Unlock another slot for creature income",
 	"Canyon",

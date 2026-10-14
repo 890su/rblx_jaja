@@ -61,7 +61,7 @@ export type PlayerProfile = {
 	daily: { streak: number, lastClaimDay: number },
 	codes: { [string]: boolean },
 	training: number, -- Run Training upgrade level
-	treadmill: number,
+	treadmill: number, -- 0 = unbuilt, 1 = installed, 2..11 = upgrades
 	carryTraining: number,
 	hatchCredits: number,
 	restockCredits: number,

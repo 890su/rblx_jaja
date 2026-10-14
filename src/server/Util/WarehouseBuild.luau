@@ -1,5 +1,5 @@
 --!strict
--- A small parcel locker along the unused left edge of each plot. The server
+-- A parcel locker in the left corner by the station sign. The server
 -- owns the interaction anchor; private creature previews are client-only.
 local Shared = game:GetService("ReplicatedStorage").Shared
 local Config = require(Shared.Config.Warehouse)
@@ -10,7 +10,7 @@ local Build = {}
 function Build.create(parent: Model, center: Vector3): BasePart
 	local model = Instance.new("Model")
 	model.Name = "Warehouse"
-	local origin = CFrame.new(center + Config.offset) * CFrame.Angles(0, -math.pi / 2, 0)
+	local origin = CFrame.new(center + Config.offset) * CFrame.Angles(0, math.rad(Config.yaw), 0)
 	local function part(
 		name: string,
 		at: Vector3,

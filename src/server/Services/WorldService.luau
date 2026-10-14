@@ -19,6 +19,9 @@ local Biomes = require(Shared.Theme.Biomes)
 local ArenaWorldBuild = require(script.Parent.Parent.Util.ArenaWorldBuild)
 local CryoCapsuleBuild = require(script.Parent.Parent.Util.CryoCapsuleBuild)
 local WarehouseBuild = require(script.Parent.Parent.Util.WarehouseBuild)
+local FacilityBuild = require(script.Parent.Parent.Util.FacilityBuild)
+local Layout = require(Shared.Config.BaseLayout)
+local WarehouseConfig = require(Shared.Config.Warehouse)
 
 export type Plot = {
 	index: number,
@@ -28,6 +31,8 @@ export type Plot = {
 	collector: BasePart,
 	warehouse: BasePart,
 	treadmill: BasePart,
+	facilities: { [string]: Model },
+	buildSites: { [string]: BasePart },
 	center: Vector3,
 }
 
@@ -194,14 +199,16 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 
 	-- Treadmill: rubber belt (detection part "Treadmill") with frame, rollers,
 	-- handrails and a console screen. Arrows on the belt scroll client-side.
-	local treadCenter = center + Vector3.new(20, 0, -12)
+	local treadModel = Instance.new("Model")
+	treadModel.Name = "TreadmillFacility"
+	local treadCenter = center + Layout.treadmillOffset
 	local treadmill = part({
 		Name = "Treadmill",
 		Size = Vector3.new(6, 0.7, 14),
 		Position = treadCenter + Vector3.new(0, 0.35, 0),
 		Color = Color3.fromRGB(28, 28, 34),
 		Material = Enum.Material.SmoothPlastic,
-	}, model)
+	}, treadModel)
 	for side = -1, 1, 2 do
 		part({
 			Name = "TreadFrame",
@@ -209,7 +216,7 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 			Position = treadCenter + Vector3.new(side * 3.5, 0.55, 0),
 			Color = Color3.fromRGB(150, 160, 180),
 			Material = Enum.Material.Metal,
-		}, model)
+		}, treadModel)
 		-- Handrail post + rail along each side at the front half.
 		part({
 			Name = "TreadPost",
@@ -217,14 +224,14 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 			Position = treadCenter + Vector3.new(side * 3.5, 3, -6.5),
 			Color = Color3.fromRGB(150, 160, 180),
 			Material = Enum.Material.Metal,
-		}, model)
+		}, treadModel)
 		part({
 			Name = "TreadRail",
 			Size = Vector3.new(0.35, 0.35, 6),
 			Position = treadCenter + Vector3.new(side * 3.5, 4.8, -3.7),
 			Color = Color3.fromRGB(80, 220, 255),
 			Material = Enum.Material.Neon,
-		}, model)
+		}, treadModel)
 	end
 	for _, z in { -7, 7 } do
 		local roller = part({
@@ -233,7 +240,7 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 			Size = Vector3.new(6.4, 1.2, 1.2),
 			Color = Color3.fromRGB(60, 60, 70),
 			Material = Enum.Material.Metal,
-		}, model)
+		}, treadModel)
 		roller.CFrame = CFrame.new(treadCenter + Vector3.new(0, 0.6, z))
 	end
 	local console = part({
@@ -241,7 +248,7 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 		Size = Vector3.new(7, 2.6, 0.5),
 		Color = Color3.fromRGB(30, 34, 48),
 		Material = Enum.Material.Metal,
-	}, model)
+	}, treadModel)
 	console.CFrame = CFrame.new(treadCenter + Vector3.new(0, 5.4, -6.8))
 		* CFrame.Angles(math.rad(-25), 0, 0)
 	local screen = Instance.new("SurfaceGui")
@@ -291,13 +298,13 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 			arm.CFrame = CFrame.new(treadCenter + Vector3.new(0, -5, 0)) -- placed client-side
 		end
 	end
-	chevrons.Parent = model
+	chevrons.Parent = treadModel
 	CollectionService:AddTag(chevrons, "TreadmillBelt")
 
 	local sign = part({
 		Name = "Sign",
 		Size = Vector3.new(10, 6, 1),
-		Position = center + Vector3.new(-23, 6, -23),
+		Position = center + Layout.signOffset,
 		Color = Color3.fromRGB(30, 30, 45),
 	}, model)
 	local gui = Instance.new("SurfaceGui")
@@ -323,6 +330,21 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 	end
 	gui.Parent = sign
 	local warehouse = WarehouseBuild.create(model, center)
+	local warehouseModel = warehouse.Parent :: Model
+	FacilityBuild.setOwned(model, warehouseModel, "warehouse", false)
+	FacilityBuild.setOwned(model, treadModel, "treadmill", false)
+	local buildSites = {
+		warehouse = FacilityBuild.marker(
+			model,
+			"warehouse",
+			(CFrame.new(center + WarehouseConfig.offset) * CFrame.Angles(
+				0,
+				math.rad(WarehouseConfig.yaw),
+				0
+			)):PointToWorldSpace(Vector3.new(4.1, 0.12, -6))
+		),
+		treadmill = FacilityBuild.marker(model, "treadmill", treadCenter + Vector3.new(0, 0.12, 0)),
+	}
 
 	model.Parent = parent
 	return {
@@ -333,6 +355,8 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 		collector = collector,
 		warehouse = warehouse,
 		treadmill = treadmill,
+		facilities = { warehouse = warehouseModel, treadmill = treadModel },
+		buildSites = buildSites,
 		center = center,
 	}
 end

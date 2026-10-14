@@ -4,10 +4,18 @@
 
 local Migrations = {}
 
-Migrations.LATEST = 3
+Migrations.LATEST = 4
 
 -- [from] = step producing from + 1
 local STEPS: { [number]: (data: { [string]: any }) -> { [string]: any } } = {
+	[3] = function(data)
+		-- Previously both facilities were free. Keep them and every upgrade;
+		-- new v4 profiles start without either facility.
+		data.treadmill = math.clamp(tonumber(data.treadmill) or 0, 0, 10) + 1
+		data.flags = data.flags or {}
+		data.flags.warehouseOwned = true
+		return data
+	end,
 	[2] = function(data)
 		data.treadmill = 0
 		data.carryTraining = 0

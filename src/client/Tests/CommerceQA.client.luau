@@ -60,9 +60,36 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 			return true
 		end
 		if op == "upgrade" then
-			Remotes.event("BuyUpgrade"):FireServer(key)
+			if typeof(key) == "table" then
+				Remotes.event("BuyUpgrade"):FireServer(key.key, key.expected)
+			else
+				Remotes.event("BuyUpgrade"):FireServer(key)
+			end
 			task.wait(0.3)
 			return true
+		end
+		if op == "facility" then
+			local panel = UiKit.gui():FindFirstChild("Upgrades") :: Frame
+			local card = assert(panel:FindFirstChild(key, true), "missing facility card")
+			local buy = card:FindFirstChild("Buy") :: TextButton
+			local foreign = 0
+			for _, prompt in game:GetService("CollectionService"):GetTagged("FacilityPrompt") do
+				if
+					prompt:IsA("ProximityPrompt")
+					and prompt.Enabled
+					and prompt.Parent
+					and prompt.Parent.Parent
+					and prompt.Parent.Parent:GetAttribute("OwnerUserId") ~= player.UserId
+				then
+					foreign += 1
+				end
+			end
+			return {
+				open = UiKit.isOpen("Upgrades"),
+				label = buy.Text,
+				enabled = buy.Interactable,
+				foreign = foreign,
+			}
 		end
 		if op == "credit" then
 			Remotes.event("UsePurchaseCredit"):FireServer(key)
@@ -222,7 +249,17 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 			local cameraMode = player.CameraMode
 			player.CameraMode = Enum.CameraMode.LockFirstPerson
 			task.wait(0.3)
-			game:GetService("RunService").PreRender:Wait()
+			-- Background Studio test clients may not render a frame at all.
+			-- Keep the input observation bounded and report that condition.
+			local rendered = false
+			local renderConnection = game:GetService("RunService").PreRender:Connect(function()
+				rendered = true
+			end)
+			local renderDeadline = os.clock() + 1
+			while not rendered and os.clock() < renderDeadline do
+				task.wait(0.05)
+			end
+			renderConnection:Disconnect()
 			local released = game:GetService("UserInputService").MouseBehavior
 				== Enum.MouseBehavior.Default
 			player.CameraMode = cameraMode
@@ -238,6 +275,7 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 				modal = close.Modal,
 				mouseReleased = released,
 				previews = views,
+				rendered = rendered,
 			}
 		end
 		if op == "index" then

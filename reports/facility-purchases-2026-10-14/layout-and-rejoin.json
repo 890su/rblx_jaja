@@ -1,0 +1,13 @@
+{
+  "signOffset": "-10, 6, -23",
+  "ownedAfterRejoin": true,
+  "insidePlot": true,
+  "minOffset": "-28.79998779296875, 2.8312206268310547e-07, -29.299999237060547",
+  "intersections": [],
+  "capsules": 10,
+  "treadmillRebuilt": true,
+  "warehouseRebuilt": true,
+  "maxOffset": "-23.20001220703125, 9.449999809265137, -14.700000762939453",
+  "runId": "facilities-visual-1791962634",
+  "treadmillAfterRejoin": 1
+}

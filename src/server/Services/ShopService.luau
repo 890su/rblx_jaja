@@ -19,6 +19,7 @@ local Remotes = require(Shared.Remotes)
 local Locale = require(Shared.Locale)
 local UpgradeMath = require(Shared.Util.UpgradeMath)
 local Upgrades = require(Shared.Config.Upgrades)
+local BaseLayout = require(Shared.Config.BaseLayout)
 
 local Notifier = require(script.Parent.Parent.Util.Notifier)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
@@ -109,6 +110,8 @@ local function onBuy(player: Player, slot: unknown)
 	local key = tostring(slot)
 	if (bought[key] or 0) >= offer.stock then
 		Notifier.send(player, "shop_sold_out", nil, "warning")
+	elseif not StationService.hasFreePedestal(player) and profile.flags.warehouseOwned ~= true then
+		Notifier.send(player, "warehouse_required", nil, "warning")
 	elseif profile.coins < offer.price then
 		Notifier.send(player, "not_enough_coins", nil, "warning")
 	else
@@ -158,7 +161,7 @@ local function onBuyPedestal(player: Player)
 	pushState(player)
 end
 
-local function onBuyUpgrade(player: Player, key: unknown)
+local function onBuyUpgrade(player: Player, key: unknown, expectedLevel: unknown)
 	if not buyLimit:allow(player) then
 		return
 	end
@@ -169,6 +172,13 @@ local function onBuyUpgrade(player: Player, key: unknown)
 	if not profile then
 		return
 	end
+	if
+		expectedLevel ~= nil
+		and (typeof(expectedLevel) ~= "number" or expectedLevel ~= UpgradeMath.level(profile, key))
+	then
+		pushState(player)
+		return
+	end
 	local outcome, cost = UpgradeMath.buy(profile, key)
 	if outcome == "max" then
 		Notifier.send(player, "upgrade_max", nil, "warning")
@@ -176,6 +186,7 @@ local function onBuyUpgrade(player: Player, key: unknown)
 		Notifier.send(player, "need_coins", { amount = Format.short(cost) }, "warning")
 	else
 		DataService.sync(player)
+		StationService.refresh(player)
 		SpeedService.apply(player)
 		TelemetryService.economy(
 			player,
@@ -202,6 +213,34 @@ function ShopService.debugOffers(): { Types.ShopOffer }
 	return currentOffers
 end
 
+-- The physical prompt only opens a priced card; the buy button performs payment.
+function ShopService.openFacility(player: Player, plot: WorldService.Plot, key: string): boolean
+	local site = plot.buildSites[key]
+	local profile = DataService.get(player)
+	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	local position = SpeedService.validatePosition(player)
+	if
+		not site
+		or not profile
+		or StationService.ownerOf(plot) ~= player
+		or not humanoid
+		or humanoid.Health <= 0
+		or player:GetAttribute("Carrying") ~= nil
+		or player:GetAttribute("ArenaActive") == true
+		or player:GetAttribute("ArenaPrep") == true
+		or not position
+		or not WorldService.isInPlot(plot, position)
+		or (position - site.Position).Magnitude > BaseLayout.purchaseDistance
+		or UpgradeMath.level(profile, key) ~= 0
+		or not stateLimit:allow(player)
+	then
+		return false
+	end
+	pushState(player)
+	Remotes.event("OpenUpgrade"):FireClient(player, key)
+	return true
+end
+
 function ShopService.init()
 	shopState = Remotes.event("ShopState")
 	refreshCycle()
@@ -213,6 +252,14 @@ function ShopService.init()
 		end
 	end)
 	Remotes.event("BuyPedestal").OnServerEvent:Connect(onBuyPedestal)
+	for _, plot in WorldService.getPlots() do
+		for key, site in plot.buildSites do
+			local prompt = site:FindFirstChildOfClass("ProximityPrompt")
+			assert(prompt, "missing facility prompt").Triggered:Connect(function(player)
+				ShopService.openFacility(player, plot, key)
+			end)
+		end
+	end
 	-- Unlock button on the next locked pedestal of your own station.
 	for _, plot in WorldService.getPlots() do
 		for _, pedestal in plot.pedestals do
@@ -235,7 +282,7 @@ function ShopService.init()
 		end
 	end
 	Remotes.event("BuyTraining").OnServerEvent:Connect(function(player)
-		onBuyUpgrade(player, "training")
+		onBuyUpgrade(player, "training", nil)
 	end)
 	Remotes.event("BuyUpgrade").OnServerEvent:Connect(onBuyUpgrade)
 	DataService.onLoaded(function(player)

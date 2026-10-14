@@ -8,6 +8,7 @@ export type Spec = {
 	growth: number,
 	max: number,
 	bonus: number,
+	installCost: number?,
 }
 local specs: { Spec } = {
 	{
@@ -22,11 +23,21 @@ local specs: { Spec } = {
 	{
 		key = "treadmill",
 		title = "Treadmill",
-		description = "Upgrade the treadmill already installed at your base",
+		description = "Build a treadmill, then improve its idle Speed gain",
 		base = 1500,
+		installCost = 250,
 		growth = 2,
-		max = 10,
+		max = 11, -- installation + ten upgrades
 		bonus = 0.20,
+	},
+	{
+		key = "warehouse",
+		title = "Storage",
+		description = "Build a locker to store and exchange your creatures",
+		base = 1000,
+		growth = 1,
+		max = 1,
+		bonus = 0,
 	},
 	{
 		key = "carryTraining",

@@ -12,6 +12,7 @@ local UiKit = require(script.Parent.Parent.Lib.UiKit)
 local Preview = require(script.Parent.Parent.Lib.ItemPreview)
 local Players = game:GetService("Players")
 local Warehouse = require(Shared.Config.Warehouse)
+local UpgradeMath = require(Shared.Util.UpgradeMath)
 local player = Players.LocalPlayer
 
 local StationMenuController = {}
@@ -27,6 +28,7 @@ local storageList: ScrollingFrame
 local swapButton: TextButton
 local sellButton: TextButton
 local storeButton: TextButton
+local buildButton: TextButton
 local slotHighlight: Highlight
 local rowHeight = 58
 local layoutStation: () -> () = function() end
@@ -142,8 +144,13 @@ local function refreshActions()
 	local item = state and selectedSlot and state.slots[tostring(selectedSlot)]
 	local stored = state and selectedStorage and state.storage[selectedStorage]
 	local nearby = nearWarehouse()
-	selection.Text = if not nearby
-		then Locale.t("warehouse_approach")
+	local owned = player:GetAttribute("FacilityOwned_warehouse") == true
+	selection.Text = if not owned
+		then Locale.t(
+			"warehouse_build_hint",
+			{ amount = Format.short(assert(UpgradeMath.cost("warehouse", 0))) }
+		)
+		elseif not nearby then Locale.t("warehouse_approach")
 		elseif selectedSlot and (stored or item) then Locale.t(
 			if stored and item
 				then "warehouse_swap_preview"
@@ -179,7 +186,11 @@ local function refreshActions()
 		{ amount = Format.short(amount) }
 	)
 	local actions: { TextButton } = {}
-	for _, button in { swapButton, storeButton, sellButton } do
+	buildButton.Visible = not owned
+	if not owned then
+		swapButton.Visible, storeButton.Visible, sellButton.Visible = false, false, false
+	end
+	for _, button in { buildButton, swapButton, storeButton, sellButton } do
 		if button.Visible then
 			table.insert(actions, button)
 		end
@@ -424,6 +435,23 @@ function StationMenuController.init()
 		end
 		refreshActions()
 	end)
+	buildButton = UiKit.button(
+		panel,
+		Locale.t(
+			"facility_build",
+			{ amount = Format.short(assert(UpgradeMath.cost("warehouse", 0))) }
+		),
+		{
+			Name = "BuildStorageButton",
+			Size = UDim2.new(1, -32, 0, 48),
+			Position = UDim2.new(0, 16, 1, -64),
+			Visible = false,
+		}
+	)
+	buildButton.Activated:Connect(function()
+		Remotes.event("BuyUpgrade"):FireServer("warehouse", 0)
+	end)
+	player:GetAttributeChangedSignal("FacilityOwned_warehouse"):Connect(refreshActions)
 	UiKit.sideButton(Locale.term("Station"), Color3.fromRGB(45, 130, 165), 6, function()
 		physicalSession = false
 		UiKit.toggle("Station")
