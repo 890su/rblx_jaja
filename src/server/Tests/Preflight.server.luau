@@ -10,6 +10,11 @@ local args = StudioTestService:GetTestArgs()
 if typeof(args) ~= "table" or args.suite ~= "preprod" then
 	return
 end
+-- Long visual/physics sessions keep isolated profiles without starting the
+-- timed automatic suite. The operator ends these sessions explicitly.
+if args.mode == "visual" then
+	return
+end
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")

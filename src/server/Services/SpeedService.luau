@@ -14,6 +14,7 @@ local Zones = require(Shared.Config.Zones)
 local Canyons = require(Shared.Config.Canyons)
 local ArenaPatterns = require(Shared.Util.ArenaPatterns)
 local MovementBudget = require(Shared.Util.MovementBudget)
+local SpeedTransition = require(Shared.Util.SpeedTransition)
 local Theme = require(Shared.Theme)
 local Locale = require(Shared.Locale)
 
@@ -41,6 +42,8 @@ local strikes: { [Player]: { number } } = {}
 local graceUntil: { [Player]: number } = {}
 local trainingMoving: { [Player]: boolean } = {}
 local movement: { [Player]: { root: BasePart, state: MovementBudget.State } } = {}
+type ApprovedSpeed = { humanoid: Humanoid, target: number, transition: SpeedTransition.State? }
+local approvedSpeeds: { [Player]: ApprovedSpeed } = {}
 local invalidCallbacks: { (player: Player, position: Vector3?) -> () } = {}
 
 function SpeedService.onInvalidMovement(callback: (player: Player, position: Vector3?) -> ())
@@ -65,6 +68,14 @@ local function rootOf(player: Player): (BasePart?, Humanoid?)
 		return nil, nil
 	end
 	return root, humanoid
+end
+
+local function movementSpeed(player: Player, humanoid: Humanoid): number
+	local approved = approvedSpeeds[player]
+	if not approved or approved.humanoid ~= humanoid then
+		return humanoid.WalkSpeed
+	end
+	return SpeedTransition.rate(approved.transition, approved.target, os.clock())
 end
 
 function SpeedService.walkSpeedFor(
@@ -127,6 +138,7 @@ function SpeedService.apply(player: Player)
 	local profile = DataService.get(player)
 	local _, humanoid = rootOf(player)
 	if profile and humanoid then
+		humanoid.MaxSlopeAngle = Speed.PHYSICS.maxSlopeAngle
 		local carrying = player:GetAttribute("Carrying") ~= nil
 		local chaseUntil = (player:GetAttribute("ChaseUntil") :: number?) or 0
 		local chasing = chaseUntil > workspace:GetServerTimeNow()
@@ -137,6 +149,26 @@ function SpeedService.apply(player: Player)
 			walkSpeed =
 				ArenaPatterns.runSpeed(SpeedService.walkSpeedFor(profile.speed, false, false))
 		end
+		local approved = approvedSpeeds[player]
+		local now = os.clock()
+		if not approved or approved.humanoid ~= humanoid then
+			local fresh: ApprovedSpeed =
+				{ humanoid = humanoid, target = walkSpeed, transition = nil }
+			approvedSpeeds[player] = fresh
+			approved = fresh
+		elseif walkSpeed < approved.target then
+			approved.transition = {
+				from = SpeedTransition.rate(approved.transition, approved.target, now),
+				to = walkSpeed,
+				at = now,
+			}
+			-- The one-second training sample must not compare pre-braking travel
+			-- against the new lower speed. Continuous position validation remains.
+			tracked[player] = nil
+		elseif approved.transition and walkSpeed > approved.transition.to then
+			approved.transition.to = walkSpeed
+		end
+		approved.target = walkSpeed
 		humanoid.WalkSpeed = walkSpeed
 		-- MovementController ramps the local WalkSpeed toward this target.
 		humanoid:SetAttribute("TargetWalkSpeed", walkSpeed)
@@ -242,7 +274,14 @@ function SpeedService.validatePosition(player: Player): Vector3?
 		}
 		movement[player] = assert(previous, "movement seed missing")
 	end
-	if not MovementBudget.accept(previous.state, root.Position, os.clock(), humanoid.WalkSpeed) then
+	if
+		not MovementBudget.accept(
+			previous.state,
+			root.Position,
+			os.clock(),
+			movementSpeed(player, humanoid)
+		)
+	then
 		discardCarry(player, nil)
 		root.AssemblyLinearVelocity = Vector3.zero;
 		(player.Character :: Model):PivotTo(CFrame.new(previous.state.position))
@@ -276,8 +315,17 @@ local function tickPlayer(player: Player)
 	end
 	local position = root.Position
 	local previous = tracked[player]
+	local approved = approvedSpeeds[player]
+	local mixedPaceSample = previous ~= nil
+		and approved ~= nil
+		and SpeedTransition.needsFreshSample(approved.transition, previous.at)
 	-- New character (respawn) or after a server teleport: start fresh.
-	if not previous or previous.root ~= root or (graceUntil[player] or 0) > os.clock() then
+	if
+		not previous
+		or previous.root ~= root
+		or (graceUntil[player] or 0) > os.clock()
+		or mixedPaceSample
+	then
 		tracked[player] = { root = root, position = position, at = os.clock() }
 		trainingMoving[player] = false
 		SpeedService.apply(player)
@@ -287,7 +335,7 @@ local function tickPlayer(player: Player)
 	local delta =
 		Vector3.new(position.X - previous.position.X, 0, position.Z - previous.position.Z).Magnitude
 	local elapsed = math.max(0.01, os.clock() - previous.at)
-	local maxDistance = humanoid.WalkSpeed * elapsed * TELEPORT_SLACK + TELEPORT_FLAT
+	local maxDistance = movementSpeed(player, humanoid) * elapsed * TELEPORT_SLACK + TELEPORT_FLAT
 	if delta > maxDistance then
 		-- Rubber-band to the last trusted position.
 		local count = addStrike(player)
@@ -349,6 +397,7 @@ function SpeedService.init()
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		approvedSpeeds[player] = nil
 		tracked[player] = nil
 		movement[player] = nil
 		strikes[player] = nil

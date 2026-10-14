@@ -34,6 +34,8 @@ local sections: { [string]: Frame } = {}
 local callbacks: { [string]: () -> () } = {}
 local history: { string } = {}
 local panelTween: Tween? = nil
+local menuBlur: BlurEffect? = nil
+local blurTween: Tween? = nil
 local actionNames =
 	{ "Shop", "Rebirth", "Store", "Daily", "Invite", "Station", "Index", "Wave", "Chat" }
 local navNames = { "Shop", "Upgrades", "Store", "Station", "Index", "More" }
@@ -69,14 +71,6 @@ function UiKit.back()
 	end
 end
 
-local function dockWidth(): number
-	local camera = workspace.CurrentCamera
-	local width = if camera and camera.ViewportSize.X > 100
-		then camera.ViewportSize.X
-		else (if gui then gui.AbsoluteSize.X else 800)
-	return math.clamp(width - Config.padding * 2, 96, 328)
-end
-
 function UiKit.compact(): boolean
 	local camera = workspace.CurrentCamera
 	local size = if camera and camera.ViewportSize.X > 100
@@ -97,6 +91,7 @@ end
 
 function UiKit.surface(parent: GuiObject, accent: Color3?)
 	parent.BackgroundColor3 = UiKit.CARD_COLOR
+	parent.BackgroundTransparency = Config.glass.card
 	parent.BorderSizePixel = 0
 	UiKit.corner(parent, 12)
 	UiKit.border(parent, accent)
@@ -120,11 +115,15 @@ function UiKit.gui(): ScreenGui
 		backdrop.Name = "MenuShade"
 		backdrop.Size = UDim2.fromScale(1, 1)
 		backdrop.BackgroundColor3 = Color3.new()
-		backdrop.BackgroundTransparency = 0.35
+		backdrop.BackgroundTransparency = Config.glass.shade
 		backdrop.BorderSizePixel, backdrop.ZIndex = 0, 4
 		backdrop.Visible, backdrop.Active = false, true
 		backdrop.Parent = newGui
 		shade = backdrop
+		local blur = Instance.new("BlurEffect")
+		blur.Name, blur.Size, blur.Enabled = "MeteorMenuBlur", 0, false
+		blur.Parent = game:GetService("Lighting")
+		menuBlur = blur
 		-- Modern first-person cameras can re-lock the cursor despite Modal.
 		-- Run after camera updates, only while a visible menu owns input.
 		RunService:BindToRenderStep(
@@ -139,6 +138,8 @@ function UiKit.gui(): ScreenGui
 		)
 		newGui.Destroying:Connect(function()
 			UiKit.close()
+			blur:Destroy()
+			menuBlur = nil
 			RunService:UnbindFromRenderStep("MeteorMenuCursor")
 		end)
 		local player = Players.LocalPlayer
@@ -186,6 +187,13 @@ function UiKit.setEnabled(b: GuiButton, enabled: boolean)
 end
 
 function UiKit.close()
+	if blurTween then
+		blurTween:Cancel()
+		blurTween = nil
+	end
+	if menuBlur then
+		menuBlur.Size, menuBlur.Enabled = 0, false
+	end
 	if panelTween then
 		panelTween:Cancel()
 		panelTween = nil
@@ -239,6 +247,7 @@ function UiKit.button(parent: Instance, label: string, props: { [string]: any })
 	b.Text = label
 	b.TextColor3 = Color3.new(1, 1, 1)
 	b.BackgroundColor3 = UiKit.BUTTON_COLOR
+	b.BackgroundTransparency = Config.glass.button
 	b.AutoButtonColor = true
 	b.AutoLocalize = false
 	b.TextWrapped = true
@@ -327,6 +336,21 @@ local function decorateNavigation(b: TextButton, name: string, accent: Color3)
 		Size = UDim2.new(1, -52, 1, -12),
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
+	local function resizeDecoration()
+		local narrow = b.AbsoluteSize.X < 112
+		icon.Position = if narrow then UDim2.new(0.5, -10, 0, 3) else UDim2.new(0, 12, 0.5, -12)
+		icon.Size = UDim2.fromOffset(if narrow then 20 else 24, if narrow then 20 else 24)
+		label.Position = if narrow then UDim2.fromOffset(4, 25) else UDim2.fromOffset(44, 6)
+		label.Size = if narrow then UDim2.new(1, -8, 0, 18) else UDim2.new(1, -52, 1, -12)
+		label.TextXAlignment = if narrow
+			then Enum.TextXAlignment.Center
+			else Enum.TextXAlignment.Left
+		label.TextWrapped = not narrow
+		local limit = label:FindFirstChildOfClass("UITextSizeConstraint") :: UITextSizeConstraint
+		limit.MaxTextSize = if narrow then 14 else Config.fontMax
+	end
+	b:GetPropertyChangedSignal("AbsoluteSize"):Connect(resizeDecoration)
+	resizeDecoration()
 	b:GetPropertyChangedSignal("Text"):Connect(function()
 		label.Text = b.Text
 	end)
@@ -422,7 +446,7 @@ local function addAction(
 	return action
 end
 
--- Adds a button to the left-side menu column (in call order).
+-- One compact gameplay menu button; destinations live inside the menu.
 function UiKit.sideButton(
 	label: string,
 	color: Color3,
@@ -433,8 +457,8 @@ function UiKit.sideButton(
 		local frame = Instance.new("Frame")
 		frame.Name = "Side"
 		frame.BackgroundTransparency = 1
-		frame.Position = UDim2.new(0, Config.padding, 0, 110)
-		frame.Size = UDim2.fromOffset(156, 280)
+		frame.Position = UDim2.fromOffset(Config.padding, 8)
+		frame.Size = UDim2.fromOffset(Config.target, Config.target)
 		local layout = Instance.new("UIListLayout")
 		layout.Padding = UDim.new(0, Config.gap)
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -447,10 +471,10 @@ function UiKit.sideButton(
 			"UIListLayout"
 		) :: UIListLayout
 		menuLayout.Padding = UDim.new(0, 8)
-		moreButton = UiKit.button(frame, Locale.term("More"), {
+		moreButton = UiKit.button(frame, Locale.term("Menu"), {
 			Name = "More",
 			LayoutOrder = 100,
-			Size = UDim2.fromOffset(156, Config.target),
+			Size = UDim2.fromOffset(Config.target, Config.target),
 			BackgroundColor3 = UiKit.CARD_COLOR,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
@@ -462,31 +486,14 @@ function UiKit.sideButton(
 			UiKit.toggle("More")
 		end)
 		local function resize()
-			local compact = UiKit.compact()
-			frame.AnchorPoint = if compact then Vector2.new(0.5, 0) else Vector2.zero
-			frame.Position = if compact
-				then UDim2.new(0.5, 0, 0, 76)
-				else UDim2.new(0, Config.padding, 0, 110)
-			frame.Size = if compact
-				then UDim2.fromOffset(dockWidth(), Config.target)
-				else UDim2.fromOffset(156, 280)
-			layout.FillDirection = if compact
-				then Enum.FillDirection.Horizontal
-				else Enum.FillDirection.Vertical
-			for number, button in sideButtons do
-				button.Visible = number == 1
-					or number == 6
-					or (not compact and (number == 3 or number == 7))
-				button.Size = UDim2.fromOffset(
-					if compact then (dockWidth() - Config.gap * 2) / 3 else 156,
-					Config.target
-				)
+			frame.AnchorPoint = Vector2.zero
+			frame.Position = UDim2.fromOffset(Config.padding, 8)
+			frame.Size = UDim2.fromOffset(Config.target, Config.target)
+			for _, button in sideButtons do
+				button.Visible = false
 			end
 			if moreButton then
-				moreButton.Size = UDim2.fromOffset(
-					if compact then (dockWidth() - Config.gap * 2) / 3 else 156,
-					Config.target
-				)
+				moreButton.Size = UDim2.fromOffset(Config.target, Config.target)
 			end
 		end
 		if workspace.CurrentCamera then
@@ -508,11 +515,8 @@ function UiKit.sideButton(
 	b.Activated:Connect(onClick)
 	b.Name = `Menu{order}`
 	sideButtons[order] = b
-	b.Visible = order == 1 or order == 6 or (not UiKit.compact() and (order == 3 or order == 7))
-	b.Size = UDim2.fromOffset(
-		if UiKit.compact() then (dockWidth() - Config.gap * 2) / 3 else 156,
-		Config.target
-	)
+	b.Visible = false
+	b.Size = UDim2.fromOffset(Config.target, Config.target)
 	local action = addAction(label, color, order, name, function()
 		-- Social actions return to play; destinations keep Menu in the back stack.
 		if name == "Invite" or name == "Chat" or name == "Wave" then
@@ -576,6 +580,18 @@ function UiKit.show(name: string)
 		openPanel.Position = UDim2.fromScale(0.5, 0.5)
 	end
 	openPanel = target
+	if menuBlur then
+		if blurTween then
+			blurTween:Cancel()
+		end
+		menuBlur.Enabled = true
+		blurTween = TweenService:Create(
+			menuBlur,
+			TweenInfo.new(Config.fastMotion),
+			{ Size = Config.glass.blur }
+		)
+		assert(blurTween, "missing menu blur tween"):Play()
+	end
 	if shade then
 		shade.Visible = openPanel ~= nil
 	end
@@ -629,6 +645,7 @@ function UiKit.panel(name: string, title: string): Frame
 	bounds.MaxSize = Config.maxWindow
 	bounds.Parent = frame
 	frame.BackgroundColor3 = UiKit.PANEL_COLOR
+	frame.BackgroundTransparency = Config.glass.panel
 	frame.Visible = false
 	frame.ZIndex = 5
 	-- Keep panel contents above the panel even under Global ZIndexBehavior
@@ -763,10 +780,15 @@ function UiKit.panel(name: string, title: string): Frame
 end
 
 -- Consistent space below the header and above optional footer actions.
-function UiKit.body(panel: Frame, footerHeight: number?): Frame
+function UiKit.body(panel: Frame, footerHeight: number?, customLayout: boolean?): Frame
 	local body = Instance.new("Frame")
 	body.Name, body.BackgroundTransparency = "Body", 1
 	body.Parent = panel
+	-- Some headers reserve their own responsive status row. Give those panels
+	-- a single layout owner instead of racing two AbsoluteSize callbacks.
+	if customLayout then
+		return body
+	end
 	local function resize()
 		local header = if panel.Name == "Intro" then Config.header else UiKit.headerHeight()
 		body.Position = UDim2.fromOffset(Config.padding, header)

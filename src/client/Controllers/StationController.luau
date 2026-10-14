@@ -129,7 +129,7 @@ local function refreshStorage()
 	local count = (player:GetAttribute("StorageCount") :: number?) or 0
 	storageLabel.Visible = count > 0 and player:GetAttribute("MenuOpen") ~= true
 	if count > 0 then
-		storageLabel.Text = "📦 " .. Locale.t("storage_manage", { count = count })
+		storageLabel.Text = Format.short(count)
 	end
 end
 
@@ -156,14 +156,14 @@ function StationController.init()
 
 	storageLabel = UiKit.text(UiKit.gui(), {
 		Name = "StorageBadge",
-		AnchorPoint = Vector2.new(0, 0),
-		Position = UDim2.new(0, 12, 0.45, 0),
-		Size = UDim2.fromScale(0.3, 0.035),
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = Color3.fromRGB(200, 220, 255),
-		TextStrokeTransparency = 0.3,
+		Position = UDim2.fromOffset(52, 2),
+		Size = UDim2.fromOffset(22, 22),
+		BackgroundTransparency = 0,
+		BackgroundColor3 = UiKit.BUTTON_COLOR,
+		TextColor3 = Color3.new(1, 1, 1),
 		Visible = false,
 	})
+	UiKit.corner(storageLabel, 11)
 end
 
 function StationController.start()

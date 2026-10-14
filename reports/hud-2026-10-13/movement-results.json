@@ -1,0 +1,91 @@
+{
+  "baseline": {
+    "rig": "R15",
+    "wedgeHeight": 4,
+    "wedgeLength": 6,
+    "speed": 400,
+    "rise": 102.255,
+    "maxUp": 196.144
+  },
+  "r15Wedge": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"rise\":5.773662567138672,\"beginY\":44.05638122558594,\"maxSpeed\":400,\"state\":\"Running\",\"maxState\":\"Running\",\"maxUp\":19.839914321899415,\"zMin\":-746.3790893554688,\"rig\":\"R15\"}"
+      }
+    ],
+    "isError": false
+  },
+  "r6Wedge": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"rise\":7.420391082763672,\"beginY\":43.499996185302737,\"maxSpeed\":400,\"state\":\"Running\",\"maxState\":\"Running\",\"maxUp\":24.666606903076173,\"zMin\":-739.2958984375,\"rig\":\"R6\"}"
+      }
+    ],
+    "isError": false
+  },
+  "r15Slope18": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"rise\":23.390533447265626,\"beginY\":43.692420959472659,\"maxSpeed\":400,\"state\":\"Running\",\"maxState\":\"Running\",\"maxUp\":23.80495262145996,\"zMin\":-557.276123046875,\"rig\":\"R15\"}"
+      }
+    ],
+    "isError": false
+  },
+  "r15Slope35": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"rise\":24.478233337402345,\"beginY\":43.692420959472659,\"maxSpeed\":400,\"state\":\"Running\",\"maxState\":\"Running\",\"maxUp\":28.309146881103517,\"zMin\":-502.7045593261719,\"rig\":\"R15\"}"
+      }
+    ],
+    "isError": false
+  },
+  "r15Jump": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"rise\":7.266326904296875,\"beginY\":43.692420959472659,\"maxSpeed\":400,\"state\":\"Running\",\"maxState\":\"Jumping\",\"maxUp\":49.7299919128418,\"zMin\":-1102.9332275390626,\"rig\":\"R15\"}"
+      }
+    ],
+    "isError": false
+  },
+  "r6Jump": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"rise\":7.487159729003906,\"beginY\":43.499996185302737,\"maxSpeed\":400,\"state\":\"Running\",\"maxState\":\"Jumping\",\"maxUp\":51.364994049072269,\"zMin\":-1105.9798583984376,\"rig\":\"R6\"}"
+      }
+    ],
+    "isError": false
+  },
+  "combatShove": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"rise\":10.9637451171875,\"beginY\":43.692420959472659,\"maxSpeed\":120,\"state\":\"Running\",\"maxState\":\"FallingDown\",\"maxUp\":62.730003356933597,\"zMin\":-37.44525146484375,\"rig\":\"R15\"}"
+      }
+    ],
+    "isError": false
+  },
+  "baseDelivery": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"state\":\"{\\\"stats\\\":{\\\"defends\\\":0,\\\"steals\\\":0,\\\"timesRobbed\\\":0},\\\"rebirths\\\":0,\\\"coins\\\":474,\\\"flags\\\":{\\\"funnel_Loaded\\\":true,\\\"funnel_ReachedZone2\\\":true,\\\"funnel_FirstHatch\\\":true,\\\"ftueStarted\\\":true,\\\"tutorialDone\\\":true,\\\"funnel_FirstCollect\\\":true},\\\"shop\\\":{\\\"bought\\\":[],\\\"cycle\\\":5973091},\\\"storage\\\":0,\\\"daily\\\":{\\\"streak\\\":0,\\\"lastClaimDay\\\":-1},\\\"speed\\\":10056.815921200017,\\\"shieldUntil\\\":0,\\\"pedestals\\\":{\\\"1\\\":\\\"pebblit\\\",\\\"2\\\":\\\"comet_cat\\\"},\\\"pedestalCount\\\":3}\",\"samples\":21,\"last\":{\"lost\":false,\"held\":false,\"delivered\":true,\"z\":47.556312561035159}}"
+      }
+    ],
+    "isError": false
+  },
+  "arenaTransition": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"impossiblePositionRejected\":true,\"legitimate\":{\"state\":\"Running\",\"seconds\":2.8112903000001099,\"lost\":false,\"samples\":65,\"last\":{\"held\":true,\"z\":-378.92523193359377,\"lost\":false,\"t\":2.8110880000022009,\"active\":true,\"pace\":38}}}"
+      }
+    ],
+    "isError": false
+  }
+}

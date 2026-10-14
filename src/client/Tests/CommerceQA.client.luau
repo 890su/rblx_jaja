@@ -144,15 +144,29 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 				assert(action.AbsoluteSize.Y >= 48, "hub touch target too small")
 			end
 			local dock = gui:FindFirstChild("Side") :: Frame
+			local visible = 0
 			for _, name in { "Menu1", "Menu6", "More" } do
 				local b = dock:FindFirstChild(name) :: TextButton
+				if b.Visible then
+					visible += 1
+					assert(
+						b.AbsoluteSize.X >= 48 and b.AbsoluteSize.Y >= 48,
+						"menu touch target too small"
+					)
+				end
 				local icon = b:FindFirstChild("Icon") :: Frame
 				local label = b:FindFirstChild("Label") :: TextLabel
 				assert(
-					icon.AbsolutePosition.X + icon.AbsoluteSize.X <= label.AbsolutePosition.X,
+					icon.AbsolutePosition.X + icon.AbsoluteSize.X <= label.AbsolutePosition.X
+						or icon.AbsolutePosition.Y + icon.AbsoluteSize.Y
+							<= label.AbsolutePosition.Y,
 					"navigation icon overlaps its label"
 				)
 			end
+			assert(
+				visible == 1 and (dock:FindFirstChild("More") :: GuiObject).Visible,
+				"gameplay menu must stay compact"
+			)
 			UiKit.close()
 			return { menus = checked, odds = true, layout = layouts }
 		end
@@ -210,4 +224,24 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 	end)
 	remote:FireServer(nonce, { ok = ok, result = result })
 end)
-remote:FireServer("ready")
+-- The probe subscribes independently of the client bootstrap. Do not start
+-- menu assertions before panels and the first-visit intro have initialized.
+local deadline = os.clock() + 120
+while os.clock() < deadline do
+	local gui = player.PlayerGui:FindFirstChild("MainUi")
+	local ready = gui ~= nil and player:GetAttribute("TutorialDone") ~= nil
+	for _, name in { "Shop", "Rebirth", "Store", "Upgrades", "Station", "Daily", "Index" } do
+		ready = ready and gui ~= nil and gui:FindFirstChild(name) ~= nil
+	end
+	ready = ready
+		and (
+			player:GetAttribute("TutorialDone") == true
+			or (gui ~= nil and gui:FindFirstChild("Intro") ~= nil)
+		)
+	if ready then
+		UiKit.close()
+		remote:FireServer("ready")
+		break
+	end
+	task.wait(0.1)
+end

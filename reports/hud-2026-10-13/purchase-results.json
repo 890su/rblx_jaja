@@ -1,0 +1,20 @@
+{
+  "firstPurchase": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"stats\":{\"defends\":0,\"steals\":0,\"timesRobbed\":0},\"rebirths\":0,\"coins\":1000078,\"flags\":{\"funnel_Loaded\":true,\"funnel_FirstShopBuy\":true,\"funnel_FirstHatch\":true,\"ftueStarted\":true,\"tutorialDone\":true,\"funnel_FirstCollect\":true},\"shop\":{\"bought\":{\"1\":1},\"cycle\":5973185},\"storage\":0,\"daily\":{\"streak\":0,\"lastClaimDay\":-1},\"speed\":10000,\"shieldUntil\":0,\"pedestals\":{\"1\":\"pebblit\",\"2\":\"glowgrub\"},\"pedestalCount\":3}"
+      }
+    ],
+    "isError": false
+  },
+  "soldOut": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"stats\":{\"defends\":0,\"steals\":0,\"timesRobbed\":0},\"rebirths\":0,\"coins\":999712,\"flags\":{\"funnel_Loaded\":true,\"ftueStarted\":true,\"funnel_FirstShopBuy\":true,\"funnel_FirstCollect\":true},\"shop\":{\"bought\":{\"1\":5},\"cycle\":5973186},\"storage\":1,\"daily\":{\"streak\":0,\"lastClaimDay\":-1},\"speed\":0,\"shieldUntil\":0,\"pedestals\":{\"1\":\"pebblit\",\"3\":\"glowgrub\",\"2\":\"glowgrub\",\"5\":\"glowgrub\",\"4\":\"glowgrub\"},\"pedestalCount\":3}"
+      }
+    ],
+    "isError": false
+  }
+}

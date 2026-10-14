@@ -363,22 +363,8 @@ local function buildTrack(parent: Instance)
 				CanCollide = false,
 			}, folder)
 			gate:SetAttribute("ZoneIndex", i)
-			local gateSign = part({
-				Name = "GateSign",
-				Size = Vector3.new(0.5, 0.5, 0.5),
-				Position = Vector3.new(0, 30, z + 2),
-				Transparency = 1,
-				CanCollide = false,
-				CanQuery = false,
-			}, folder)
-			billboard(
-				gateSign,
-				Theme.ZONE_NAMES[i] or `Zone {i}`,
-				Vector3.zero,
-				Vector2.new(320, 60),
-				Color3.fromRGB(255, 255, 255),
-				400
-			)
+			-- Zone names arrive through the responsive HUD. A fixed 320 px
+			-- floating sign filled the phone view long before reaching this gate.
 			gate:SetAttribute("SpeedGate", zone.speedGate)
 			gate:SetAttribute("RebirthGate", zone.rebirthGate)
 			CollectionService:AddTag(gate, "SpeedGate")

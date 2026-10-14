@@ -117,6 +117,29 @@ local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
 		})
 	end,
 	-- unprotect <player> : skip new-player protection
+	-- Isolated manual movement QA: cargo without an attacking drone, so a
+	-- movement rejection can be distinguished from legitimate combat damage.
+	carry = function(player, origin)
+		assert(player, "no player")
+		local args = game:GetService("StudioTestService"):GetTestArgs()
+		assert(
+			typeof(args) == "table" and args.suite == "preprod" and args.mode == "visual",
+			"isolated visual QA only"
+		)
+		player:SetAttribute("QACarryLost", nil)
+		player:SetAttribute("QACarryDelivered", nil)
+		return CarryService.begin(player, {
+			state = { creatureId = "comet_cat", rarity = "Rare", paid = false },
+			fresh = true,
+			originZone = tonumber(origin) or 3,
+			onLost = function(actor, _carry, _position)
+				actor:SetAttribute("QACarryLost", true)
+			end,
+			onDelivered = function(actor, _carry)
+				actor:SetAttribute("QACarryDelivered", true)
+			end,
+		})
+	end,
 	unprotect = function(player)
 		local profile = assert(player and DataService.get(player), "no profile")
 		profile.playtimeTotal =

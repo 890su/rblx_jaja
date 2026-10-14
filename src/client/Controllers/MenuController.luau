@@ -44,6 +44,7 @@ local showerLabel: TextLabel
 local showerMenuLabel: TextLabel
 local shopGrid: ScrollingFrame
 local shopLoading: TextLabel
+local purchaseStation: TextButton
 
 local text = UiKit.text
 local button = UiKit.button
@@ -55,7 +56,7 @@ local function buildShop()
 	assert(frame:FindFirstChildOfClass("UISizeConstraint"), "missing shop bounds").MaxSize =
 		Vector2.new(920, 536)
 	local title = frame:FindFirstChild("Title") :: TextLabel
-	local body = UiKit.body(frame, 56)
+	local body = UiKit.body(frame, 56, true)
 	restockLabel = text(frame, {
 		Size = UDim2.new(1, -32, 0, 24),
 		Position = UDim2.fromOffset(16, 64),
@@ -68,6 +69,8 @@ local function buildShop()
 	body.Size = UDim2.new(1, -32, 1, -168)
 	local function headerResize()
 		local header = UiKit.headerHeight()
+		local feedback = UiKit.compact() and player:GetAttribute("HudNoticeActive") == true
+		title.Visible, restockLabel.Visible = not feedback, not feedback
 		if frame.AbsoluteSize.X < 520 then
 			title.Size = UDim2.new(1, -156, 0, 48)
 			restockLabel.Position, restockLabel.Size =
@@ -84,6 +87,7 @@ local function buildShop()
 		end
 	end
 	frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(headerResize)
+	player:GetAttributeChangedSignal("HudNoticeActive"):Connect(headerResize)
 	headerResize()
 	local grid = Instance.new("ScrollingFrame")
 	shopGrid = grid
@@ -178,12 +182,19 @@ local function buildShop()
 		cards[slot] = entry
 	end
 	resize()
-	local upgrades =
-		UiKit.footer(frame, Locale.term("Upgrades · Treadmill · Carry speed"), "UpgradesButton")
+	local upgrades = UiKit.footer(frame, Locale.term("Upgrades"), "UpgradesButton")
+	upgrades.Size = UDim2.new(0.5, -20, 0, 48)
 	upgrades.BackgroundColor3 = UiKit.CARD_COLOR
 	upgrades.Activated:Connect(function()
 		UiKit.show("Upgrades")
 		Remotes.event("RequestShopState"):FireServer()
+	end)
+	purchaseStation = UiKit.footer(frame, Locale.term("Station"), "PurchaseStation")
+	purchaseStation.Position = UDim2.new(0.5, 4, 1, -16)
+	purchaseStation.Size = UDim2.new(0.5, -20, 0, 48)
+	purchaseStation.BackgroundColor3 = UiKit.CARD_COLOR
+	purchaseStation.Activated:Connect(function()
+		UiKit.navigate("Station")
 	end)
 end
 
@@ -319,10 +330,9 @@ function MenuController.init()
 
 	showerLabel = text(gui, {
 		Name = "ShowerTimer",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -12, 0, 8),
-		Size = UDim2.new(0.3, 0, 0, 24),
-		TextXAlignment = Enum.TextXAlignment.Right,
+		Position = UDim2.fromOffset(80, 8),
+		Size = UDim2.fromOffset(260, 24),
+		TextXAlignment = Enum.TextXAlignment.Left,
 		TextStrokeTransparency = 0.3,
 	})
 	local function timerVisibility()
@@ -339,6 +349,17 @@ function MenuController.init()
 end
 
 function MenuController.start()
+	Remotes.event("Notify").OnClientEvent:Connect(function(key: string, args: Locale.Args?)
+		if key ~= "shop_bought" and key ~= "shop_bought_storage" then
+			return
+		end
+		local creature = args and args.creature
+		if typeof(creature) == "string" then
+			local name = if creature:sub(1, 1) == "@" then creature:sub(2) else creature
+			purchaseStation.Text = Locale.term("Station") .. " · " .. Locale.term(name)
+			purchaseStation.BackgroundColor3 = UiKit.BUTTON_COLOR
+		end
+	end)
 	Remotes.event("ShopState").OnClientEvent:Connect(function(state: Types.ShopState)
 		shopState = state
 		refreshShop()

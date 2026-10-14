@@ -23,6 +23,11 @@ local function refreshGate(gate: Instance)
 		local unlocked = isUnlocked(gate)
 		gate.CanCollide = not unlocked
 		gate.Transparency = if unlocked then 0.85 else 0.3
+		for _, child in gate:GetChildren() do
+			if child:IsA("SurfaceGui") then
+				child.Enabled = not unlocked
+			end
+		end
 	end
 end
 

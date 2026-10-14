@@ -3,6 +3,8 @@
 Version 0.1 · 2026-10-11 · Team: 1 programmer (+ freelance 3D/thumbnail artist). MVP target: soft launch week of 2026-11-23.
 Design spec: `docs/01-game-design.md`.
 
+Current implementation audit (2026-10-14), next art/animation work and release gates: [current plan](12-current-status-and-art-plan.md). The dated milestone table below is the original schedule; it does not mean every future-dated feature remains unimplemented.
+
 ## 1. Tech stack
 | Area | Choice |
 |---|---|
@@ -45,19 +47,25 @@ src/
 ```
 Rules: no `_G`; services expose typed APIs; client never decides outcomes (rarity, steal, income, purchases); every `:Connect` cleaned up (Trove); no per-frame allocations in hot paths.
 
-## 3. Data schema (v1)
+## 3. Data schema (v3)
+
+Authoritative definitions: `src/shared/Types.luau` (`Profile`), `src/server/Services/DataService.luau` (`TEMPLATE`) and `src/server/Data/Migrations.luau` (`LATEST = 3`). Abbreviated current shape:
 ```
 Profile = {
-  schema = 1,
+  schema = 3,
   coins: number, speed: number, rebirths: number,
-  pedestals: { [slot]: { creatureId, rarity, mutation?, hatchAt: number? } },
+  pedestals: { [slot]: { creatureId, rarity, mutation?, hatchAt: number?, paid? } },
   pedestalCount: number,
-  inventory: { meteors: {...}, creaturesIndex: { [creatureId]: true } },
+  storage: { PedestalState }, index: { [creatureId]: true },
   lastOnline: number, playtimeTotal: number,
   daily: { streak: number, lastClaimDay: number },
-  shieldUntil: number, codesRedeemed: { [code]: true },
-  purchases: { [purchaseId]: true },   -- receipt idempotency (trim to last 100)
-  settings: {...}, stats: { steals, defends, chasesWon }
+  shieldUntil: number, codes: { [code]: true },
+  purchases: { [purchaseId]: number },
+  training: number, treadmill: number, carryTraining: number,
+  hatchCredits: number, restockCredits: number,
+  uncollectedCoins: number, serverLuckUntil: number,
+  outgoingTransfers: {...}, incomingTransfers: {...},
+  stats: { steals, defends, timesRobbed }
 }
 ```
 Migrations are pure functions `vN → vN+1`, unit-tested.
@@ -116,3 +124,5 @@ Owner's weekly work, five distinct zone prototypes, emote groups, achievement un
 ## 11. UI cleanup and speed balance
 
 Unified menu layout, mobile navigation, optional chat, readable creature discovery labels and viewport portrait fitting implemented 2026-10-13. Current hound status and proposed AFK/difficulty tuning: [UI and speed balance](10-ui-and-speed-balance.md). Speed losses and economy tuning remain proposals; no saved progress is reduced by this UI work.
+
+2026-10-14: single gameplay Menu button, corner stats, translucent menus, zone arrivals and approved speed-transition validation: [validation report](../reports/hud-and-movement-2026-10-14.md).

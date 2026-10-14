@@ -2,6 +2,8 @@
 
 Version 0.1 · 2026-10-11 · Soft launch window: 2026-11-23 → 11-29. Scale decision: not before 2026-12-21 (28-day signal window).
 
+Implementation status audited 2026-10-14: [current art/release plan](12-current-status-and-art-plan.md), [HUD/movement and 75-check commerce validation](../reports/hud-and-movement-2026-10-14.md). Meteor shell variants and a rigged deep-zone creature remain outstanding art work; do not infer release completion from the original schedule below.
+
 ## 1. Launch philosophy
 - Home "Recommended For You" ranks on organic players only, over a 28-day window (Day 1 / Days 2–7 / Days 8–28). Ads train the system but do not count as signals.
 - Most important signals: play-through rate (PTR), first-play bounce (< 60 s and 61–180 s), play days, playtime (capped 60 min/user/day). Important: friends-play days, qualified sessions, spend days, Robux spent.

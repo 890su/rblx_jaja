@@ -6,13 +6,15 @@
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Physics = require(Shared.Config.Speed).PHYSICS
 
 local player = Players.LocalPlayer
 
 local START_SPEED = 12 -- studs/s the moment input begins
 local ACCEL_TIME = 0.9 -- seconds from standstill to full speed
 local MIN_ACCEL = 30 -- studs/s² floor so slow characters still feel snappy
-local BRAKE_TIME = 0.5 -- seconds from full speed to standstill
+local BRAKE_TIME = Physics.brakeSeconds -- seconds from full speed to standstill
 local MIN_BRAKE = 60
 local REVERSE_DOT = -0.3 -- sharper turns than this bleed speed
 local REVERSE_KEEP = 0.4
@@ -23,6 +25,11 @@ local speed = 0
 local lastDirection = Vector3.zero
 local coastUntil = 0 -- our own coast Move shows up in MoveDirection; ignore it
 local controls: any = nil -- legacy PlayerModule, including touch/gamepad input
+local probeRoot: BasePart? = nil
+local probeParams = RaycastParams.new()
+probeParams.FilterType = Enum.RaycastFilterType.Exclude
+probeParams.RespectCanCollide, probeParams.IgnoreWater = true, true
+local footOffset = 0
 
 local function flat(v: Vector3): Vector3
 	local f = Vector3.new(v.X, 0, v.Z)
@@ -121,6 +128,112 @@ local function step(moveAction: InputAction?, dt: number)
 	end
 end
 
+local function protectRun(dt: number)
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if
+		not character
+		or not humanoid
+		or not root
+		or not root:IsA("BasePart")
+		or humanoid.Health <= 0
+	then
+		return
+	end
+	if root ~= probeRoot then
+		probeRoot = root
+		probeParams.FilterDescendantsInstances = { character }
+		local leg = character:FindFirstChild("Left Leg")
+		footOffset = if humanoid.RigType == Enum.HumanoidRigType.R6
+				and leg
+				and leg:IsA("BasePart")
+			then leg.Size.Y
+			else 0
+	end
+	local target = (humanoid:GetAttribute("TargetWalkSpeed") :: number?) or humanoid.WalkSpeed
+	humanoid.AutoJumpEnabled = player.AutoJumpEnabled and target < Physics.highSpeed
+	local state = humanoid:GetState()
+	-- Server combat shoves and arena movement keep their existing behavior.
+	if
+		player:GetAttribute("ArenaActive")
+		or player:GetAttribute("ArenaPrep")
+		or state == Enum.HumanoidStateType.FallingDown
+		or state == Enum.HumanoidStateType.Ragdoll
+		or state == Enum.HumanoidStateType.GettingUp
+		or humanoid.PlatformStand
+	then
+		return
+	end
+	local velocity = root.AssemblyLinearVelocity
+	local horizontal = Vector3.new(velocity.X, 0, velocity.Z)
+	if target < Physics.highSpeed and horizontal.Magnitude < Physics.highSpeed then
+		return
+	end
+	local jumpSpeed = if humanoid.UseJumpPower
+		then humanoid.JumpPower
+		else math.sqrt(2 * workspace.Gravity * humanoid.JumpHeight)
+	local launchLimit = if state == Enum.HumanoidStateType.Running
+			and humanoid.FloorMaterial == Enum.Material.Air
+		then math.min(jumpSpeed, Physics.maxClimbRiseSpeed)
+		else jumpSpeed
+	if velocity.Y > launchLimit + Physics.launchSlack then
+		-- Keep the ordinary jump impulse; discard only an excessive upward kick.
+		root.AssemblyLinearVelocity = horizontal + Vector3.new(0, launchLimit, 0)
+	end
+	if humanoid.FloorMaterial == Enum.Material.Air or horizontal.Magnitude < 1 then
+		return
+	end
+	probeParams.CollisionGroup = root.CollisionGroup
+	local frame = math.clamp(dt, 1 / 240, Physics.maxStep)
+	local travel = horizontal.Magnitude * frame + Physics.wallSkin
+	local floorY = root.Position.Y - humanoid.HipHeight - root.Size.Y / 2 - footOffset
+	local center = Vector3.new(
+		root.Position.X,
+		floorY + Physics.probeLift + Physics.probeHeight / 2,
+		root.Position.Z
+	)
+	local hit = workspace:Blockcast(
+		CFrame.new(center),
+		Vector3.new(root.Size.X * 0.8, Physics.probeHeight, root.Size.Z * 0.8),
+		horizontal.Unit * travel,
+		probeParams
+	)
+	-- Blockcast does not report surfaces already overlapping its initial box.
+	-- Keep the climbing pace bounded while our feet are already on a ramp.
+	if not hit then
+		hit = workspace:Raycast(
+			root.Position,
+			Vector3.new(0, -(root.Position.Y - floorY + Physics.probeHeight), 0),
+			probeParams
+		)
+	end
+	if not hit then
+		return
+	end
+	local normal = Vector3.new(hit.Normal.X, 0, hit.Normal.Z)
+	if normal.Magnitude < 0.1 then
+		return
+	end
+	normal = normal.Unit
+	local intoWall = -horizontal:Dot(normal)
+	local allowed = math.max(0, hit.Distance - Physics.wallSkin) / frame
+	if hit.Normal.Y >= math.cos(math.rad(Physics.maxSlopeAngle)) then
+		-- A walkable ramp still converts horizontal momentum into an upward
+		-- impulse. Limit the climbing component before contact, then let the
+		-- humanoid climb it normally. Manual jumps keep their normal impulse.
+		local slope = Vector3.new(hit.Normal.X, 0, hit.Normal.Z).Magnitude / hit.Normal.Y
+		allowed = math.min(jumpSpeed, Physics.maxClimbRiseSpeed) / slope
+	end
+	if intoWall > allowed then
+		local safeVelocity = horizontal + normal * (intoWall - allowed)
+		root.AssemblyLinearVelocity = safeVelocity
+			+ Vector3.new(0, math.min(velocity.Y, jumpSpeed), 0)
+		humanoid.WalkSpeed = math.min(humanoid.WalkSpeed, safeVelocity.Magnitude)
+		speed = math.min(speed, humanoid.WalkSpeed)
+	end
+end
+
 function MovementController.start()
 	local moveAction = findMoveAction()
 	task.spawn(function()
@@ -146,8 +259,14 @@ function MovementController.start()
 				moveAction = findMoveAction()
 			end
 			step(moveAction, dt)
+			protectRun(dt)
 		end
 	)
+	-- Contact impulses arrive during physics; remove a launch in that same
+	-- simulation step rather than waiting for the next rendered frame.
+	RunService.PostSimulation:Connect(function(dt: number)
+		protectRun(dt)
+	end)
 end
 
 return MovementController

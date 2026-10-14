@@ -29,7 +29,16 @@ function Icons.new(parent: Instance, kind: string, color: Color3): Frame
 		end
 		return f
 	end
-	if kind == "Shop" or kind == "Store" then
+	if kind == "Speed" then
+		-- A lightning bolt built from two diagonal bars and a connecting bar.
+		shape(0.40, 0.05, 0.18, 0.48, 0.1).Rotation = 30
+		shape(0.30, 0.43, 0.42, 0.15, 0.1)
+		shape(0.43, 0.49, 0.18, 0.48, 0.1).Rotation = 30
+	elseif kind == "Coins" then
+		shape(0.12, 0.12, 0.76, 0.76, 0.5, true)
+		shape(0.28, 0.28, 0.44, 0.44, 0.5, true)
+		shape(0.46, 0.34, 0.08, 0.32, 0.2)
+	elseif kind == "Shop" or kind == "Store" then
 		shape(0.16, 0.30, 0.68, 0.56, 0.15, true)
 		shape(0.32, 0.10, 0.36, 0.32, 0.5, true)
 		if kind == "Store" then

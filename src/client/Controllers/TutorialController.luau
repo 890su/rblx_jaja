@@ -59,6 +59,10 @@ local function update()
 		setMarker(nil)
 		return
 	end
+	if player:GetAttribute("HudNoticeActive") == true then
+		banner.Visible = false
+		return
+	end
 	if player:GetAttribute("TutorialDone") then
 		step = "done"
 	end

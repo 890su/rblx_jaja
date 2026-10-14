@@ -13,6 +13,19 @@ return deepFreeze({
 	BASE_WALKSPEED = 16,
 	WALKSPEED_COEFFICIENT = 6,
 	WALKSPEED_CAP = 400,
+	-- High-speed contact must not turn a small curb/ramp into a launch pad.
+	PHYSICS = {
+		highSpeed = 80,
+		maxSlopeAngle = 50,
+		launchSlack = 10,
+		maxClimbRiseSpeed = 20,
+		probeHeight = 1.8,
+		probeLift = 0.2,
+		wallSkin = 0.4,
+		maxStep = 0.1,
+		brakeSeconds = 0.5,
+		replicationGrace = 0.3,
+	},
 
 	CARRY_MULTIPLIER = 0.6, -- movement while carrying a meteor
 	REBIRTH_GAIN_BONUS = 0.25, -- +25% gain per rebirth
