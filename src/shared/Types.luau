@@ -88,6 +88,21 @@ export type ShopState = {
 
 export type IndexState = { discovered: { [string]: boolean } }
 
+export type StationItem = {
+	creatureId: string,
+	rarity: Rarity,
+	mutation: string?,
+	hatchAt: number?,
+	income: number,
+	key: string,
+}
+export type StationState = {
+	capacity: number,
+	slots: { [string]: StationItem },
+	storage: { StationItem },
+	openStorage: boolean?,
+}
+
 export type PlayerStats = {
 	steals: number,
 	defends: number, -- thieves caught during a chase

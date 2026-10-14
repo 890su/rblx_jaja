@@ -30,6 +30,8 @@ local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local StationInventory = require(Shared.Util.StationInventory)
 local CryoCapsuleBuild = require(script.Parent.Parent.Util.CryoCapsuleBuild)
 local MeteorVisual = require(script.Parent.Parent.Util.MeteorVisual)
+local WarehouseBuild = require(script.Parent.Parent.Util.WarehouseBuild)
+local Warehouse = require(Shared.Config.Warehouse)
 
 type Plot = WorldService.Plot
 
@@ -208,6 +210,11 @@ local function refreshPlot(plot: Plot, profile: Types.PlayerProfile?)
 	local owner = plotOwner[plot.index]
 	plot.model:SetAttribute("OwnerUserId", if owner then owner.UserId else nil)
 	local capacity = if profile and owner then StationService.capacity(owner, profile) else 0
+	WarehouseBuild.refresh(
+		plot.warehouse,
+		if profile then #profile.storage else 0,
+		if owner then true else false
+	)
 	if owner and profile then
 		owner:SetAttribute("StorageCount", #profile.storage)
 		owner:SetAttribute("StationCapacity", capacity)
@@ -521,7 +528,7 @@ function StationService.placeNew(player: Player, creatureId: string, mutation: s
 end
 
 -- Gives a creature from a purchase/reward: on a free pedestal, else into
--- overflow storage (placed automatically when a pedestal frees up).
+-- storage, where it stays until the owner places it through their locker.
 function StationService.give(
 	player: Player,
 	state: Types.PedestalState
@@ -618,12 +625,12 @@ function StationService.replaceSlot(
 	return true
 end
 
-function StationService.pushInventory(player: Player)
+function StationService.pushInventory(player: Player, openStorage: boolean?)
 	local profile = DataService.get(player)
 	if not profile then
 		return
 	end
-	local function item(state: Types.PedestalState?): any
+	local function item(state: Types.PedestalState?): Types.StationItem?
 		return if state
 			then {
 				creatureId = state.creatureId,
@@ -635,17 +642,54 @@ function StationService.pushInventory(player: Player)
 			}
 			else nil
 	end
-	local slots, storage = {}, {}
+	local slots: { [string]: Types.StationItem } = {}
+	local storage: { Types.StationItem } = {}
 	for slot = 1, StationService.capacity(player, profile) do
-		slots[tostring(slot)] = item(profile.pedestals[tostring(slot)])
+		local view = item(profile.pedestals[tostring(slot)])
+		if view then
+			slots[tostring(slot)] = view
+		end
 	end
 	for index, state in profile.storage do
-		storage[index] = item(state)
+		storage[index] = assert(item(state))
 	end
-	inventoryRemote:FireClient(
-		player,
-		{ capacity = StationService.capacity(player, profile), slots = slots, storage = storage }
-	)
+	inventoryRemote:FireClient(player, {
+		capacity = StationService.capacity(player, profile),
+		slots = slots,
+		storage = storage,
+		openStorage = openStorage,
+	})
+end
+
+local function atWarehouse(player: Player, plot: Plot, radius: number): boolean
+	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if
+		playerPlot[player] ~= plot
+		or not humanoid
+		or humanoid.Health <= 0
+		or player:GetAttribute("Carrying") ~= nil
+		or player:GetAttribute("ArenaActive") == true
+		or player:GetAttribute("ArenaPrep") == true
+	then
+		return false
+	end
+	local position = SpeedService.validatePosition(player)
+	return position ~= nil
+		and WorldService.isInPlot(plot, position)
+		and (position - plot.warehouse.Position).Magnitude <= radius
+end
+
+-- Used by the physical prompt and isolated integration tests alike.
+function StationService.openWarehouse(player: Player, plot: Plot): boolean
+	if
+		not inventoryLimit:allow(player)
+		or not DataService.get(player)
+		or not atWarehouse(player, plot, Warehouse.openDistance)
+	then
+		return false
+	end
+	StationService.pushInventory(player, true)
+	return true
 end
 
 local function inventoryAction(
@@ -657,6 +701,9 @@ local function inventoryAction(
 	expectedStored: unknown
 )
 	if not inventoryLimit:allow(player) then
+		return
+	end
+	if action ~= "request" and action ~= "swap" and action ~= "store" and action ~= "sell" then
 		return
 	end
 	if action == "request" then
@@ -677,6 +724,11 @@ local function inventoryAction(
 		StationService.pushInventory(player)
 		return
 	end
+	if not atWarehouse(player, plot, Warehouse.manageDistance) then
+		Notifier.send(player, "warehouse_approach", nil, "warning")
+		StationService.pushInventory(player)
+		return
+	end
 	if
 		typeof(slot) ~= "number"
 		or slot % 1 ~= 0
@@ -689,7 +741,21 @@ local function inventoryAction(
 	local key = tostring(slot)
 	local state = profile.pedestals[key]
 	local changed = false
-	if action == "swap" and typeof(index) == "number" and typeof(expectedStored) == "string" then
+	if action == "store" then
+		changed = StationInventory.store(
+			profile,
+			slot,
+			expectedSlot,
+			StationService.capacity(player, profile)
+		)
+		if changed then
+			Notifier.send(player, "warehouse_stored", nil, "success")
+		end
+	elseif
+		action == "swap"
+		and typeof(index) == "number"
+		and typeof(expectedStored) == "string"
+	then
 		changed = StationInventory.exchange(
 			profile,
 			slot,
@@ -741,10 +807,8 @@ local function tickStation(player: Player, plot: Plot, profile: Types.PlayerProf
 		player:SetAttribute("OnTreadmill", false)
 	end
 
-	-- Overflow storage drains onto free pedestals.
-	while #profile.storage > 0 and StationService.placeState(player, profile.storage[1]) do
-		table.remove(profile.storage, 1)
-	end
+	-- Stored creatures stay in the locker until the owner explicitly deploys
+	-- them. An empty pedestal must not undo a deliberate store action.
 
 	local now = os.time()
 	local previous = lastIncomeAt[player] or now
@@ -823,6 +887,10 @@ function StationService.init()
 	end)
 	for _, plot in WorldService.getPlots() do
 		refreshPlot(plot, nil)
+		local prompt = plot.warehouse:FindFirstChild("WarehousePrompt") :: ProximityPrompt
+		prompt.Triggered:Connect(function(player)
+			StationService.openWarehouse(player, plot)
+		end)
 	end
 end
 

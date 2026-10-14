@@ -116,7 +116,22 @@ local COMMANDS: { [string]: (player: Player?, ...any) -> any } = {
 			rarity = creature.rarity,
 		})
 	end,
-	-- unprotect <player> : skip new-player protection
+	-- Isolated visual QA: long name, mutation and a pending hatch timer.
+	warehouseItem = function(player)
+		assert(player, "no player")
+		local args = game:GetService("StudioTestService"):GetTestArgs()
+		assert(
+			typeof(args) == "table" and args.suite == "preprod" and args.mode == "visual",
+			"isolated visual QA only"
+		)
+		return StationService.give(player, {
+			creatureId = "singularity_sprite",
+			rarity = "Mythic",
+			mutation = "Golden",
+			paid = false,
+			hatchAt = os.time() + 300,
+		})
+	end,
 	-- Isolated manual movement QA: cargo without an attacking drone, so a
 	-- movement rejection can be distinguished from legitimate combat damage.
 	carry = function(player, origin)

@@ -21,6 +21,12 @@ local Theme = require(script.Parent.Theme)
 export type Args = { [string]: any }
 
 local STRINGS: { [string]: string } = {
+	warehouse_approach = "Approach the storage terminal on your plot to manage creatures",
+	warehouse_stored = "Creature safely stored. It earns Stardust when placed on a pedestal",
+	warehouse_swap_preview = "Slot {slot}: {incoming} in · {outgoing} goes to storage",
+	warehouse_place_preview = "Slot {slot}: place {incoming} here",
+	warehouse_store_preview = "Slot {slot} · {name} can move to storage without selling",
+	warehouse_hint = "Select a pedestal to store its creature, or choose a stored creature and its destination",
 	ui_station_compact_title = "Station · {used}/{capacity}",
 	ui_station_hint = "1. Select a slot   2. Select a stored creature   3. Swap — the old creature stays in storage",
 	ui_station_pick_storage = "Slot {slot} · {name} — select a stored creature to swap",
@@ -259,6 +265,9 @@ local STATIC_TERMS: { string } = {
 	"Select a slot first",
 	"Station slots",
 	"Storage",
+	"Manage creatures",
+	"Move to storage",
+	"Place creature",
 	"Home",
 	"Safe station area",
 	"Canyon entrances",

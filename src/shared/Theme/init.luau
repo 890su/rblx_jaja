@@ -12,6 +12,13 @@ return deepFreeze({
 	BASE = "Station",
 	SHOWER_EVENT = "Meteor Shower",
 	WEEKLY_EVENT = "Starfall",
+	WAREHOUSE = {
+		body = Color3.fromRGB(31, 45, 62),
+		door = Color3.fromRGB(49, 67, 85),
+		screen = Color3.fromRGB(9, 25, 35),
+		accent = Color3.fromRGB(88, 231, 201),
+		muted = Color3.fromRGB(89, 115, 133),
+	},
 
 	ZONE_NAMES = { "Dust Flats", "Ember Ridge", "Frost Rim", "Void Basin", "Nova Core" },
 

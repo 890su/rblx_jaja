@@ -5,6 +5,25 @@ local Types = require(script.Parent.Parent.Types)
 
 local StationInventory = {}
 
+function StationInventory.store(
+	profile: Types.PlayerProfile,
+	slot: number,
+	expected: string,
+	capacity: number
+): boolean
+	if slot % 1 ~= 0 or slot < 1 or slot > capacity then
+		return false
+	end
+	local key = tostring(slot)
+	local state = profile.pedestals[key]
+	if not state or StationInventory.key(state) ~= expected then
+		return false
+	end
+	profile.pedestals[key] = nil
+	table.insert(profile.storage, state)
+	return true
+end
+
 function StationInventory.key(state: Types.PedestalState?): string
 	if not state then
 		return ""

@@ -16,6 +16,44 @@ local player = game:GetService("Players").LocalPlayer
 remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 	remote:FireServer("stage", op)
 	local ok, result = pcall(function(): any
+		if op == "stationAction" then
+			Remotes.event("StationAction")
+				:FireServer(key.action, key.slot, key.index, key.expectedSlot, key.expectedStored)
+			task.wait(0.35)
+			return true
+		end
+		if op == "warehouse" then
+			local g = UiKit.gui()
+			local panel = assert(g:FindFirstChild("Station"), "missing inventory panel")
+			local store =
+				assert(panel:FindFirstChild("StoreButton"), "missing storage action") :: TextButton
+			local foreignPrompts, foreignPreviews = 0, 0
+			for _, prompt in game:GetService("CollectionService"):GetTagged("WarehousePrompt") do
+				local plot = prompt.Parent and prompt.Parent.Parent and prompt.Parent.Parent.Parent
+				if
+					plot
+					and plot:GetAttribute("OwnerUserId") ~= player.UserId
+					and prompt:IsA("ProximityPrompt")
+					and prompt.Enabled
+				then
+					foreignPrompts += 1
+				end
+			end
+			for _, plot in workspace.World.Plots:GetChildren() do
+				if plot:GetAttribute("OwnerUserId") ~= player.UserId then
+					local locker = plot:FindFirstChild("Warehouse")
+					if locker and locker:FindFirstChild("PrivateStoragePreviews") then
+						foreignPreviews += 1
+					end
+				end
+			end
+			return {
+				open = UiKit.isOpen("Station"),
+				foreignPrompts = foreignPrompts,
+				foreignPreviews = foreignPreviews,
+				storeHeight = store.AbsoluteSize.Y,
+			}
+		end
 		if op == "buy" then
 			Remotes.event("ShopBuy"):FireServer(key)
 			task.wait(0.3)
@@ -111,9 +149,13 @@ remote.OnClientEvent:Connect(function(nonce: number, op: string, key: any)
 				UiKit.navigate(section)
 				assert(UiKit.isOpen(section), "navigation failed: " .. section)
 				if section == "Station" and workspace.CurrentCamera.ViewportSize.X > 100 then
-					task.wait(0.3)
 					local station = gui:FindFirstChild("Station") :: Frame
-					local slot = station:FindFirstChild("Slot1", true) :: GuiButton
+					local slot = station:FindFirstChild("Slot1", true) :: GuiButton?
+					local deadline = os.clock() + 10
+					while not slot and os.clock() < deadline do
+						task.wait(0.05)
+						slot = station:FindFirstChild("Slot1", true) :: GuiButton?
+					end
 					assert(slot, "missing initial station slot")
 					local service = game:GetService("GuiService")
 					service.SelectedObject = slot

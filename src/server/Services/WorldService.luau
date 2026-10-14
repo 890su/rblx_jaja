@@ -18,6 +18,7 @@ local EnvironmentBuild = require(script.Parent.Parent.Util.EnvironmentBuild)
 local Biomes = require(Shared.Theme.Biomes)
 local ArenaWorldBuild = require(script.Parent.Parent.Util.ArenaWorldBuild)
 local CryoCapsuleBuild = require(script.Parent.Parent.Util.CryoCapsuleBuild)
+local WarehouseBuild = require(script.Parent.Parent.Util.WarehouseBuild)
 
 export type Plot = {
 	index: number,
@@ -25,6 +26,7 @@ export type Plot = {
 	spawn: CFrame,
 	pedestals: { BasePart },
 	collector: BasePart,
+	warehouse: BasePart,
 	treadmill: BasePart,
 	center: Vector3,
 }
@@ -320,6 +322,7 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 		label.Parent = gui
 	end
 	gui.Parent = sign
+	local warehouse = WarehouseBuild.create(model, center)
 
 	model.Parent = parent
 	return {
@@ -328,6 +331,7 @@ local function buildPlot(index: number, count: number, parent: Instance): Plot
 		spawn = CFrame.new(center + Vector3.new(0, 3, -2)),
 		pedestals = pedestals,
 		collector = collector,
+		warehouse = warehouse,
 		treadmill = treadmill,
 		center = center,
 	}

@@ -16,6 +16,7 @@ local Shared = ReplicatedStorage.Shared
 local Specs = require(Shared.Config.Upgrades)
 local Products = require(Shared.Config.Products)
 local UpgradeMath = require(Shared.Util.UpgradeMath)
+local Inventory = require(Shared.Util.StationInventory)
 local Checks = {}
 function Checks.run(): any
 	require(script.Parent.Parent.Util.CommerceQA)()
@@ -244,6 +245,116 @@ function Checks.run(): any
 		end
 		-- Restore neutral paid entitlements for stealing fixtures.
 		buyer:SetAttribute("Pass_Expansion", nil)
+		-- Physical locker access and real remote actions, with isolated saves.
+		local storedOriginal = {
+			id = "warehouse-original",
+			creatureId = "pebblit",
+			rarity = "Common",
+			paid = true,
+			mutation = "Golden",
+			hatchAt = os.time() + 3600,
+		}
+		local storedIncoming =
+			{ id = "warehouse-incoming", creatureId = "comet_cat", rarity = "Rare", paid = false }
+		buyerData.pedestals = { ["1"] = storedOriginal }
+		buyerData.storage = { storedIncoming }
+		Station.refresh(buyer)
+		local warehouseAt = buyerPlot.warehouse.Position + Vector3.new(5, -2.2, 0)
+		at(buyer, warehouseAt)
+		task.wait(0.3)
+		check("owner can open physical locker", Station.openWarehouse(buyer, buyerPlot))
+		local warehouseView = client(buyer, "warehouse", nil)
+		check(
+			"locker opens inventory with full touch targets",
+			warehouseView.open and warehouseView.storeHeight >= 48
+		)
+		check("foreign locker prompts hidden", warehouseView.foreignPrompts == 0)
+		check("foreign storage previews stay private", warehouseView.foreignPreviews == 0)
+		check(
+			"local previews never replicate to server",
+			not assert(buyerPlot.model:FindFirstChild("Warehouse"), "missing locker"):FindFirstChild(
+				"PrivateStoragePreviews"
+			)
+		)
+		check("foreign locker ownership rejected", not Station.openWarehouse(buyer, ownerPlot))
+		local originalKey = Inventory.key(storedOriginal)
+		client(buyer, "stationAction", { action = "store", slot = 1, expectedSlot = originalKey })
+		check(
+			"store removes pedestal and keeps exact item",
+			buyerData.pedestals["1"] == nil and buyerData.storage[2] == storedOriginal
+		)
+		task.wait(1.2)
+		check(
+			"stored creature stays off free pedestal",
+			buyerData.pedestals["1"] == nil and #buyerData.storage == 2
+		)
+		check(
+			"storage does not earn passive income",
+			Station.incomePerSecond(buyer, buyerData) == 0
+		)
+		check(
+			"stored metadata saved intact",
+			Data.saveConfirmed(buyer, function(saved)
+				local item = saved.storage[2]
+				return item ~= nil
+					and item.id == storedOriginal.id
+					and item.paid == true
+					and item.mutation == "Golden"
+					and item.hatchAt == storedOriginal.hatchAt
+			end)
+		)
+		client(buyer, "stationAction", { action = "store", slot = 1, expectedSlot = originalKey })
+		check(
+			"replayed store cannot duplicate",
+			#buyerData.storage == 2 and buyerData.pedestals["1"] == nil
+		)
+		at(buyer, buyerPlot.center + Vector3.new(20, 4, -20))
+		client(buyer, "stationAction", {
+			action = "swap",
+			slot = 2,
+			index = 1,
+			expectedSlot = "",
+			expectedStored = Inventory.key(storedIncoming),
+		})
+		check(
+			"distant deployment rejected",
+			buyerData.pedestals["2"] == nil and #buyerData.storage == 2
+		)
+		check("distant locker opening rejected", not Station.openWarehouse(buyer, buyerPlot))
+		at(buyer, warehouseAt)
+		client(buyer, "stationAction", {
+			action = "swap",
+			slot = 2,
+			index = 1,
+			expectedSlot = "",
+			expectedStored = Inventory.key(storedIncoming),
+		})
+		check(
+			"stored creature deployed to exact empty slot",
+			buyerData.pedestals["2"] == storedIncoming and #buyerData.storage == 1
+		)
+		client(buyer, "stationAction", {
+			action = "swap",
+			slot = 2,
+			index = 1,
+			expectedSlot = Inventory.key(storedIncoming),
+			expectedStored = originalKey,
+		})
+		check(
+			"occupied swap keeps both identities",
+			buyerData.pedestals["2"] == storedOriginal and buyerData.storage[1] == storedIncoming
+		)
+		client(buyer, "stationAction", {
+			action = "swap",
+			slot = 2,
+			index = 1,
+			expectedSlot = Inventory.key(storedIncoming),
+			expectedStored = originalKey,
+		})
+		check(
+			"stale swap cannot change new occupants",
+			buyerData.pedestals["2"] == storedOriginal and buyerData.storage[1] == storedIncoming
+		)
 		fillOwner()
 		check("short hold rejected", not Steal.debugAttempt(buyer, owner, 1, 0))
 		ownerData.playtimeTotal = 0

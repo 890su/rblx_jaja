@@ -29,4 +29,26 @@ check(
 	"two distinct occupants",
 	profile.pedestals["1"] == incoming and profile.pedestals["2"] == old
 )
+check("store preserves exact item", Inventory.store(profile, 1, b, 3))
+check(
+	"stored mutation timer and object retained",
+	profile.storage[1] == incoming and profile.storage[1].mutation == "Golden"
+)
+check("stored slot becomes empty", profile.pedestals["1"] == nil)
+check(
+	"replayed store cannot duplicate",
+	not Inventory.store(profile, 1, b, 3) and #profile.storage == 1
+)
+check(
+	"stale store cannot remove different item",
+	not Inventory.store(profile, 2, b, 3) and profile.pedestals["2"] == old
+)
+check("locked store rejected", not Inventory.store(profile, 4, a, 3))
+check("NaN store rejected", not Inventory.store(profile, 0 / 0, a, 3))
+check("infinite store rejected", not Inventory.store(profile, math.huge, a, 3))
+check("deploy stored item into empty slot", Inventory.exchange(profile, 1, 1, "", b, 3))
+check(
+	"deploy consumes stored entry exactly once",
+	#profile.storage == 0 and profile.pedestals["1"] == incoming
+)
 return `PASS {passed}`
